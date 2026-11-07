@@ -17,9 +17,26 @@
       {{ flow.summary.database }} 已初始化，管理员
       {{ flow.summary.administrator }} 已创建。
     </q-banner>
-    <q-banner v-if="reinitializeMode" class="message-banner warning-message">
-      <template #avatar><q-icon name="swap_horiz" /></template>
-      正在为新目标数据库重新初始化。原数据库及其数据会保留；目标库已存在管理员时，服务会拒绝覆盖。
+    <q-banner
+      v-if="flow.databaseReady"
+      class="message-banner info-message migration-banner"
+    >
+      <template #avatar><q-icon name="system_update_alt" /></template>
+      检查并应用管理后台所需的数据库版本迁移。此操作仅允许在安装器本机执行。
+      <template #action>
+        <q-btn
+          flat
+          color="primary"
+          label="应用待执行迁移"
+          icon="system_update_alt"
+          :loading="migrating"
+          @click="applyPendingMigrations"
+        />
+      </template>
+    </q-banner>
+    <q-banner v-if="migrationResult" class="message-banner success-message">
+      <template #avatar><q-icon name="task_alt" /></template>
+      {{ migrationResult }}
     </q-banner>
 
     <InstallerCard class="form-section">
@@ -361,6 +378,8 @@ const router = useRouter();
 const flow = installerFlow;
 const checking = ref(false);
 const initializing = ref(false);
+const migrating = ref(false);
+const migrationResult = ref("");
 const confirmExistingOpen = ref(false);
 const reinitializeMode = ref(false);
 const originalReinitializationSettings = ref<{
@@ -430,35 +449,23 @@ async function testDatabase() {
   }
 }
 
-function beginReinitialize() {
-  // 切换后续安装目标时先保存当前表单，取消后可完整恢复原安装上下文。
-  originalReinitializationSettings.value = {
-    database: { ...flow.database },
-    installation: { ...flow.installation },
-    administrator: { ...flow.administrator },
-    projectId: flow.projectId,
-    passwordPolicy: { ...flow.passwordPolicy },
-  };
+async function applyPendingMigrations() {
+  migrating.value = true;
+  migrationResult.value = "";
   flow.databaseError = "";
-  resetDatabaseCheck();
-  reinitializeMode.value = true;
-  flow.databaseReinitializing = true;
-}
-
-function cancelReinitialize() {
-  const original = originalReinitializationSettings.value;
-  if (original) {
-    flow.database = { ...original.database };
-    flow.installation = { ...original.installation };
-    flow.administrator = { ...original.administrator };
-    flow.projectId = original.projectId;
-    flow.passwordPolicy = { ...original.passwordPolicy };
+  try {
+    const result = await postJson<{ applied: string[] }>(
+      "/database/migrate",
+      {},
+    );
+    migrationResult.value = result.applied.length
+      ? `已应用 ${result.applied.length} 个数据库迁移版本：${result.applied.join("、")}`
+      : "数据库结构已是最新版本，无需迁移。";
+  } catch (error) {
+    flow.databaseError = errorMessage(error);
+  } finally {
+    migrating.value = false;
   }
-  flow.databaseError = "";
-  resetDatabaseCheck();
-  reinitializeMode.value = false;
-  flow.databaseReinitializing = false;
-  originalReinitializationSettings.value = null;
 }
 
 async function initializeDatabase(confirmedExisting: boolean) {

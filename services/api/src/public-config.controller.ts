@@ -10,4 +10,10 @@ export class PublicConfigController {
   configuration() {
     return this.publicConfigService.getInstallationIdentity();
   }
+
+  @Get("initialization")
+  @Header("Cache-Control", "no-store")
+  initialization() {
+    return this.publicConfigService.getAdminInitializationStatus();
+  }
 }
