@@ -122,6 +122,42 @@ export class InstallerService {
     }
   }
 
+  async migrateDatabase() {
+    const pool = await this.getPool();
+    if (!pool) {
+      throw new ServiceUnavailableException("请先初始化数据库并保存连接配置。");
+    }
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const schema = await client.query<{ exists: boolean }>(
+        "SELECT to_regclass('public.system_configs') IS NOT NULL AS exists",
+      );
+      if (!schema.rows[0]?.exists) {
+        throw new ConflictException(
+          "当前数据库尚未完成首次安装，不能执行后续迁移。",
+        );
+      }
+      const installed = await client.query(
+        "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'",
+      );
+      if (!installed.rowCount) {
+        throw new ConflictException(
+          "当前数据库尚未完成首次安装，不能执行后续迁移。",
+        );
+      }
+      const applied = await this.applyPendingMigrations(client);
+      await client.query("COMMIT");
+      return { applied };
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      if (error instanceof ConflictException) throw error;
+      throw new ServiceUnavailableException(this.describeError(error));
+    } finally {
+      client.release();
+    }
+  }
+
   async initialize(input: InitializeInput) {
     this.validateInitializeInput(input);
     const databaseState = await this.inspectDatabase(input.database);
@@ -161,8 +197,7 @@ export class InstallerService {
       }
 
       await client.query("BEGIN");
-      const migrationPath = await this.findMigrationPath();
-      await client.query(await readFile(migrationPath, "utf8"));
+      await this.applyPendingMigrations(client);
 
       const current = await client.query<{ total: string }>(
         "SELECT COUNT(*)::text AS total FROM admin_users",
@@ -188,12 +223,13 @@ export class InstallerService {
         input.installation,
       );
 
+      // 管理端 MVP 以系统管理菜单为主入口，保留概览记录但不在侧栏显示。
       await client.query(
-        `INSERT INTO menus (code, name, path, icon, sort_order)
+        `INSERT INTO menus (code, name, path, icon, sort_order, is_visible)
          VALUES
-           ('overview', '概览', '/', 'dashboard', 10),
-           ('administrators', '管理员', '/administrators', 'admin_panel_settings', 20),
-           ('system-settings', '系统设置', '/settings', 'settings', 30)
+           ('overview', '概览', '/', 'dashboard', 10, FALSE),
+           ('administrators', '管理员', '/administrators', 'admin_panel_settings', 20, TRUE),
+           ('system-settings', '系统设置', '/settings', 'settings', 30, TRUE)
          ON CONFLICT (code) DO NOTHING`,
       );
       await client.query(
@@ -626,6 +662,8 @@ export class InstallerService {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+      // 与后台设置写入共用锁，确保目标链锁定和代币身份修改串行完成。
+      await client.query("SELECT pg_advisory_xact_lock(4102, 4)");
       const installed = await client.query(
         "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'",
       );
@@ -969,8 +1007,14 @@ export class InstallerService {
         "管理员账号须为 3 到 64 位字母、数字或 . _ -。",
       );
     }
-    if (!administrator.password) {
-      throw new ServiceUnavailableException("请填写首位管理员密码。");
+    if (
+      typeof administrator.password !== "string" ||
+      !administrator.password ||
+      administrator.password.length > 1024
+    ) {
+      throw new ServiceUnavailableException(
+        "首位管理员密码不能为空且最多为 1024 个字符。",
+      );
     }
     if ((input.projectId?.length ?? 0) > 200) {
       throw new ServiceUnavailableException("WalletConnect 项目 ID 长度无效。");
@@ -997,6 +1041,7 @@ export class InstallerService {
     identity: InstallationIdentityInput,
   ): Promise<InstallationIdentity> {
     // 安装身份只允许首次写入；已有值不匹配时中止事务，避免覆盖旧部署配置。
+    await client.query("SELECT pg_advisory_xact_lock(4102, 4)");
     const entries = [
       ["system_name", identity.systemName.trim(), "安装时确认的系统名称"],
       ["token_name", identity.tokenName.trim(), "链上主代币全称"],
@@ -1141,7 +1186,7 @@ export class InstallerService {
     return `scrypt:${salt.toString("hex")}:${hash.toString("hex")}`;
   }
 
-  private async findMigrationPath() {
+  private async findMigrationsDirectory() {
     const startingPoints = [
       process.cwd(),
       dirname(fileURLToPath(import.meta.url)),
@@ -1149,21 +1194,57 @@ export class InstallerService {
     for (const start of startingPoints) {
       let directory = resolve(start);
       for (let level = 0; level < 8; level += 1) {
-        const candidate = join(
-          directory,
-          "db",
-          "migrations",
-          "0001_installer_core.sql",
-        );
+        const candidate = join(directory, "db", "migrations");
         try {
-          await access(candidate);
+          await access(join(candidate, "0001_installer_core.sql"));
           return candidate;
         } catch {
           directory = dirname(directory);
         }
       }
     }
-    throw new Error("找不到 db/migrations/0001_installer_core.sql。");
+    throw new Error("找不到 db/migrations 目录。");
+  }
+
+  private async applyPendingMigrations(client: PoolClient) {
+    // 初始化和手动升级共享事务锁，确保并发请求不会重复执行同一迁移。
+    await client.query("SELECT pg_advisory_xact_lock(4102, 3)");
+    const migrationsDirectory = await this.findMigrationsDirectory();
+    const files = (await readdir(migrationsDirectory))
+      .filter((file) => /^\d{4}_[a-z0-9_]+\.sql$/i.test(file))
+      .sort((left, right) => left.localeCompare(right));
+    const applied: string[] = [];
+
+    for (const file of files) {
+      const version = file.slice(0, -4);
+      const table = await client.query<{ exists: boolean }>(
+        "SELECT to_regclass('public.schema_migrations') IS NOT NULL AS exists",
+      );
+      if (table.rows[0]?.exists) {
+        const previous = await client.query(
+          "SELECT 1 FROM schema_migrations WHERE version = $1",
+          [version],
+        );
+        if (previous.rowCount) continue;
+      }
+
+      await client.query(
+        await readFile(join(migrationsDirectory, file), "utf8"),
+      );
+      const created = await client.query<{ exists: boolean }>(
+        "SELECT to_regclass('public.schema_migrations') IS NOT NULL AS exists",
+      );
+      if (!created.rows[0]?.exists) {
+        throw new Error(`迁移 ${version} 未创建 schema_migrations 表。`);
+      }
+      await client.query(
+        `INSERT INTO schema_migrations (version)
+         VALUES ($1) ON CONFLICT (version) DO NOTHING`,
+        [version],
+      );
+      applied.push(version);
+    }
+    return applied;
   }
 
   private async persistDatabaseUrl(settings: DatabaseSettings) {

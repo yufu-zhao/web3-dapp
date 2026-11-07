@@ -6,8 +6,8 @@ body,
 
 body {
   margin: 0;
-  background: #111827;
-  color: #f9fafb;
+  background: #f3f6fa;
+  color: #202d42;
   font-family:
     Inter,
     ui-sans-serif,
@@ -16,4 +16,12 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+}
+
+.q-field--outlined .q-field__control:before {
+  border-color: #d9e0e9;
+}
+
+.q-field--outlined:hover .q-field__control:before {
+  border-color: #aeb8c7;
 }

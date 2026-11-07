@@ -2,11 +2,14 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   Post,
   Query,
+  Req,
 } from "@nestjs/common";
+import type { FastifyRequest } from "fastify";
 import {
   InstallerService,
   type DatabaseSettings,
@@ -31,6 +34,14 @@ export class InstallerController {
   @Post("database/initialize")
   initialize(@Body() body: Parameters<InstallerService["initialize"]>[0]) {
     return this.installerService.initialize(body);
+  }
+
+  @Post("database/migrate")
+  migrateDatabase(@Req() request: FastifyRequest) {
+    if (!isLoopbackAddress(request.ip)) {
+      throw new ForbiddenException("数据库迁移仅允许本机安装器调用。");
+    }
+    return this.installerService.migrateDatabase();
   }
 
   @Get("config")
@@ -128,4 +139,12 @@ export class InstallerController {
   ) {
     return this.installerService.addSavedToken(Number(chainId), body);
   }
+}
+
+function isLoopbackAddress(address: string) {
+  return (
+    address === "127.0.0.1" ||
+    address === "::1" ||
+    address.startsWith("::ffff:127.")
+  );
 }

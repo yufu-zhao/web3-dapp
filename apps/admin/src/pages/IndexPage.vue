@@ -2,19 +2,125 @@
   <q-layout view="lHh Lpr lFf">
     <q-page-container>
       <q-page class="page-shell flex flex-center">
-        <main class="starter-card">
+        <main
+          class="starter-card"
+          aria-live="polite"
+          :aria-busy="state === 'loading'"
+        >
           <div class="brand-mark" aria-hidden="true">{{ brandMark }}</div>
-          <p class="eyebrow">{{ systemName }}</p>
-          <h1>管理后台</h1>
-          <p class="description">
-            {{ systemName }} · {{ tokenName }}（{{ tokenSymbol }}） ·
-            {{ chainLabel }}
-          </p>
-          <p v-if="configError" class="config-error">{{ configError }}</p>
-          <q-badge color="positive" text-color="dark" class="status-badge">
-            <q-icon name="check_circle" size="16px" class="q-mr-xs" />
-            运行就绪
-          </q-badge>
+
+          <template v-if="state === 'loading'">
+            <p class="eyebrow">系统初始化检查</p>
+            <h1>正在检查系统状态</h1>
+            <p class="description">正在连接业务 API 并读取安装状态，请稍候。</p>
+            <q-spinner-dots color="primary" size="36px" aria-label="正在加载" />
+          </template>
+
+          <template v-else-if="state === 'ready'">
+            <p class="eyebrow">{{ systemName }}</p>
+            <h1>管理后台</h1>
+            <p class="description">
+              {{ systemName }} · {{ tokenName }}（{{ tokenSymbol }}） ·
+              {{ chainLabel }}
+            </p>
+            <q-badge color="positive" text-color="dark" class="status-badge">
+              <q-icon name="check_circle" size="16px" class="q-mr-xs" />
+              初始化完成，管理台已就绪
+            </q-badge>
+          </template>
+
+          <template v-else-if="state === 'uninitialized'">
+            <q-icon
+              class="state-icon"
+              name="settings_suggest"
+              color="primary"
+              aria-hidden="true"
+            />
+            <p class="eyebrow">首次运行</p>
+            <h1>系统尚未初始化</h1>
+            <p class="description">
+              请先通过可视化安装器连接
+              PostgreSQL，并完成核心数据与首位管理员初始化。完成后返回此页重新检查。
+            </p>
+            <q-btn
+              color="primary"
+              text-color="dark"
+              label="重新检查"
+              icon="refresh"
+              unelevated
+              :loading="checking"
+              @click="checkInitialization"
+            />
+          </template>
+
+          <template v-else-if="state === 'incomplete'">
+            <q-icon
+              class="state-icon"
+              name="warning_amber"
+              color="warning"
+              aria-hidden="true"
+            />
+            <p class="eyebrow">需要完成配置</p>
+            <h1>安装配置未完成</h1>
+            <p class="description">
+              数据库已有初始化记录，但系统身份配置不完整。请返回安装器的数据库连接步骤补全配置，再重新检查。
+            </p>
+            <q-btn
+              color="primary"
+              text-color="dark"
+              label="重新检查"
+              icon="refresh"
+              unelevated
+              :loading="checking"
+              @click="checkInitialization"
+            />
+          </template>
+
+          <template v-else-if="state === 'migration-required'">
+            <q-icon
+              class="state-icon"
+              name="system_update_alt"
+              color="warning"
+              aria-hidden="true"
+            />
+            <p class="eyebrow">数据库升级</p>
+            <h1>管理后台数据库尚未升级</h1>
+            <p class="description">
+              当前安装记录有效，但管理后台所需的登录会话和菜单结构迁移尚未应用。请在本机安装器的数据库连接页点击“应用待执行迁移”，完成后返回此页重新检查。
+            </p>
+            <q-btn
+              color="primary"
+              text-color="dark"
+              label="重新检查"
+              icon="refresh"
+              unelevated
+              :loading="checking"
+              @click="checkInitialization"
+            />
+          </template>
+
+          <template v-else>
+            <q-icon
+              class="state-icon"
+              name="cloud_off"
+              color="warning"
+              aria-hidden="true"
+            />
+            <p class="eyebrow">连接问题</p>
+            <h1>暂时无法读取系统状态</h1>
+            <p class="description config-error">
+              {{ configError || "请检查业务 API 与数据库连接后重试。" }}
+            </p>
+            <q-btn
+              color="primary"
+              text-color="dark"
+              label="重试"
+              icon="refresh"
+              unelevated
+              :loading="checking"
+              @click="checkInitialization"
+            />
+          </template>
         </main>
       </q-page>
     </q-page-container>
@@ -24,11 +130,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import {
-  loadPublicInstallationConfig,
+  loadAdminInitializationStatus,
+  type AdminInitializationStatus,
   type PublicInstallationConfig,
 } from "@filereset/shared-types";
 
+type InitializationState =
+  AdminInitializationStatus["state"] | "loading" | "error";
+
+const state = ref<InitializationState>("loading");
 const identity = ref<PublicInstallationConfig | null>(null);
+const checking = ref(false);
 const configError = ref("");
 const systemName = computed(() => identity.value?.systemName || "FileReset");
 const tokenName = computed(() => identity.value?.tokenName || "FileReset");
@@ -39,7 +151,7 @@ const brandMark = computed(
 const chainLabel = computed(() =>
   identity.value?.chainId
     ? `ChainId ${identity.value.chainId}`
-    : "目标链在首次完整部署成功后锁定",
+    : "目标链将在首次完整部署后锁定",
 );
 
 watch(
@@ -50,13 +162,25 @@ watch(
   { immediate: true },
 );
 
-onMounted(async () => {
+// 按初始化状态选择管理端首屏；API 或数据库故障单独显示重试提示。
+async function checkInitialization() {
+  checking.value = true;
+  configError.value = "";
   try {
-    identity.value = await loadPublicInstallationConfig();
+    const result = await loadAdminInitializationStatus();
+    state.value = result.state;
+    identity.value = result.state === "ready" ? result.installation : null;
   } catch (error) {
+    state.value = "error";
     configError.value =
-      error instanceof Error ? error.message : "无法读取安装身份配置。";
+      error instanceof Error ? error.message : "无法读取安装状态，请稍后重试。";
+  } finally {
+    checking.value = false;
   }
+}
+
+onMounted(() => {
+  void checkInitialization();
 });
 </script>
 
@@ -101,6 +225,11 @@ onMounted(async () => {
   place-items: center;
 }
 
+.state-icon {
+  margin-bottom: 10px;
+  font-size: 36px;
+}
+
 .eyebrow {
   margin: 0 0 8px;
   color: #ffc832;
@@ -112,8 +241,9 @@ onMounted(async () => {
 
 h1 {
   margin: 0;
-  font-size: clamp(28px, 6vw, 40px);
+  font-size: clamp(26px, 6vw, 40px);
   font-weight: 700;
+  line-height: 1.25;
 }
 
 .description {
@@ -123,9 +253,8 @@ h1 {
 }
 
 .config-error {
-  margin: 0;
-  color: #ffc832;
-  font-size: 12px;
+  color: #fcd34d;
+  overflow-wrap: anywhere;
 }
 
 .status-badge {

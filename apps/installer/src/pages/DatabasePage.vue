@@ -14,6 +14,27 @@
       {{ flow.summary.database }} 已初始化，管理员
       {{ flow.summary.administrator }} 已创建。
     </q-banner>
+    <q-banner
+      v-if="flow.databaseReady"
+      class="message-banner info-message migration-banner"
+    >
+      <template #avatar><q-icon name="system_update_alt" /></template>
+      检查并应用管理后台所需的数据库版本迁移。此操作仅允许在安装器本机执行。
+      <template #action>
+        <q-btn
+          flat
+          color="primary"
+          label="应用待执行迁移"
+          icon="system_update_alt"
+          :loading="migrating"
+          @click="applyPendingMigrations"
+        />
+      </template>
+    </q-banner>
+    <q-banner v-if="migrationResult" class="message-banner success-message">
+      <template #avatar><q-icon name="task_alt" /></template>
+      {{ migrationResult }}
+    </q-banner>
 
     <InstallerCard class="form-section">
       <div class="form-section-title">
@@ -325,6 +346,8 @@ const router = useRouter();
 const flow = installerFlow;
 const checking = ref(false);
 const initializing = ref(false);
+const migrating = ref(false);
+const migrationResult = ref("");
 const confirmExistingOpen = ref(false);
 const validInstallationIdentity = computed(() =>
   Boolean(
@@ -374,6 +397,25 @@ async function testDatabase() {
     flow.databaseError = errorMessage(error);
   } finally {
     checking.value = false;
+  }
+}
+
+async function applyPendingMigrations() {
+  migrating.value = true;
+  migrationResult.value = "";
+  flow.databaseError = "";
+  try {
+    const result = await postJson<{ applied: string[] }>(
+      "/database/migrate",
+      {},
+    );
+    migrationResult.value = result.applied.length
+      ? `已应用 ${result.applied.length} 个数据库迁移版本：${result.applied.join("、")}`
+      : "数据库结构已是最新版本，无需迁移。";
+  } catch (error) {
+    flow.databaseError = errorMessage(error);
+  } finally {
+    migrating.value = false;
   }
 }
 
