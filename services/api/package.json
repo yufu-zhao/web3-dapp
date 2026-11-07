@@ -1,0 +1,20 @@
+{
+  "name": "@filereset/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nest start --watch",
+    "dev:indexer": "nest start --watch --entryFile indexer",
+    "build": "nest build",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@nestjs/common": "^12.3.3",
+    "@nestjs/core": "^12.3.3",
+    "@nestjs/platform-fastify": "^12.3.3",
+    "fastify": "^5.12.8",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  }
+}

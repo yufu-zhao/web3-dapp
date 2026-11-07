@@ -1,0 +1,11 @@
+{
+  "compiler": "solc 0.8.28",
+  "optimizer": {
+    "enabled": true,
+    "runs": 200
+  },
+  "evmVersion": "paris",
+  "viaIR": false,
+  "openZeppelin": "5.4.0",
+  "artifactGeneration": "Hardhat 3.19.0"
+}

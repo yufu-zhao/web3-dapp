@@ -1,0 +1,24 @@
+{
+  "defaults": {
+    "externalAddresses": {
+      "paymentToken": "0x5Ef66f51AB44776d6981F0af34CDdea6F29Fab2d",
+      "factory": "0x6725F303b657a9451d8BA641348b6761A6CC7a17",
+      "router": "0xD99D1c33F9fC3444f8101754aBC46c52416550D1"
+    },
+    "wallets": {
+      "operator": "DEPLOYER",
+      "launch": "SET_BEFORE_DEPLOYMENT",
+      "batchRegistrar": "SET_BEFORE_DEPLOYMENT",
+      "pauser": "SET_MULTISIG_BEFORE_DEPLOYMENT",
+      "ecosystemWallet": "SET_BEFORE_DEPLOYMENT",
+      "proceedsWallet": "DEPLOYER",
+      "fundingWallet": "DEPLOYER",
+      "feeWallet": "SET_BEFORE_DEPLOYMENT",
+      "recoveryWallet": "SET_MULTISIG_BEFORE_DEPLOYMENT"
+    },
+    "oracle": {
+      "samplePeriodSeconds": 300,
+      "minimumPaymentReserve": "1000000000000000000000"
+    }
+  }
+}

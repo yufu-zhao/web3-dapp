@@ -1,0 +1,52 @@
+{
+  "name": "filereset",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.6.0",
+  "engines": {
+    "node": ">=22.22.0 <23"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @filereset/user --filter @filereset/admin --filter @filereset/installer --filter @filereset/api --filter @filereset/installer-service run dev",
+    "dev:user": "pnpm --filter @filereset/user dev",
+    "dev:admin": "pnpm --filter @filereset/admin dev",
+    "dev:installer-ui": "pnpm --filter @filereset/installer dev",
+    "dev:api": "pnpm --filter @filereset/api dev",
+    "dev:installer-service": "pnpm --filter @filereset/installer-service dev",
+    "dev:indexer": "pnpm --filter @filereset/api dev:indexer",
+    "build": "pnpm clean && pnpm --recursive --if-present run build",
+    "build:user": "pnpm --filter @filereset/user build",
+    "build:admin": "pnpm --filter @filereset/admin build",
+    "build:installer-ui": "pnpm --filter @filereset/installer build",
+    "build:api": "pnpm --filter @filereset/api build",
+    "build:installer-service": "pnpm --filter @filereset/installer-service build",
+    "build:shared-types": "pnpm --filter @filereset/shared-types build",
+    "build:public-chain": "pnpm --filter @filereset/public-chain build",
+    "start:api": "node dist/services/api/main.js",
+    "start:installer": "node dist/services/installer/main.js",
+    "start:indexer": "node dist/services/api/indexer.js",
+    "typecheck": "pnpm --recursive --parallel --if-present run typecheck",
+    "lint": "eslint apps services packages scripts eslint.config.mjs && prettier --check \"apps/**/*\" \"services/**/*\" \"packages/**/*\" \"docs/**/*.md\" \"scripts/**/*.mjs\" package.json pnpm-workspace.yaml tsconfig.base.json eslint.config.mjs AGENTS.md README.md",
+    "clean": "node scripts/clean.mjs"
+  },
+  "dependencies": {
+    "@nestjs/common": "^12.3.3",
+    "@nestjs/core": "^12.3.3",
+    "@nestjs/platform-fastify": "^12.3.3",
+    "fastify": "^5.12.8",
+    "pg": "^8.16.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^12.0.11",
+    "@nestjs/schematics": "^12.0.12",
+    "@types/node": "^22.15.30",
+    "eslint": "^10.14.0",
+    "eslint-plugin-vue": "^10.5.1",
+    "prettier": "^3.6.2",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.46.2"
+  }
+}

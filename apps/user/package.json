@@ -1,0 +1,23 @@
+{
+  "name": "@filereset/user",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "quasar dev",
+    "build": "quasar build",
+    "typecheck": "quasar prepare && vue-tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@filereset/wallet-connect": "workspace:*",
+    "@quasar/extras": "^1.16.15",
+    "quasar": "^2.35.2",
+    "vue": "^3.5.45",
+    "vue-router": "^5.4.0"
+  },
+  "devDependencies": {
+    "@quasar/app-vite": "^3.10.3",
+    "sass": "^1.83.4",
+    "vue-tsc": "^3.0.0"
+  }
+}

@@ -1,0 +1,24 @@
+# macOS metadata
+.DS_Store
+**/.DS_Store
+
+# JavaScript dependencies
+node_modules/
+**/node_modules/
+.pnpm-store/
+dist/
+**/dist/
+.quasar/
+**/.quasar/
+.eslintcache
+*.tsbuildinfo
+.env*
+!**/.env.example
+*.log
+**/public/deployment-releases/
+
+# Generated Solidity build outputs
+artifacts/
+**/artifacts/
+cache/
+**/cache/
