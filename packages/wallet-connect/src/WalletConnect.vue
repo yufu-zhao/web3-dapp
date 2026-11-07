@@ -30,7 +30,7 @@
           <div>
             <div class="wallet-picker-title">选择连接方式</div>
             <div class="wallet-picker-caption">
-              选择一个钱包来连接 FileReset。
+              选择一个钱包来连接 {{ systemName }}。
             </div>
           </div>
           <q-btn
@@ -102,11 +102,60 @@
         </q-banner>
       </q-card>
     </q-dialog>
+
+    <q-dialog v-model="walletChangeOpen" persistent>
+      <q-card class="wallet-change-card">
+        <q-card-section>
+          <div class="wallet-picker-title">检测到钱包账户或网络切换</div>
+          <p class="wallet-change-copy">
+            页面仍使用原连接信息。确认同步后才会更新部署钱包状态并重新校验。
+          </p>
+        </q-card-section>
+        <q-card-section class="wallet-change-comparison">
+          <div class="wallet-change-value">
+            <small>页面当前</small>
+            <strong>{{ wallet?.address }}</strong>
+            <span>Chain {{ wallet?.chainId }}</span>
+          </div>
+          <q-icon name="arrow_downward" color="grey-6" />
+          <div class="wallet-change-value wallet-change-next">
+            <small>钱包检测到</small>
+            <strong>{{ pendingWallet?.address }}</strong>
+            <span>Chain {{ pendingWallet?.chainId }}</span>
+          </div>
+        </q-card-section>
+        <q-banner v-if="walletChangeError" class="wallet-error" rounded>
+          {{ walletChangeError }}
+        </q-banner>
+        <q-banner v-if="deploymentBusy" class="wallet-change-warning" rounded>
+          部署进行中：已发出的钱包请求无法撤回。确认同步后会停止后续步骤；若切回页面当前账户和网络，部署可继续。
+        </q-banner>
+        <q-card-section class="wallet-change-copy wallet-change-hint">
+          如果这是临时切换，切回页面当前显示的账户和网络后，此提示会自动关闭。
+        </q-card-section>
+        <q-card-actions align="right" class="wallet-change-actions">
+          <q-btn
+            flat
+            color="grey-8"
+            label="断开钱包"
+            :disable="syncingWalletChange"
+            @click="disconnect"
+          />
+          <q-btn
+            color="primary"
+            unelevated
+            label="确认同步切换"
+            :loading="syncingWalletChange"
+            @click="syncWalletChange"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { ConnectedWallet, Eip1193Provider } from "./wallet-types.js";
 
 interface InjectedWallet {
@@ -135,19 +184,42 @@ type DiscoverableProvider = Eip1193Provider & {
 const props = withDefaults(
   defineProps<{
     projectId?: string;
+    systemName?: string;
+    chainId?: number | null;
+    confirmChanges?: boolean;
+    deploymentBusy?: boolean;
   }>(),
-  { projectId: "" },
+  {
+    projectId: "",
+    systemName: "FileReset",
+    chainId: null,
+    confirmChanges: false,
+    deploymentBusy: false,
+  },
 );
+// BNB 链使用公开 RPC 候选；其他链由 WalletConnect Cloud 按 project_id 提供 RPC。
+const walletConnectRpcUrls: Record<number, string> = {
+  56: "https://bsc-dataseed.binance.org",
+  97: "https://data-seed-prebsc-1-s1.bnbchain.org:8545",
+};
 
 const emit = defineEmits<{
   connected: [wallet: ConnectedWallet];
   changed: [wallet: ConnectedWallet];
+  changePending: [pending: boolean];
   disconnected: [];
 }>();
 
 const wallet = ref<ConnectedWallet | null>(null);
+// 部署页先暂存钱包变化，用户确认后才替换当前连接快照。
+const pendingWallet = ref<ConnectedWallet | null>(null);
+const walletChangeOpen = ref(false);
+const syncingWalletChange = ref(false);
+const walletChangeError = ref("");
 const loading = ref<"injected" | "walletconnect" | null>(null);
 const projectId = ref(props.projectId);
+const systemName = ref(props.systemName);
+const chainId = ref(props.chainId);
 const walletPickerOpen = ref(false);
 const injectedWallets = ref<InjectedWallet[]>([]);
 const discoveringWallets = ref(false);
@@ -158,8 +230,13 @@ let chainListener: ((value: unknown) => void) | undefined;
 let disconnectListener: (() => void) | undefined;
 let discoveryTimer: number | undefined;
 let restoreTimer: number | undefined;
+let walletContextTimer: number | undefined;
 let mounted = false;
 let restoring = false;
+let pendingChangeNotified = false;
+let contextRefreshInFlight = false;
+
+const deploymentBusy = computed(() => props.deploymentBusy);
 
 const connectionStorageKey = "filereset.wallet-connection";
 
@@ -170,9 +247,11 @@ interface StoredWalletSelection {
 }
 
 watch(
-  () => props.projectId,
-  (value) => {
-    projectId.value = value ?? "";
+  () => [props.projectId, props.systemName, props.chainId] as const,
+  ([nextProjectId, nextSystemName, nextChainId]) => {
+    projectId.value = nextProjectId ?? "";
+    systemName.value = nextSystemName ?? "FileReset";
+    chainId.value = nextChainId ?? null;
     if (mounted) scheduleRestore(100);
   },
 );
@@ -281,20 +360,25 @@ async function connectWalletConnect() {
     // WalletConnect 仅在数据库提供 project_id 后初始化，不在包内写入项目凭据。
     const { EthereumProvider } =
       await import("@walletconnect/ethereum-provider");
+    const chains: [number, ...number[]] = chainId.value
+      ? [chainId.value]
+      : [56, 97];
+    const rpcMap = chainId.value
+      ? walletConnectRpcUrls[chainId.value]
+        ? { [chainId.value]: walletConnectRpcUrls[chainId.value] }
+        : {}
+      : walletConnectRpcUrls;
     const provider = await EthereumProvider.init({
       projectId: projectId.value.trim(),
-      chains: [56, 97],
+      chains,
       showQrModal: true,
       metadata: {
-        name: "FileReset",
-        description: "FileReset 安装器",
+        name: systemName.value,
+        description: `${systemName.value} 应用`,
         url: window.location.origin,
         icons: [],
       },
-      rpcMap: {
-        56: "https://bsc-dataseed.binance.org",
-        97: "https://data-seed-prebsc-1-s1.bnbchain.org:8545",
-      },
+      rpcMap,
     });
     await provider.connect();
     await connectProvider(
@@ -359,9 +443,11 @@ async function connectProvider(
     walletName,
   };
   wallet.value = connected;
+  clearPendingWalletChange();
   saveWalletSelection({ walletType, walletKey, walletName });
   listen(provider, walletType);
   emit("connected", connected);
+  startWalletContextMonitor();
 }
 
 // 钱包可能返回十六进制字符串，也可能返回十进制字符串或数字。
@@ -457,20 +543,25 @@ async function restoreWalletConnection() {
     // EthereumProvider.init 会恢复本机 WalletConnect 会话；关闭 QR 模态框以免刷新时打断用户。
     const { EthereumProvider } =
       await import("@walletconnect/ethereum-provider");
+    const chains: [number, ...number[]] = chainId.value
+      ? [chainId.value]
+      : [56, 97];
+    const rpcMap = chainId.value
+      ? walletConnectRpcUrls[chainId.value]
+        ? { [chainId.value]: walletConnectRpcUrls[chainId.value] }
+        : {}
+      : walletConnectRpcUrls;
     const provider = await EthereumProvider.init({
       projectId: projectId.value.trim(),
-      chains: [56, 97],
+      chains,
       showQrModal: false,
       metadata: {
-        name: "FileReset",
-        description: "FileReset 安装器",
+        name: systemName.value,
+        description: `${systemName.value} 应用`,
         url: window.location.origin,
         icons: [],
       },
-      rpcMap: {
-        56: "https://bsc-dataseed.binance.org",
-        97: "https://data-seed-prebsc-1-s1.bnbchain.org:8545",
-      },
+      rpcMap,
     });
     const session = (provider as typeof provider & { session?: unknown })
       .session;
@@ -496,10 +587,7 @@ function listen(
   accountsListener = (value) => {
     const address = Array.isArray(value) ? value[0] : undefined;
     if (typeof address !== "string") {
-      clearListeners(provider);
-      saveWalletSelection();
-      wallet.value = null;
-      emit("disconnected");
+      resetWalletConnection(provider);
       return;
     }
     updateWallet({ address }, provider, walletType);
@@ -509,10 +597,7 @@ function listen(
     if (chainId !== null) updateWallet({ chainId }, provider, walletType);
   };
   disconnectListener = () => {
-    clearListeners(provider);
-    saveWalletSelection();
-    wallet.value = null;
-    emit("disconnected");
+    resetWalletConnection(provider);
   };
   provider.on?.("accountsChanged", accountsListener);
   provider.on?.("chainChanged", chainListener);
@@ -525,17 +610,165 @@ function updateWallet(
   walletType: ConnectedWallet["walletType"],
 ) {
   if (!wallet.value) return;
-  wallet.value = { ...wallet.value, ...change };
-  emit("changed", { ...wallet.value, provider, walletType });
+  const base = pendingWallet.value ?? wallet.value;
+  const candidate: ConnectedWallet = {
+    ...base,
+    ...change,
+    provider,
+    walletType,
+  };
+  if (sameWalletContext(candidate, wallet.value)) {
+    clearPendingWalletChange();
+    return;
+  }
+  if (props.confirmChanges) {
+    pendingWallet.value = candidate;
+    walletChangeError.value = "";
+    walletChangeOpen.value = true;
+    notifyPendingChange(true);
+    return;
+  }
+  wallet.value = candidate;
+  emit("changed", candidate);
+}
+
+function sameWalletContext(
+  left: ConnectedWallet | null,
+  right: ConnectedWallet | null,
+) {
+  return Boolean(
+    left &&
+    right &&
+    left.address.toLowerCase() === right.address.toLowerCase() &&
+    left.chainId === right.chainId,
+  );
+}
+
+function notifyPendingChange(pending: boolean) {
+  if (pendingChangeNotified === pending) return;
+  pendingChangeNotified = pending;
+  emit("changePending", pending);
+}
+
+function clearPendingWalletChange() {
+  pendingWallet.value = null;
+  walletChangeOpen.value = false;
+  walletChangeError.value = "";
+  notifyPendingChange(false);
+}
+
+function resetWalletConnection(provider?: Eip1193Provider) {
+  clearListeners(provider);
+  stopWalletContextMonitor();
+  saveWalletSelection();
+  clearPendingWalletChange();
+  wallet.value = null;
+  emit("disconnected");
+}
+
+async function refreshWalletContext() {
+  const current = wallet.value;
+  if (!props.confirmChanges || !current || contextRefreshInFlight) return;
+  contextRefreshInFlight = true;
+  try {
+    const [accounts, chain] = await Promise.all([
+      current.provider.request({ method: "eth_accounts" }),
+      current.provider.request({ method: "eth_chainId" }),
+    ]);
+    const address = Array.isArray(accounts) ? accounts[0] : undefined;
+    const chainId = parseChainId(chain);
+    if (typeof address !== "string" || chainId === null) {
+      resetWalletConnection(current.provider);
+      return;
+    }
+    updateWallet({ address, chainId }, current.provider, current.walletType);
+  } catch {
+    // 临时 RPC 错误不改变已确认的钱包状态，也不自动断开连接。
+  } finally {
+    contextRefreshInFlight = false;
+  }
+}
+
+function handleWalletFocus() {
+  void refreshWalletContext();
+}
+
+function handleVisibilityChange() {
+  if (document.visibilityState === "visible") handleWalletFocus();
+}
+
+function startWalletContextMonitor() {
+  if (!props.confirmChanges || walletContextTimer !== undefined) return;
+  // 有些注入钱包切换时不会及时发事件，轮询和页面恢复焦点时再读一次当前状态。
+  walletContextTimer = window.setInterval(() => {
+    void refreshWalletContext();
+  }, 1500);
+  window.addEventListener("focus", handleWalletFocus);
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+}
+
+function stopWalletContextMonitor() {
+  if (walletContextTimer !== undefined) {
+    window.clearInterval(walletContextTimer);
+    walletContextTimer = undefined;
+  }
+  window.removeEventListener("focus", handleWalletFocus);
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
+}
+
+async function syncWalletChange() {
+  const candidate = pendingWallet.value;
+  if (!candidate || syncingWalletChange.value) return;
+  syncingWalletChange.value = true;
+  walletChangeError.value = "";
+  try {
+    // 点击确认时再从钱包读取一次，避免同步过期的事件载荷。
+    const [accounts, chain] = await Promise.all([
+      candidate.provider.request({ method: "eth_accounts" }),
+      candidate.provider.request({ method: "eth_chainId" }),
+    ]);
+    const address = Array.isArray(accounts) ? accounts[0] : undefined;
+    const chainId = parseChainId(chain);
+    if (typeof address !== "string" || chainId === null) {
+      resetWalletConnection(candidate.provider);
+      return;
+    }
+    const connected: ConnectedWallet = {
+      ...candidate,
+      address,
+      chainId,
+    };
+    if (sameWalletContext(connected, wallet.value)) {
+      clearPendingWalletChange();
+      return;
+    }
+    if (!sameWalletContext(connected, candidate)) {
+      pendingWallet.value = connected;
+      walletChangeOpen.value = true;
+      walletChangeError.value =
+        "钱包状态刚发生变化，请核对更新后的账户和网络后再次确认。";
+      notifyPendingChange(true);
+      return;
+    }
+    wallet.value = connected;
+    clearPendingWalletChange();
+    emit("changed", connected);
+  } catch (error) {
+    walletChangeError.value = errorMessage(error);
+  } finally {
+    syncingWalletChange.value = false;
+  }
 }
 
 async function disconnect() {
   const provider = wallet.value?.provider;
-  clearListeners(provider);
+  clearListeners(provider ?? pendingWallet.value?.provider);
+  stopWalletContextMonitor();
   if (wallet.value?.walletType === "walletconnect") {
     await provider?.disconnect?.().catch(() => undefined);
   }
   saveWalletSelection();
+  clearPendingWalletChange();
   wallet.value = null;
   emit("disconnected");
 }
@@ -574,6 +807,7 @@ onBeforeUnmount(() => {
   );
   if (discoveryTimer) window.clearTimeout(discoveryTimer);
   if (restoreTimer) window.clearTimeout(restoreTimer);
+  stopWalletContextMonitor();
   mounted = false;
   clearListeners(wallet.value?.provider);
 });
@@ -619,6 +853,73 @@ onBeforeUnmount(() => {
   border-radius: 18px;
   display: flex;
   flex-direction: column;
+}
+
+.wallet-change-card {
+  width: min(calc(100vw - 32px), 460px);
+  border-radius: 18px;
+}
+
+.wallet-change-copy {
+  margin: 8px 0 0;
+  color: #687386;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.wallet-change-comparison {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.wallet-change-value {
+  display: grid;
+  width: 100%;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #e3e8ef;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+
+.wallet-change-value small {
+  color: #687386;
+  font-size: 11px;
+}
+
+.wallet-change-value strong {
+  color: #202c40;
+  font-size: 14px;
+}
+
+.wallet-change-value span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.wallet-change-next {
+  border-color: #f4d274;
+  background: #fffbeb;
+}
+
+.wallet-change-warning {
+  margin: 0 24px;
+  background: #fff7df;
+  color: #735719;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.wallet-change-hint {
+  padding-top: 4px;
+}
+
+.wallet-change-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 24px 20px;
 }
 
 .wallet-picker-heading {
@@ -765,6 +1066,19 @@ onBeforeUnmount(() => {
 
   .wallet-error {
     margin: 0 18px 18px;
+  }
+
+  .wallet-change-warning {
+    margin: 0 18px;
+  }
+
+  .wallet-change-actions {
+    justify-content: stretch;
+    padding: 10px 18px 18px;
+  }
+
+  .wallet-change-actions :deep(.q-btn) {
+    flex: 1 1 auto;
   }
 }
 </style>

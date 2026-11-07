@@ -11,6 +11,7 @@ import {
   InstallerService,
   type DatabaseSettings,
   type DeploymentRecord,
+  type InstallationIdentity,
 } from "./installer.service.js";
 
 @Controller("installer")
@@ -35,6 +36,17 @@ export class InstallerController {
   @Get("config")
   publicConfig() {
     return this.installerService.publicConfig();
+  }
+
+  @Post("config/installation")
+  saveInstallationIdentity(
+    @Body()
+    body: Pick<
+      InstallationIdentity,
+      "systemName" | "tokenName" | "tokenSymbol"
+    >,
+  ) {
+    return this.installerService.saveInstallationIdentity(body);
   }
 
   @Get("summary")
@@ -79,6 +91,11 @@ export class InstallerController {
     @Body() body: Record<string, unknown>,
   ) {
     return this.installerService.saveCompletedDeployment(Number(chainId), body);
+  }
+
+  @Get("contracts/pending")
+  pendingDeployments() {
+    return this.installerService.getPendingDeployments();
   }
 
   @Get("contracts/pending/:chainId")

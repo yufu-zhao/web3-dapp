@@ -3,10 +3,14 @@
     <q-page-container>
       <q-page class="page-shell flex flex-center">
         <main class="starter-card">
-          <div class="brand-mark" aria-hidden="true">FR</div>
-          <p class="eyebrow">FileReset</p>
+          <div class="brand-mark" aria-hidden="true">{{ brandMark }}</div>
+          <p class="eyebrow">{{ systemName }}</p>
           <h1>管理后台</h1>
-          <p class="description">应用骨架已启动，可以开始后续需求拆解。</p>
+          <p class="description">
+            {{ systemName }} · {{ tokenName }}（{{ tokenSymbol }}） ·
+            {{ chainLabel }}
+          </p>
+          <p v-if="configError" class="config-error">{{ configError }}</p>
           <q-badge color="positive" text-color="dark" class="status-badge">
             <q-icon name="check_circle" size="16px" class="q-mr-xs" />
             运行就绪
@@ -16,6 +20,45 @@
     </q-page-container>
   </q-layout>
 </template>
+
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from "vue";
+import {
+  loadPublicInstallationConfig,
+  type PublicInstallationConfig,
+} from "@filereset/shared-types";
+
+const identity = ref<PublicInstallationConfig | null>(null);
+const configError = ref("");
+const systemName = computed(() => identity.value?.systemName || "FileReset");
+const tokenName = computed(() => identity.value?.tokenName || "FileReset");
+const tokenSymbol = computed(() => identity.value?.tokenSymbol || "FRC");
+const brandMark = computed(
+  () => Array.from(systemName.value.trim()).slice(0, 2).join("") || "FR",
+);
+const chainLabel = computed(() =>
+  identity.value?.chainId
+    ? `ChainId ${identity.value.chainId}`
+    : "目标链在首次完整部署成功后锁定",
+);
+
+watch(
+  systemName,
+  (value) => {
+    document.title = `${value} 管理后台`;
+  },
+  { immediate: true },
+);
+
+onMounted(async () => {
+  try {
+    identity.value = await loadPublicInstallationConfig();
+  } catch (error) {
+    configError.value =
+      error instanceof Error ? error.message : "无法读取安装身份配置。";
+  }
+});
+</script>
 
 <style lang="scss" scoped>
 .page-shell {
@@ -77,6 +120,12 @@ h1 {
   margin: 14px 0 24px;
   color: #cbd5e1;
   line-height: 1.7;
+}
+
+.config-error {
+  margin: 0;
+  color: #ffc832;
+  font-size: 12px;
 }
 
 .status-badge {

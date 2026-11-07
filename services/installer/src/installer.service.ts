@@ -35,6 +35,18 @@ export interface AdminPasswordPolicy {
   requireSymbol: boolean;
 }
 
+export interface InstallationIdentity {
+  chainId: number | null;
+  systemName: string;
+  tokenName: string;
+  tokenSymbol: string;
+}
+
+type InstallationIdentityInput = Pick<
+  InstallationIdentity,
+  "systemName" | "tokenName" | "tokenSymbol"
+>;
+
 export interface DatabaseCheck {
   connected: boolean;
   database: string;
@@ -50,6 +62,7 @@ interface InitializeInput {
   database: DatabaseSettings;
   administrator: { username: string; password: string };
   projectId?: string;
+  installation: InstallationIdentityInput;
   passwordPolicy?: AdminPasswordPolicy;
   allowExistingNonEmpty?: boolean;
 }
@@ -170,6 +183,11 @@ export class InstallerService {
         : this.normalizePasswordPolicy(input.passwordPolicy);
       this.validateAdminPassword(input.administrator.password, passwordPolicy);
 
+      const installation = await this.persistInstallationIdentity(
+        client,
+        input.installation,
+      );
+
       await client.query(
         `INSERT INTO menus (code, name, path, icon, sort_order)
          VALUES
@@ -239,6 +257,7 @@ export class InstallerService {
         database: input.database.database,
         administrator: input.administrator.username.trim(),
         projectIdConfigured: Boolean(input.projectId?.trim()),
+        installation,
         settingsSaved,
       };
     } catch (error) {
@@ -260,7 +279,7 @@ export class InstallerService {
         config_key: string;
         config_value: string;
       }>(
-        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('project_id', 'admin_password_policy')",
+        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('project_id', 'admin_password_policy', 'installation_chain_id', 'system_name', 'token_name', 'token_symbol')",
       );
       const installed = await pool.query(
         "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'",
@@ -273,10 +292,40 @@ export class InstallerService {
         passwordPolicy: this.parsePasswordPolicy(
           configs.get("admin_password_policy"),
         ),
+        installation: this.parseInstallationIdentity(configs),
         installed: installed.rowCount === 1,
       };
     } catch {
-      return { projectId: null, installed: false };
+      return { projectId: null, installation: null, installed: false };
+    }
+  }
+
+  async saveInstallationIdentity(identity: InstallationIdentityInput) {
+    this.validateInstallationIdentity(identity);
+    const pool = await this.getPool();
+    if (!pool) throw new ServiceUnavailableException("请先初始化数据库。");
+    const installed = await pool.query(
+      "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'",
+    );
+    if (installed.rowCount !== 1) {
+      throw new ConflictException("数据库尚未完成初始化，不能补录安装配置。");
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const installation = await this.persistInstallationIdentity(
+        client,
+        identity,
+      );
+      await client.query("COMMIT");
+      return { saved: true, installation };
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      if (error instanceof ConflictException) throw error;
+      throw new ServiceUnavailableException(this.describeError(error));
+    } finally {
+      client.release();
     }
   }
 
@@ -296,7 +345,7 @@ export class InstallerService {
           "SELECT config_value FROM system_configs WHERE config_key = 'deployment_records'",
         ),
         pool.query<{ config_key: string; config_value: string }>(
-          "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('project_id', 'admin_password_policy', 'installed_at')",
+          "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('project_id', 'admin_password_policy', 'installed_at', 'installation_chain_id', 'system_name', 'token_name', 'token_symbol')",
         ),
       ]);
       const configValues = new Map(
@@ -312,6 +361,7 @@ export class InstallerService {
         passwordPolicy: this.parsePasswordPolicy(
           configValues.get("admin_password_policy"),
         ),
+        installation: this.parseInstallationIdentity(configValues),
         installedAt: configValues.get("installed_at") ?? null,
         settingsSaved:
           this.databaseSettingsSaved || (await this.hasSavedDatabaseUrl()),
@@ -479,6 +529,41 @@ export class InstallerService {
     );
   }
 
+  async getPendingDeployments() {
+    const root = await this.findWorkspaceRoot();
+    const deploymentRoot = join(root, "contracts", "deploy");
+    const entries = await readdir(deploymentRoot, {
+      withFileTypes: true,
+    }).catch((error: unknown) => {
+      if ((error as { code?: string }).code === "ENOENT") return [];
+      throw error;
+    });
+    const pending = await Promise.all(
+      entries
+        .filter((entry) => entry.isDirectory() && /^\d{1,9}$/.test(entry.name))
+        .map(async (entry) => {
+          const chainId = Number(entry.name);
+          if (
+            !Number.isSafeInteger(chainId) ||
+            chainId <= 0 ||
+            chainId > 999999999
+          )
+            return undefined;
+          const record = await this.readJsonFile<Record<string, unknown>>(
+            join(deploymentRoot, entry.name, ".pending-deployment.json"),
+          );
+          if (record?.status !== "in_progress") return undefined;
+          return {
+            chainId,
+            deployer: String(record.deployer ?? ""),
+            releaseVersion: String(record.releaseVersion ?? ""),
+            updatedAt: String(record.updatedAt ?? ""),
+          };
+        }),
+    );
+    return { pending: pending.filter((item) => item !== undefined) };
+  }
+
   async savePendingDeployment(
     chainId: number,
     pending: Record<string, unknown>,
@@ -515,6 +600,8 @@ export class InstallerService {
     ) {
       throw new ServiceUnavailableException("部署完成资料的链 ID 或状态无效。");
     }
+    // 只有部署与链上核验全部成功后，才将钱包 ChainId 写为正式安装配置。
+    const installation = await this.lockCompletedInstallationChain(safeChainId);
     const deploymentId = `${Date.now()}-${randomBytes(4).toString("hex")}`;
     const directory = join(
       await this.chainDeployDirectory(safeChainId),
@@ -530,7 +617,62 @@ export class InstallerService {
     };
     await this.writeJsonFile(join(directory, "deployment.json"), saved);
     await this.clearPendingDeployment(safeChainId).catch(() => undefined);
-    return { deploymentId, outputPath, deployment: saved };
+    return { deploymentId, outputPath, deployment: saved, installation };
+  }
+
+  private async lockCompletedInstallationChain(chainId: number) {
+    const pool = await this.getPool();
+    if (!pool) throw new ServiceUnavailableException("请先初始化数据库。");
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const installed = await client.query(
+        "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'",
+      );
+      if (installed.rowCount !== 1) {
+        throw new ConflictException("数据库尚未完成初始化，不能锁定目标链。");
+      }
+      const current = await client.query<{
+        config_key: string;
+        config_value: string;
+      }>(
+        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('installation_chain_id', 'system_name', 'token_name', 'token_symbol')",
+      );
+      const configs = new Map(
+        current.rows.map((item) => [item.config_key, item.config_value]),
+      );
+      const identity = this.parseInstallationIdentity(configs);
+      if (!identity) {
+        throw new ConflictException("请先确认系统名称和代币信息。");
+      }
+      if (identity.chainId !== null && identity.chainId !== chainId) {
+        throw new ConflictException(
+          `安装目标链已锁定为 ChainId ${identity.chainId}，当前部署为 ${chainId}。`,
+        );
+      }
+      await client.query(
+        `INSERT INTO system_configs (config_key, config_value, description)
+         VALUES ('installation_chain_id', $1, '首次完整部署与链上核验成功后锁定的 ChainId')
+         ON CONFLICT (config_key) DO NOTHING`,
+        [String(chainId)],
+      );
+      const savedChain = await client.query<{ config_value: string }>(
+        "SELECT config_value FROM system_configs WHERE config_key = 'installation_chain_id'",
+      );
+      if (Number(savedChain.rows[0]?.config_value) !== chainId) {
+        throw new ConflictException(
+          `安装目标链已锁定为 ChainId ${savedChain.rows[0]?.config_value}，当前部署为 ${chainId}。`,
+        );
+      }
+      await client.query("COMMIT");
+      return { ...identity, chainId };
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      if (error instanceof ConflictException) throw error;
+      throw new ServiceUnavailableException(this.describeError(error));
+    } finally {
+      client.release();
+    }
   }
 
   async getSavedTokens(chainId: number) {
@@ -811,6 +953,7 @@ export class InstallerService {
   private validateInitializeInput(input: InitializeInput) {
     const { database, administrator } = input;
     this.validateDatabaseSettings(database);
+    this.validateInstallationIdentity(input.installation);
     if (
       input.passwordPolicy?.minimumLength !== undefined &&
       (!Number.isInteger(input.passwordPolicy.minimumLength) ||
@@ -832,6 +975,96 @@ export class InstallerService {
     if ((input.projectId?.length ?? 0) > 200) {
       throw new ServiceUnavailableException("WalletConnect 项目 ID 长度无效。");
     }
+  }
+
+  private validateInstallationIdentity(identity: InstallationIdentityInput) {
+    if (
+      !identity ||
+      !identity.systemName?.trim() ||
+      identity.systemName.trim().length > 80 ||
+      !identity.tokenName?.trim() ||
+      identity.tokenName.trim().length > 80 ||
+      !/^[\p{L}\p{N}._-]{1,16}$/u.test(identity.tokenSymbol?.trim() ?? "")
+    ) {
+      throw new ServiceUnavailableException(
+        "请填写有效的系统名称、代币名称和代币简称。",
+      );
+    }
+  }
+
+  private async persistInstallationIdentity(
+    client: PoolClient,
+    identity: InstallationIdentityInput,
+  ): Promise<InstallationIdentity> {
+    // 安装身份只允许首次写入；已有值不匹配时中止事务，避免覆盖旧部署配置。
+    const entries = [
+      ["system_name", identity.systemName.trim(), "安装时确认的系统名称"],
+      ["token_name", identity.tokenName.trim(), "链上主代币全称"],
+      ["token_symbol", identity.tokenSymbol.trim(), "链上主代币简称"],
+    ] as const;
+    const current = await client.query<{
+      config_key: string;
+      config_value: string;
+    }>(
+      "SELECT config_key, config_value FROM system_configs WHERE config_key = ANY($1::text[])",
+      [entries.map(([key]) => key)],
+    );
+    const existing = new Map(
+      current.rows.map((item) => [item.config_key, item.config_value]),
+    );
+    for (const [key, value] of entries) {
+      const saved = existing.get(key);
+      if (saved !== undefined && saved !== value) {
+        throw new ConflictException(
+          `数据库中的安装配置 ${key} 已存在且与本次输入不同，请使用原配置。`,
+        );
+      }
+      await client.query(
+        `INSERT INTO system_configs (config_key, config_value, description)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (config_key) DO NOTHING`,
+        [
+          key,
+          value,
+          entries.find((entry) => entry[0] === key)?.[2] ?? "安装身份配置",
+        ],
+      );
+    }
+    const saved = await client.query<{
+      config_key: string;
+      config_value: string;
+    }>(
+      "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('installation_chain_id', 'system_name', 'token_name', 'token_symbol')",
+    );
+    const configs = new Map(
+      saved.rows.map((item) => [item.config_key, item.config_value]),
+    );
+    const installation = this.parseInstallationIdentity(configs);
+    if (!installation) {
+      throw new ConflictException("安装身份配置未能完整保存，请重试。");
+    }
+    return installation;
+  }
+
+  private parseInstallationIdentity(
+    configs: Map<string, string>,
+  ): InstallationIdentity | null {
+    const chainIdValue = configs.get("installation_chain_id");
+    const chainId = chainIdValue ? Number(chainIdValue) : null;
+    const systemName = configs.get("system_name")?.trim() ?? "";
+    const tokenName = configs.get("token_name")?.trim() ?? "";
+    const tokenSymbol = configs.get("token_symbol")?.trim() ?? "";
+    if (
+      (chainId !== null &&
+        (!Number.isSafeInteger(chainId) ||
+          chainId <= 0 ||
+          chainId > 999999999)) ||
+      !systemName ||
+      !tokenName ||
+      !tokenSymbol
+    )
+      return null;
+    return { chainId, systemName, tokenName, tokenSymbol };
   }
 
   private validateDatabaseSettings(database: DatabaseSettings) {

@@ -14,6 +14,13 @@ export default defineConfig(() => ({
     // 独立端口变量便于通过根目录 .env 配置多应用开发服务。
     port: Number(process.env.USER_PORT ?? 5675),
     open: false,
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:3610",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ""),
+      },
+    },
   },
   framework: {
     config: {

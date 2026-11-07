@@ -6,7 +6,12 @@
           <aside class="sidebar">
             <div class="brand-row">
               <div class="brand-mark">WD</div>
-              <div><strong>Web3 Dapp</strong><span>系统安装器</span></div>
+              <div>
+                <strong>{{
+                  flow.installation.systemName || "Web3 Dapp"
+                }}</strong
+                ><span>系统安装器</span>
+              </div>
             </div>
             <div class="sidebar-intro">
               <span class="release-label">INSTALLATION</span>
@@ -42,7 +47,10 @@
           <main class="content-panel">
             <header class="topbar">
               <div>
-                <span class="topbar-label">FILE RESET / INSTALLATION</span>
+                <span class="topbar-label"
+                  >{{ flow.installation.systemName.toUpperCase() }} /
+                  INSTALLATION</span
+                >
                 <p>安装向导 <span>·</span> {{ currentStep }} / 4</p>
               </div>
               <q-badge
@@ -56,7 +64,7 @@
             </header>
             <div class="content-scroll"><RouterView /></div>
             <footer class="content-footer">
-              <span>FileReset Installation</span
+              <span>{{ flow.installation.systemName }} Installation</span
               ><span>安全安装 · 版本 0.1.0</span>
             </footer>
           </main>
@@ -90,7 +98,12 @@ const currentStep = computed(() =>
 function canOpen(path: string) {
   if (path === "/environment") return true;
   if (path === "/database") return flow.environmentReady;
-  if (path === "/deploy") return flow.environmentReady && flow.databaseReady;
+  if (path === "/deploy")
+    return (
+      flow.environmentReady &&
+      flow.databaseReady &&
+      Boolean(flow.summary.installation)
+    );
   return route.path.startsWith("/complete") || Boolean(flow.selectedDeployment);
 }
 

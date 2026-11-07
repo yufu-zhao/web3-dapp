@@ -9,6 +9,7 @@
     "typecheck": "quasar prepare && vue-tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@filereset/shared-types": "workspace:*",
     "@filereset/wallet-connect": "workspace:*",
     "@quasar/extras": "^1.16.15",
     "quasar": "^2.35.2",

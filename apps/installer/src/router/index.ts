@@ -19,6 +19,8 @@ export default defineRouter(() => {
     if (!installerFlow.environmentReady) return "/environment";
     if (to.path === "/database") return true;
     if (!installerFlow.databaseReady) return "/database";
+    if (to.path.startsWith("/complete")) return true;
+    if (!installerFlow.summary.installation) return "/database";
     return true;
   });
 

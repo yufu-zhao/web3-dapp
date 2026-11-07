@@ -75,6 +75,17 @@
           </div>
         </InstallerCard>
         <InstallerCard tag="article" class="summary-card">
+          <span class="summary-icon"><q-icon name="badge" /></span>
+          <div>
+            <small>系统与代币身份</small>
+            <strong>{{ deploymentIdentity.systemName || "FileReset" }}</strong>
+            <span
+              >{{ deploymentIdentity.tokenName || "FileReset" }} ·
+              {{ deploymentIdentity.tokenSymbol || "FRC" }}</span
+            >
+          </div>
+        </InstallerCard>
+        <InstallerCard tag="article" class="summary-card">
           <span class="summary-icon"><q-icon name="terminal" /></span>
           <div>
             <small>安装运行环境</small
@@ -240,7 +251,14 @@ const configurationRows = computed(() => {
   const roles = readObject(configuration.roleWallets);
   const assets = readObject(configuration.assetWallets);
   const oracle = readObject(configuration.oracle);
+  const identity = readObject(configuration.installation);
   return [
+    { label: "系统名称", value: identity.systemName },
+    {
+      label: "代币全称 / 简称",
+      value: `${identity.tokenName ?? "—"} / ${identity.tokenSymbol ?? "—"}`,
+    },
+    { label: "安装目标 ChainId", value: identity.chainId },
     { label: "Router", value: external.router },
     { label: "Factory", value: external.factory },
     { label: "支付 Token", value: external.paymentToken },
@@ -262,6 +280,9 @@ const configurationRows = computed(() => {
     },
   ].map((item) => ({ label: item.label, value: String(item.value ?? "—") }));
 });
+const deploymentIdentity = computed(() =>
+  readObject(deployment.value?.configuration?.installation),
+);
 const policyLabels = computed(() => {
   const policy = summary.value.passwordPolicy;
   if (!policy) return "大写、小写、数字、特殊字符";

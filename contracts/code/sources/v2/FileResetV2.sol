@@ -56,8 +56,9 @@ contract FileResetV2 is ERC20, AccessControlDefaultAdminRules {
     event EcosystemWalletChanged(address previous,address next);
 
     // 部署交易发送者自动成为唯一初始超管，避免部署参数把权限授予错误地址。
-    constructor(address usdt,address factory,address ecoWallet,address operator,address launch,address batchRegistrar,address pauser)
-        ERC20("FileReset","FRC") AccessControlDefaultAdminRules(2 days,msg.sender) {
+    // ERC-20 名称在安装时确认，部署后由链上 name() 和 symbol() 固定提供。
+    constructor(string memory tokenName_,string memory tokenSymbol_,address usdt,address factory,address ecoWallet,address operator,address launch,address batchRegistrar,address pauser)
+        ERC20(tokenName_,tokenSymbol_) AccessControlDefaultAdminRules(2 days,msg.sender) {
         if (usdt.code.length == 0 || factory.code.length == 0 || ecoWallet == address(0)
             || ecoWallet == address(this) || operator == address(0) || launch == address(0)
             || batchRegistrar == address(0) || pauser == address(0)) revert InvalidConfiguration();

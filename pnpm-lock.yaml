@@ -57,6 +57,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@filereset/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
       '@filereset/wallet-connect':
         specifier: workspace:*
         version: link:../../packages/wallet-connect
@@ -116,6 +119,9 @@ importers:
 
   apps/user:
     dependencies:
+      '@filereset/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
       '@filereset/wallet-connect':
         specifier: workspace:*
         version: link:../../packages/wallet-connect
@@ -180,12 +186,19 @@ importers:
       fastify:
         specifier: ^5.12.8
         version: 5.12.8
+      pg:
+        specifier: ^8.23.1
+        version: 8.23.1
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
+    devDependencies:
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
 
   services/installer:
     dependencies:

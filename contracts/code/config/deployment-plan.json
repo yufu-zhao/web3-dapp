@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseVersion": "0.0.1",
+  "releaseVersion": "0.0.2",
   "nodes": [
     {
       "id": "FileResetV2",
@@ -8,6 +8,16 @@
       "kind": "transaction",
       "dependsOn": [],
       "constructorArgs": [
+        {
+          "name": "tokenName_",
+          "source": "formInput",
+          "key": "installation.tokenName"
+        },
+        {
+          "name": "tokenSymbol_",
+          "source": "formInput",
+          "key": "installation.tokenSymbol"
+        },
         {
           "name": "usdt",
           "source": "formInput",

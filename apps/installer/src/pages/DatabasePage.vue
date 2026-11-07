@@ -129,16 +129,54 @@
 
     <InstallerCard class="form-section config-section">
       <div class="form-section-title">
-        <span>初始配置</span><small>保存为系统配置</small>
+        <span>初始配置</span
+        ><small>ChainId 将在部署完成后从钱包读取并锁定</small>
       </div>
-      <q-input
-        v-model="flow.projectId"
-        outlined
-        dense
-        label="WalletConnect project_id（可选）"
-        hint="配置后钱包连接组件才会显示 WalletConnect。"
-        :disable="flow.databaseReady"
-      />
+      <q-banner
+        v-if="flow.databaseReady && !flow.summary.installation"
+        class="message-banner warning-message"
+      >
+        <template #avatar><q-icon name="lock_reset" /></template>
+        这是已有安装的首次身份补录。保存后系统名称和代币信息不可通过安装器修改；目标
+        ChainId 会在全部合约部署与链上核验成功后，从本次部署钱包读取并锁定。
+      </q-banner>
+      <div class="form-grid identity-grid">
+        <q-input
+          v-model="flow.installation.systemName"
+          outlined
+          dense
+          maxlength="80"
+          label="系统名称"
+          hint="显示在用户端、管理端和钱包连接信息中"
+          :disable="flow.databaseReady && Boolean(flow.summary.installation)"
+        />
+        <q-input
+          v-model="flow.installation.tokenName"
+          outlined
+          dense
+          maxlength="80"
+          label="代币全称"
+          hint="写入 ERC-20 name()，部署后不可更改"
+          :disable="flow.databaseReady && Boolean(flow.summary.installation)"
+        />
+        <q-input
+          v-model="flow.installation.tokenSymbol"
+          outlined
+          dense
+          maxlength="16"
+          label="代币简称"
+          hint="仅允许字母、数字、点、下划线和短横线"
+          :disable="flow.databaseReady && Boolean(flow.summary.installation)"
+        />
+        <q-input
+          v-model="flow.projectId"
+          outlined
+          dense
+          label="WalletConnect project_id（可选）"
+          hint="配置后钱包连接组件才会显示 WalletConnect。"
+          :disable="flow.databaseReady"
+        />
+      </div>
       <div class="policy-box">
         <strong>管理员密码策略</strong
         ><span>密码长度和字符要求会写入 system_configs。</span>
@@ -209,12 +247,22 @@
         @click="router.push('/environment')"
       />
       <q-btn
-        v-if="flow.databaseReady"
+        v-if="flow.databaseReady && flow.summary.installation"
         color="primary"
         icon-right="arrow_forward"
         label="进入合约部署"
         unelevated
         @click="router.push('/deploy')"
+      />
+      <q-btn
+        v-else-if="flow.databaseReady"
+        color="primary"
+        icon="lock"
+        label="保存并锁定安装身份"
+        :loading="initializing"
+        :disable="!canSaveInstallation"
+        unelevated
+        @click="saveInstallationIdentity"
       />
       <q-btn
         v-else
@@ -278,6 +326,15 @@ const flow = installerFlow;
 const checking = ref(false);
 const initializing = ref(false);
 const confirmExistingOpen = ref(false);
+const validInstallationIdentity = computed(() =>
+  Boolean(
+    flow.installation.systemName.trim().length > 0 &&
+    flow.installation.systemName.trim().length <= 80 &&
+    flow.installation.tokenName.trim().length > 0 &&
+    flow.installation.tokenName.trim().length <= 80 &&
+    /^[\p{L}\p{N}._-]{1,16}$/u.test(flow.installation.tokenSymbol.trim()),
+  ),
+);
 const canInitialize = computed(() =>
   Boolean(
     flow.databaseCheck?.connected &&
@@ -286,8 +343,15 @@ const canInitialize = computed(() =>
     flow.passwordPolicy.minimumLength >= 8 &&
     flow.passwordPolicy.minimumLength <= 128 &&
     flow.administrator.username.trim() &&
-    flow.administrator.password,
+    flow.administrator.password &&
+    validInstallationIdentity.value,
   ),
+);
+const canSaveInstallation = computed(
+  () =>
+    flow.databaseReady &&
+    !flow.summary.installation &&
+    validInstallationIdentity.value,
 );
 
 watch(
@@ -330,26 +394,67 @@ async function initializeDatabase(confirmedExisting: boolean) {
       database: string;
       administrator: string;
       settingsSaved: boolean;
+      installation: {
+        chainId: number | null;
+        systemName: string;
+        tokenName: string;
+        tokenSymbol: string;
+      };
     }>("/database/initialize", {
       database: flow.database,
       administrator: flow.administrator,
       projectId: flow.projectId,
+      installation: {
+        systemName: flow.installation.systemName.trim(),
+        tokenName: flow.installation.tokenName.trim(),
+        tokenSymbol: flow.installation.tokenSymbol.trim(),
+      },
       passwordPolicy: flow.passwordPolicy,
       allowExistingNonEmpty: confirmedExisting,
     });
     confirmExistingOpen.value = false;
     flow.databaseReady = result.initialized;
     flow.databaseSettingsSaved = result.settingsSaved;
+    flow.installation = { ...result.installation };
     flow.summary = {
       ...flow.summary,
       installed: result.initialized,
       database: result.database,
       administrator: result.administrator,
+      installation: result.installation,
       projectId: flow.projectId || null,
       passwordPolicy: { ...flow.passwordPolicy },
       settingsSaved: result.settingsSaved,
       installedAt: new Date().toISOString(),
     };
+    await router.replace("/deploy");
+  } catch (error) {
+    flow.databaseError = errorMessage(error);
+  } finally {
+    initializing.value = false;
+  }
+}
+
+async function saveInstallationIdentity() {
+  if (!canSaveInstallation.value) return;
+  initializing.value = true;
+  flow.databaseError = "";
+  try {
+    const result = await postJson<{
+      saved: boolean;
+      installation: {
+        chainId: number | null;
+        systemName: string;
+        tokenName: string;
+        tokenSymbol: string;
+      };
+    }>("/config/installation", {
+      systemName: flow.installation.systemName.trim(),
+      tokenName: flow.installation.tokenName.trim(),
+      tokenSymbol: flow.installation.tokenSymbol.trim(),
+    });
+    flow.installation = { ...result.installation };
+    flow.summary.installation = { ...result.installation };
     await router.replace("/deploy");
   } catch (error) {
     flow.databaseError = errorMessage(error);

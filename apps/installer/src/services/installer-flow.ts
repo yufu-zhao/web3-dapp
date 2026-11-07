@@ -4,8 +4,10 @@ import {
   type AdminPasswordPolicy,
   type DatabaseCheck,
   type DatabaseSettings,
+  type InstallationIdentity,
   type DeploymentRecord,
   type InstallationSummary,
+  type InstallationIdentityInput,
   type SavedDeployment,
 } from "./installer-api";
 
@@ -50,6 +52,11 @@ export const installerFlow = reactive({
     password: "",
   },
   projectId: "",
+  installation: {
+    systemName: "FileReset",
+    tokenName: "FileReset",
+    tokenSymbol: "FRC",
+  } as InstallationIdentityInput,
   passwordPolicy: { ...defaultPasswordPolicy } as AdminPasswordPolicy,
   summary: {} as InstallationSummary,
   deploymentRecords: [] as DeploymentRecord[],
@@ -88,10 +95,16 @@ export async function bootstrapInstallerFlow() {
           projectId: string | null;
           installed: boolean;
           passwordPolicy?: AdminPasswordPolicy;
+          installation?: InstallationIdentity | null;
         }>("/config"),
         installerRequest<InstallationSummary>("/summary"),
       ]);
       installerFlow.projectId = config.projectId ?? "";
+      if (config.installation) {
+        installerFlow.installation = { ...config.installation };
+      } else if (summary.installation) {
+        installerFlow.installation = { ...summary.installation };
+      }
       installerFlow.passwordPolicy = {
         ...defaultPasswordPolicy,
         ...config.passwordPolicy,

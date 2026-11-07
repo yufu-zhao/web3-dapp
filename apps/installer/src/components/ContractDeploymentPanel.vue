@@ -7,16 +7,34 @@
         :icon="{ icon: 'gavel', color: 'teal-1', textColor: 'teal-9' }"
       />
       <WalletConnect
-        :project-id="projectId"
+        :project-id="props.projectId"
+        :system-name="props.installation.systemName"
+        :chain-id="props.installation.chainId"
+        confirm-changes
+        :deployment-busy="runningSequence || deployingMock"
         @connected="onWalletConnected"
         @changed="onWalletChanged"
-        @disconnected="wallet = null"
+        @change-pending="onWalletChangePending"
+        @disconnected="onWalletDisconnected"
       />
     </div>
     <p class="section-copy">
       直接读取 contracts/code
       的部署计划和编译产物。每笔链上写入都按计划顺序等待钱包确认与成功回执。
     </p>
+    <InstallerCard class="installation-identity-card q-px-md q-py-xs">
+      <strong>已锁定的安装身份</strong>
+      <span
+        >目标 ChainId
+        {{ props.installation.chainId ?? "全部部署成功后锁定" }}</span
+      >
+      <span>系统名称：{{ props.installation.systemName }}</span>
+      <span
+        >链上代币：{{ props.installation.tokenName }}（{{
+          props.installation.tokenSymbol
+        }}）</span
+      >
+    </InstallerCard>
 
     <q-banner v-if="packageError" class="notice-banner error-banner">
       <template #avatar><q-icon name="error_outline" /></template
@@ -141,7 +159,7 @@
                 flat
                 dense
                 icon="add_circle"
-                :disable="!packageInfo.mockArtifact"
+                :disable="!canDeployMock"
                 @click="mockConfirmOpen = true"
               >
                 <q-tooltip> 一键部署 MockUSDT </q-tooltip>
@@ -396,7 +414,7 @@
               color="primary"
               unelevated
               label="确认部署测试币"
-              :disable="wallet?.chainId === 56"
+              :disable="!canDeployMock"
               :loading="deployingMock"
               @click="deployMockToken"
             />
@@ -476,6 +494,16 @@
           >
             钱包请求等待超过 90
             秒，安装器尚未收到交易哈希。请检查钱包弹窗并确认或拒绝；此请求未结束前不会自动重试，以免重复部署。
+          </q-banner>
+          <q-banner
+            v-if="pendingChainMismatch !== null"
+            dense
+            class="inline-banner warning-banner"
+          >
+            <template #avatar><q-icon name="history" /></template>
+            检测到 ChainId
+            {{ pendingChainMismatch }}
+            有未完成部署。请切换回该链并使用原部署钱包继续；完成前不能在其他链开始部署。
           </q-banner>
           <q-banner
             v-if="pendingMismatch"
@@ -586,7 +614,7 @@
                     index === firstIncompleteIndex
                   "
                   outline
-                  color="dark"
+                  color="primary"
                   icon="play_arrow"
                   label="从此步继续"
                   :loading="runningSequence"
@@ -624,6 +652,8 @@ import {
   installerRequest,
   postJson,
   type DeploymentStepRecord,
+  type InstallationIdentity,
+  type PendingDeploymentSummary,
   type SavedDeployment,
   type SavedToken,
 } from "../services/installer-api";
@@ -710,6 +740,7 @@ interface DeploymentContract {
   source?: string;
 }
 interface DeploymentConfiguration {
+  installation: Omit<InstallationIdentity, "chainId"> & { chainId: number };
   externalAddresses: { router: string; factory: string; paymentToken: string };
   roleWallets: {
     operator: string;
@@ -747,7 +778,10 @@ interface StepResult {
   pairAddress?: string;
 }
 
-defineProps<{ projectId: string }>();
+const props = defineProps<{
+  projectId: string;
+  installation: InstallationIdentity;
+}>();
 const emit = defineEmits<{ completed: [deployment: SavedDeployment] }>();
 const router = useRouter();
 const wallet = ref<ConnectedWallet | null>(null);
@@ -793,6 +827,7 @@ const mockConfirmOpen = ref(false);
 const deployingMock = ref(false);
 const savedDeployments = ref<SavedDeployment[]>([]);
 const pendingMismatch = ref("");
+const pendingChainMismatch = ref<number | null>(null);
 const pendingStale = ref(false);
 const pendingLoaded = ref(false);
 const pendingDeployment = ref<PendingDeployment | null>(null);
@@ -812,6 +847,9 @@ const stepToRecover = ref<LocalStep | null>(null);
 const runningSequence = ref(false);
 const stopSequence = ref(false);
 const lastLoadedChain = ref<number | null>(null);
+const loadingChain = ref<number | null>(null);
+const walletChangePending = ref(false);
+let chainDataRequestId = 0;
 
 const roleFields: Array<{ key: keyof typeof roleWallets; label: string }> = [
   { key: "operator", label: "OPERATOR_ROLE 钱包" },
@@ -841,6 +879,10 @@ const transactionNodeCount = computed(
 const actionCount = computed(
   () => packageInfo.value?.plan.postDeploymentActions.length ?? 0,
 );
+function replaceTokenSymbol(value: string) {
+  // 计划文案中的默认简称使用本次安装确认的符号显示。
+  return value.replaceAll("FRC", props.installation.tokenSymbol);
+}
 const minimumReserveRaw = computed(() => {
   const decimals = tokenInfo.value?.decimals ?? 18;
   if (
@@ -870,8 +912,8 @@ const stepItems = computed(() => {
     })),
     ...plan.postDeploymentActions.map((action) => ({
       id: action.id,
-      title: action.title,
-      description: action.description,
+      title: replaceTokenSymbol(action.title),
+      description: replaceTokenSymbol(action.description),
       kindLabel: action.kind === "getOrCreatePair" ? "核验或交易" : "配置交易",
       kind: action.kind,
     })),
@@ -911,8 +953,27 @@ const activeStepPhase = computed(() => {
 const canStart = computed(() =>
   Boolean(
     wallet.value &&
+    !walletChangePending.value &&
+    !loadingPackage.value &&
+    !compiling.value &&
+    (props.installation.chainId === null ||
+      wallet.value.chainId === props.installation.chainId) &&
     packageInfo.value?.exists &&
     packageInfo.value.artifactsReady &&
+    !pendingMismatch.value &&
+    pendingChainMismatch.value === null &&
+    !pendingStale.value,
+  ),
+);
+const canDeployMock = computed(() =>
+  Boolean(
+    wallet.value &&
+    wallet.value.chainId !== 56 &&
+    packageInfo.value?.mockArtifact &&
+    !walletChangePending.value &&
+    !runningSequence.value &&
+    !deployingMock.value &&
+    pendingChainMismatch.value === null &&
     !pendingMismatch.value &&
     !pendingStale.value,
   ),
@@ -967,19 +1028,86 @@ function formatDate(value: string) {
 
 function onWalletConnected(value: ConnectedWallet) {
   wallet.value = value;
-  void loadChainData(true);
+  void prepareWalletChain(value);
 }
 function onWalletChanged(value: ConnectedWallet) {
   wallet.value = value;
-  if (runningSequence.value) stopSequence.value = true;
-  if (value.chainId !== lastLoadedChain.value) void loadChainData(true);
+  if (runningSequence.value) {
+    stopSequence.value = true;
+    progressNotice.value =
+      "钱包账户或网络已确认同步，本次部署将停止后续步骤；请先核对当前步骤的交易状态。";
+  }
+  const activeChain = loadingPackage.value
+    ? loadingChain.value
+    : lastLoadedChain.value;
+  if (value.chainId !== activeChain) {
+    void prepareWalletChain(value);
+  } else {
+    void refreshPendingForWallet();
+  }
+}
+
+function onWalletChangePending(pending: boolean) {
+  walletChangePending.value = pending;
+  if (pending) {
+    confirmDeployOpen.value = false;
+    mockConfirmOpen.value = false;
+  }
+  if (pending && runningSequence.value) {
+    progressNotice.value =
+      "检测到钱包账户或网络切换。同步新状态会停止后续步骤；若这是临时切换，切回原账户和网络后会继续。";
+  } else if (
+    !pending &&
+    runningSequence.value &&
+    !stopSequence.value &&
+    progressNotice.value.startsWith("检测到钱包账户或网络切换")
+  ) {
+    progressNotice.value = "";
+  }
+}
+
+function onWalletDisconnected() {
+  walletChangePending.value = false;
+  wallet.value = null;
+  if (runningSequence.value) {
+    stopSequence.value = true;
+    progressNotice.value = "钱包已断开，后续链上写入已停止。";
+  }
+}
+
+async function prepareWalletChain(value: ConnectedWallet) {
+  packageError.value = "";
+  if (
+    props.installation.chainId !== null &&
+    value.chainId !== props.installation.chainId
+  ) {
+    packageInfo.value = null;
+    lastLoadedChain.value = value.chainId;
+    packageError.value = `当前钱包 ChainId ${value.chainId} 与安装时锁定的 ChainId ${props.installation.chainId} 不一致。请切换网络后重试。`;
+    return;
+  }
+  if (value.chainId !== lastLoadedChain.value) packageInfo.value = null;
+  await loadChainData(true);
 }
 
 async function loadChainData(resetDefaults: boolean) {
   if (!wallet.value) return;
+  const requestId = ++chainDataRequestId;
   const chainId = wallet.value.chainId;
+  if (
+    props.installation.chainId !== null &&
+    chainId !== props.installation.chainId
+  ) {
+    packageInfo.value = null;
+    savedDeployments.value = [];
+    lastLoadedChain.value = null;
+    packageError.value = `当前钱包 ChainId ${chainId} 与安装时锁定的 ChainId ${props.installation.chainId} 不一致。请切换网络后重试。`;
+    return;
+  }
   loadingPackage.value = true;
+  loadingChain.value = chainId;
   packageError.value = "";
+  pendingChainMismatch.value = null;
   preflightError.value = "";
   progressNotice.value = "";
   pendingLoaded.value = false;
@@ -987,6 +1115,7 @@ async function loadChainData(resetDefaults: boolean) {
     const loaded = await installerRequest<ContractPackage>(
       `/contracts/package?chainId=${chainId}`,
     );
+    if (requestId !== chainDataRequestId) return;
     packageInfo.value = loaded;
     if (!loaded.exists) {
       packageError.value = "合约不存在：安装器未找到 contracts/code 部署计划。";
@@ -994,7 +1123,7 @@ async function loadChainData(resetDefaults: boolean) {
     }
     if (resetDefaults || lastLoadedChain.value !== chainId)
       applyNetworkDefaults();
-    const [tokens, runs, pending] = await Promise.all([
+    const [tokens, runs, pending, pendingRuns] = await Promise.all([
       installerRequest<{ tokens: SavedToken[] }>(
         `/contracts/tokens/${chainId}`,
       ),
@@ -1004,7 +1133,14 @@ async function loadChainData(resetDefaults: boolean) {
       installerRequest<PendingDeployment | null>(
         `/contracts/pending/${chainId}`,
       ),
+      installerRequest<{ pending: PendingDeploymentSummary[] }>(
+        "/contracts/pending",
+      ),
     ]);
+    if (requestId !== chainDataRequestId) return;
+    pendingChainMismatch.value =
+      pendingRuns.pending.find((record) => record.chainId !== chainId)
+        ?.chainId ?? null;
     tokenOptions.value = (tokens.tokens ?? []).map((token) => token.address);
     if (
       externalAddresses.paymentToken &&
@@ -1040,9 +1176,54 @@ async function loadChainData(resetDefaults: boolean) {
     }
     lastLoadedChain.value = chainId;
   } catch (error) {
-    packageError.value = describeError(error);
+    if (requestId === chainDataRequestId)
+      packageError.value = describeError(error);
   } finally {
-    loadingPackage.value = false;
+    if (requestId === chainDataRequestId) {
+      loadingPackage.value = false;
+      loadingChain.value = null;
+    }
+  }
+}
+
+async function refreshPendingForWallet() {
+  const currentWallet = wallet.value;
+  if (!currentWallet || loadingPackage.value) return;
+  const chainId = currentWallet.chainId;
+  try {
+    const [pending, pendingRuns] = await Promise.all([
+      installerRequest<PendingDeployment | null>(
+        `/contracts/pending/${chainId}`,
+      ),
+      installerRequest<{ pending: PendingDeploymentSummary[] }>(
+        "/contracts/pending",
+      ),
+    ]);
+    if (
+      !wallet.value ||
+      wallet.value.chainId !== chainId ||
+      wallet.value.address.toLowerCase() !== currentWallet.address.toLowerCase()
+    )
+      return;
+    pendingChainMismatch.value =
+      pendingRuns.pending.find((record) => record.chainId !== chainId)
+        ?.chainId ?? null;
+    const currentPending =
+      pending?.releaseVersion === packageInfo.value?.releaseVersion
+        ? pending
+        : null;
+    pendingStale.value = Boolean(pending && !currentPending);
+    pendingLoaded.value = Boolean(currentPending);
+    pendingDeployment.value = currentPending;
+    pendingMismatch.value =
+      currentPending &&
+      String(currentPending.deployer).toLowerCase() !==
+        wallet.value.address.toLowerCase()
+        ? String(currentPending.deployer)
+        : "";
+  } catch (error) {
+    pendingStale.value = true;
+    packageError.value = describeError(error);
   }
 }
 
@@ -1238,7 +1419,11 @@ async function deployMockToken() {
   if (
     !wallet.value ||
     !packageInfo.value?.mockArtifact ||
-    wallet.value.chainId === 56
+    wallet.value.chainId === 56 ||
+    walletChangePending.value ||
+    pendingChainMismatch.value !== null ||
+    pendingMismatch.value ||
+    pendingStale.value
   )
     return;
   const artifact = packageInfo.value.mockArtifact;
@@ -1306,8 +1491,25 @@ async function prepareDeployment() {
 }
 
 async function preflight() {
+  if (walletChangePending.value)
+    throw new Error("检测到钱包账户或网络切换，请先在弹窗中确认同步。");
+  if (pendingChainMismatch.value !== null)
+    throw new Error(
+      `ChainId ${pendingChainMismatch.value} 有未完成部署，请切回该链和原部署钱包继续。`,
+    );
+  if (pendingMismatch.value || pendingStale.value)
+    throw new Error("当前链存在不能安全续跑的未完成部署，请先检查进度提示。");
+  if (loadingPackage.value || compiling.value)
+    throw new Error("合约信息仍在加载或编译，请完成后再开始部署。");
   if (!wallet.value || !packageInfo.value?.artifactsReady)
     throw new Error("请连接钱包并确保合约已编译。");
+  if (
+    props.installation.chainId !== null &&
+    wallet.value.chainId !== props.installation.chainId
+  )
+    throw new Error(
+      `当前钱包 ChainId ${wallet.value.chainId} 与安装时锁定的 ChainId ${props.installation.chainId} 不一致。`,
+    );
   if (wallet.value.chainId === 56 && !externalAddresses.paymentToken)
     throw new Error("请填写 BSC 主网支付 Token 地址。");
   const requiredAddresses = [
@@ -1350,6 +1552,8 @@ async function startDeployment() {
   progressNotice.value = "";
   try {
     await preflight();
+    const currentWallet = { ...wallet.value! };
+    await assertWalletContext(currentWallet);
   } catch (error) {
     preflightError.value = describeError(error);
     return;
@@ -1361,7 +1565,7 @@ async function startDeployment() {
   let failedInStep = false;
   try {
     const currentWallet = { ...wallet.value! };
-    const configuration = snapshotConfiguration();
+    const configuration = snapshotConfiguration(currentWallet);
     if (!localSteps.value.length) createSteps();
     await persistPending(currentWallet, configuration);
     for (let index = 0; index < stepItems.value.length; index += 1) {
@@ -1419,6 +1623,11 @@ async function startDeployment() {
       if (walletChanged) stopSequence.value = true;
       activeStep.value = stepItems.value[index + 1]?.id ?? item.id;
     }
+    if (stopSequence.value)
+      throw new Error(
+        "钱包状态已变化，部署资料尚未完成归档；请切回本次部署的钱包后继续。",
+      );
+    await assertWalletContext(currentWallet);
     await completeDeployment(currentWallet, configuration);
   } catch (error) {
     if (!failedInStep) progressNotice.value = describeError(error);
@@ -1448,7 +1657,7 @@ async function prepareUnknownRetry(stepId: string) {
         step.recoveryBlocked = true;
         step.recoveryRequired = false;
         step.error = `钱包待处理 Nonce 已从 ${step.startingNonce} 增至 ${currentNonce}，可能已有未知交易提交。为避免重复部署，已锁定重试；请先在钱包和区块浏览器查明该 Nonce 对应的交易。`;
-        await persistPending(snapshot, snapshotConfiguration());
+        await persistPending(snapshot, snapshotConfiguration(snapshot));
       }
     }
     stepToRecover.value = step;
@@ -1493,12 +1702,18 @@ async function runFromStep(stepId: string) {
 }
 
 async function assertWalletContext(snapshot: ConnectedWallet) {
+  if (walletChangePending.value) {
+    stopSequence.value = true;
+    throw new Error("检测到钱包切换尚未同步，已停止后续写入。");
+  }
   const provider = browserProvider();
   const network = await provider.getNetwork();
   const signer = await provider.getSigner();
   const address = await signer.getAddress();
   if (
     Number(network.chainId) !== snapshot.chainId ||
+    (props.installation.chainId !== null &&
+      snapshot.chainId !== props.installation.chainId) ||
     address.toLowerCase() !== snapshot.address.toLowerCase()
   ) {
     stopSequence.value = true;
@@ -1506,8 +1721,11 @@ async function assertWalletContext(snapshot: ConnectedWallet) {
   }
 }
 
-function snapshotConfiguration(): DeploymentConfiguration {
+function snapshotConfiguration(
+  snapshot: ConnectedWallet,
+): DeploymentConfiguration {
   return {
+    installation: { ...props.installation, chainId: snapshot.chainId },
     externalAddresses: { ...externalAddresses },
     roleWallets: { ...roleWallets },
     assetWallets: { ...assetWallets },
@@ -1536,6 +1754,7 @@ async function persistPending(
     steps: localSteps.value,
   };
   pendingDeployment.value = pending;
+  pendingLoaded.value = true;
   await postJson(`/contracts/pending/${snapshot.chainId}`, pending);
 }
 
@@ -1730,6 +1949,10 @@ function resolveConstructorArgument(
   if (argument.source === "deployedAddress")
     value = String(contracts.value[argument.nodeId ?? ""]?.address ?? "");
   else if (argument.source === "deployer") value = snapshot.address;
+  else if (argument.key === "installation.tokenName")
+    value = configuration.installation.tokenName;
+  else if (argument.key === "installation.tokenSymbol")
+    value = configuration.installation.tokenSymbol;
   else if (argument.key?.startsWith("externalAddresses.")) {
     const key = argument.key.split(".")[1];
     value =
@@ -1803,6 +2026,13 @@ async function estimateAndSend(
   step.startingNonce = startingNonce;
   step.phase = "awaiting_wallet";
   await persistPending(snapshot, configuration);
+  try {
+    await assertWalletContext(snapshot);
+  } catch (error) {
+    // 尚未把签名请求交给钱包，失败恢复状态不应误标为未知交易。
+    step.phase = "preparing";
+    throw error;
+  }
 
   // 钱包请求无法由网页取消；超时只提示用户，不解锁重试或并发发出第二笔交易。
   const warningTimer = window.setTimeout(() => {
@@ -1996,6 +2226,18 @@ async function verifyDeployment(
     packageInfo.value!.artifacts[mainNode?.contractName ?? ""];
   if (main?.address && mainArtifact) {
     const contract = new Contract(main.address, mainArtifact.abi, provider);
+    const [tokenName, tokenSymbol] = await Promise.all([
+      contract.getFunction("name")(),
+      contract.getFunction("symbol")(),
+    ]);
+    if (
+      String(tokenName) !== configuration.installation.tokenName ||
+      String(tokenSymbol) !== configuration.installation.tokenSymbol
+    ) {
+      throw new Error(
+        `代币名称核验失败：实际为 ${String(tokenName)}（${String(tokenSymbol)}），预期为 ${configuration.installation.tokenName}（${configuration.installation.tokenSymbol}）。`,
+      );
+    }
     for (const [roleGetter, walletKey] of [
       ["OPERATOR_ROLE", "operator"],
       ["LAUNCH_ROLE", "launch"],
@@ -2032,10 +2274,11 @@ async function completeDeployment(
     steps: localSteps.value,
     pairAddress: pairAddress.value,
   };
-  const result = await postJson<{ deployment: SavedDeployment }>(
-    `/contracts/deployments/${snapshot.chainId}`,
-    record,
-  );
+  const result = await postJson<{
+    deployment: SavedDeployment;
+    installation: InstallationIdentity;
+  }>(`/contracts/deployments/${snapshot.chainId}`, record);
+  installerFlow.summary.installation = { ...result.installation };
   installerFlow.selectedDeployment = result.deployment;
   pendingLoaded.value = false;
   pendingDeployment.value = null;

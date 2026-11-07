@@ -21,6 +21,19 @@ export interface AdminPasswordPolicy {
   requireSymbol: boolean;
 }
 
+export interface InstallationIdentity {
+  chainId: number | null;
+  systemName: string;
+  tokenName: string;
+  tokenSymbol: string;
+}
+
+export interface InstallationIdentityInput {
+  systemName: string;
+  tokenName: string;
+  tokenSymbol: string;
+}
+
 export interface DatabaseCheck {
   connected: boolean;
   database: string;
@@ -52,6 +65,7 @@ export interface InstallationSummary {
   };
   administrator?: string;
   passwordPolicy?: AdminPasswordPolicy;
+  installation?: InstallationIdentity | null;
   deployments?: DeploymentRecord[];
   projectId?: string | null;
   installedAt?: string | null;
@@ -66,6 +80,13 @@ export interface SavedToken {
   transactionHash: string;
   deployer: string;
   createdAt: string;
+}
+
+export interface PendingDeploymentSummary {
+  chainId: number;
+  deployer: string;
+  releaseVersion?: string;
+  updatedAt?: string;
 }
 
 export interface DeploymentStepRecord {
