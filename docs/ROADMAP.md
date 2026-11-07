@@ -1,4 +1,4 @@
-# FileReset 路线图
+# 链构（ChainForge）路线图
 
 这里维护跨应用的唯一进度状态。每项都应有可检查的完成条件；不要在应用 README 中重复维护相同状态。
 
@@ -9,18 +9,19 @@
 - 已完成：实现和对应验收均已通过。
 - 待优化：功能已交付，仍有明确的质量、体验或维护改进项。
 
-| 范围                             | 事项                                                               | 状态   | 验收条件                                                                                                                                                   |
-| -------------------------------- | ------------------------------------------------------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 用户端 apps/user                 | Vue、Quasar、TypeScript 骨架与只读安装身份展示                     | 开发中 | GET /public/config 返回数据库中的系统身份，名称和代币信息随安装配置显示                                                                                    |
-| 管理后台 apps/admin              | Vue、Quasar、TypeScript 骨架与只读安装身份展示                     | 开发中 | GET /public/config 返回数据库中的系统身份，名称和代币信息随安装配置显示                                                                                    |
-| 可视化安装器 apps/installer      | 四路由安装流程、数据库初始化、完整合约部署计划与完成摘要           | 开发中 | 部署页钱包切换需用户确认，切回原状态自动撤销待同步；ChainId 在完整部署成功后写入数据库，未完成部署按临时记录限制同链续跑；真实钱包签名与回执恢复待链上验收 |
-| 业务 API services/api            | NestJS、Fastify 服务、只读安装身份接口与索引任务入口               | 开发中 | GET /public/config 从 system_configs 读取安装身份；GET /init 返回成功；索引入口可独立构建并正常退出                                                        |
-| 安装器服务 services/installer    | NestJS、Fastify、PostgreSQL、合约包和按链部署资料接口              | 开发中 | 自动建库、非空库确认、已有管理员保护、配置与迁移接口已验收；仅部署完成后绑定 ChainId，跨链未完成记录拦截待浏览器验收；JSON 部署文件在真实链写入后复核      |
-| 共享包 packages/shared-types     | TypeScript workspace 包入口                                        | 已完成 | 可独立类型检查和构建至根 dist                                                                                                                              |
-| 公共链工具 packages/public-chain | TypeScript workspace 包入口                                        | 已完成 | 可独立类型检查和构建至根 dist                                                                                                                              |
-| 钱包组件 packages/wallet-connect | Vue 钱包方式选择、多注入钱包发现和按 project_id 启用 WalletConnect | 开发中 | 注入钱包列表滚动与 project_id 条件显示已实现；真实浏览器扩展、WalletConnect 手机端和账户/网络变化待钱包验收                                                |
-| 全仓工程                         | 根脚本、文档与检查规范                                             | 已完成 | dev、build、typecheck、lint 通过，产物仅输出到根 dist                                                                                                      |
-| 全部应用                         | 后续业务需求拆解                                                   | 待开发 | 按产品需求确定页面、API、数据、权限和验收条件后再拆分任务                                                                                                  |
-| -                                | -                                                                  | -      | -                                                                                                                                                          |
+| 范围                             | 事项                                                               | 状态   | 验收条件                                                                                                                                   |
+| -------------------------------- | ------------------------------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 用户端 apps/user                 | Vue、Quasar、TypeScript 骨架、安装状态与只读安装身份展示           | 开发中 | GET /public/config 的状态区分未初始化、等待部署和已完成；显示数据库中的实例名称和代币信息                                                  |
+| 管理后台 apps/admin              | Vue、Quasar、TypeScript 骨架、安装状态与只读安装身份展示           | 开发中 | GET /public/config 的状态区分未初始化、等待部署和已完成；显示数据库中的实例名称和代币信息                                                  |
+| 可视化安装器 apps/installer      | 四路由安装流程、可切换数据库重新初始化、完整合约部署计划与摘要     | 开发中 | 新目标库初始化保留原库且不覆盖已有管理员；安装器和钱包连接元数据固定使用链构品牌；ChainId 仅在完整部署成功后写入数据库，真实交易恢复待验收 |
+| 业务 API services/api            | NestJS、Fastify 服务、只读安装身份与安装状态接口、索引任务入口     | 开发中 | GET /public/config 返回 not_initialized、deployment_pending 或 ready；GET /init 返回成功；索引入口可独立构建并正常退出                     |
+| 安装器服务 services/installer    | NestJS、Fastify、PostgreSQL、合约包和按链部署资料接口              | 开发中 | 自动建库、非空库确认、已有管理员保护、连接目标切换与配置接口已验收；仅完整部署后绑定 ChainId；JSON 部署文件在真实链写入后复核              |
+| 共享包 packages/shared-types     | TypeScript workspace 包入口                                        | 已完成 | 可独立类型检查和构建至根 dist                                                                                                              |
+| 公共链工具 packages/public-chain | TypeScript workspace 包入口                                        | 已完成 | 可独立类型检查和构建至根 dist                                                                                                              |
+| 钱包组件 packages/wallet-connect | Vue 钱包方式选择、多注入钱包发现和按 project_id 启用 WalletConnect | 开发中 | 注入钱包列表滚动与 project_id 条件显示已实现；真实浏览器扩展、WalletConnect 手机端和账户/网络变化待钱包验收                                |
+| 链构品牌与通用合约包             | 全仓品牌资源、workspace 包名与合约标识通用化                       | 已完成 | 三个前端使用 ChainForge 品牌图标与 favicon；部署计划、Solidity 源码和交接文档不再依赖 FileReset/FRC 专属命名，合约包可编译且校验和匹配     |
+| 全仓工程                         | 根脚本、文档与检查规范                                             | 已完成 | dev、build、typecheck、lint 通过，产物仅输出到根 dist                                                                                      |
+| 全部应用                         | 后续业务需求拆解                                                   | 待开发 | 按产品需求确定页面、API、数据、权限和验收条件后再拆分任务                                                                                  |
+| -                                | -                                                                  | -      | -                                                                                                                                          |
 
 完成一项后，将状态更新为已完成并记录验收证据；若发现需要继续改进的已交付能力，另列待优化事项。

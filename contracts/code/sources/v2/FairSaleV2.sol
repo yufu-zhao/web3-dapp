@@ -6,9 +6,9 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {IFRCV2} from "./V2Interfaces.sol";
+import {IProjectToken} from "./V2Interfaces.sol";
 
-/// @notice Fixed-ticket entry (default 100 USDT), once across all rounds. Terms lock on first entry.
+/// @notice Fixed-ticket entry (default 100 payment-token units), once across all rounds. Terms lock on first entry.
 contract FairSaleV2 is ReentrancyGuard {
     using SafeERC20 for IERC20;
     bytes32 private constant OPERATOR_ROLE=keccak256("OPERATOR_ROLE");
@@ -65,7 +65,7 @@ contract FairSaleV2 is ReentrancyGuard {
     constructor(address token_,address proceeds_) {
         if(token_.code.length==0||proceeds_==address(0)||proceeds_==address(this))revert InvalidConfiguration();
         token=token_;proceedsWallet=proceeds_;
-        address payment=IFRCV2(token_).paymentToken();
+        address payment=IProjectToken(token_).paymentToken();
         uint8 decimals=IERC20Metadata(payment).decimals();
         if(decimals!=6&&decimals!=18)revert InvalidConfiguration();
         paymentToken=IERC20(payment);paymentUnit=10**decimals;ticket=100*paymentUnit;
@@ -74,17 +74,17 @@ contract FairSaleV2 is ReentrancyGuard {
         rounds[0].offered=ROUND_ONE_BASE;
     }
     // 超管拥有全部操作权限；其他调用者必须持有运营角色。
-    modifier operator(){if(!IFRCV2(token).hasRole(bytes32(0),msg.sender)&&!IFRCV2(token).hasRole(OPERATOR_ROLE,msg.sender))revert Unauthorized();_;}
-    modifier admin(){if(!IFRCV2(token).hasRole(bytes32(0),msg.sender))revert Unauthorized();_;}
-    function activeModule() public view returns(bool){return IFRCV2(token).sale()==address(this);}
+    modifier operator(){if(!IProjectToken(token).hasRole(bytes32(0),msg.sender)&&!IProjectToken(token).hasRole(OPERATOR_ROLE,msg.sender))revert Unauthorized();_;}
+    modifier admin(){if(!IProjectToken(token).hasRole(bytes32(0),msg.sender))revert Unauthorized();_;}
+    function activeModule() public view returns(bool){return IProjectToken(token).sale()==address(this);}
     function price(uint8 round) public view returns(uint256){
         if(round>2)revert InvalidRound();return prices[round];
     }
     function configureSaleTerms(uint256[3] calldata nextPrices,uint256[3] calldata amounts,uint256 nextTicket) external admin {
-        if(!activeModule()||totalParticipants!=0||cursor!=0||IFRCV2(token).launchTime()!=0)revert InvalidConfiguration();
+        if(!activeModule()||totalParticipants!=0||cursor!=0||IProjectToken(token).launchTime()!=0)revert InvalidConfiguration();
         if(nextTicket==0||amounts[0]+amounts[1]+amounts[2]!=ALLOCATION)revert InvalidConfiguration();
         for(uint256 i=0;i<3;i++) {
-            // Each ticket must buy >=1 raw FRC unit. Bound cost arithmetic to the allocation.
+            // Each ticket must buy >=1 raw TOKEN unit. Bound cost arithmetic to the allocation.
             if(nextPrices[i]==0||nextPrices[i]>type(uint128).max||amounts[i]==0
                 ||Math.mulDiv(nextTicket,1 ether,nextPrices[i])==0)revert InvalidConfiguration();
         }
@@ -174,9 +174,9 @@ contract FairSaleV2 is ReentrancyGuard {
         emit Committed(msg.sender,cursor,r.participants-1,ticket);
     }
     function finalize(uint8 expectedRound) external nonReentrant {
-        IFRCV2 frc=IFRCV2(token);
-        if(!frc.hasRole(bytes32(0),msg.sender)&&!frc.hasRole(OPERATOR_ROLE,msg.sender)
-            &&!frc.hasRole(LAUNCH_ROLE,msg.sender))revert Unauthorized();
+        IProjectToken projectToken=IProjectToken(token);
+        if(!projectToken.hasRole(bytes32(0),msg.sender)&&!projectToken.hasRole(OPERATOR_ROLE,msg.sender)
+            &&!projectToken.hasRole(LAUNCH_ROLE,msg.sender))revert Unauthorized();
         if(cursor!=expectedRound||cursor>2||rounds[cursor].endTime==0||block.timestamp<rounds[cursor].endTime)revert InvalidRound();
         _finalize();
     }
@@ -221,8 +221,8 @@ contract FairSaleV2 is ReentrancyGuard {
     }
     function allRoundsFinalized() public view returns(bool){return cursor==3;}
     function claimable(address buyer) public view returns(uint256){
-        if(!IFRCV2(token).tradingOpen())return 0;
-        uint256 start=IFRCV2(token).launchTime();
+        if(!IProjectToken(token).tradingOpen())return 0;
+        uint256 start=IProjectToken(token).launchTime();
         uint256 elapsed=block.timestamp-start;
         uint256 percentage=elapsed>=365 days?100:elapsed>=180 days?80:elapsed>=90 days?50:20;
         (uint256 amount,,)=allocationOf(buyer);
@@ -237,7 +237,7 @@ contract FairSaleV2 is ReentrancyGuard {
     // Only settled proceeds may leave escrow. Unclaimed refunds remain fully collateralized.
     function fundInitialLiquidity() external nonReentrant {
         if(!allRoundsFinalized()||sold!=ALLOCATION||initialLiquidityFunded)revert SaleNotComplete();
-        address vault=IFRCV2WithVault(token).liquidityVault();
+        address vault=IProjectTokenWithVault(token).liquidityVault();
         if(vault==address(0))revert InvalidConfiguration();
         uint256 amount=600_000*paymentUnit;
         if(acceptedPayment<amount)revert SaleNotComplete();
@@ -253,4 +253,4 @@ contract FairSaleV2 is ReentrancyGuard {
         emit ProceedsWithdrawn(proceedsWallet,amount);
     }
 }
-interface IFRCV2WithVault{function liquidityVault() external view returns(address);}
+interface IProjectTokenWithVault{function liquidityVault() external view returns(address);}

@@ -1,6 +1,8 @@
 import { defineConfig } from "#q-app";
 
 export default defineConfig(() => ({
+  productName: '链构',
+  productDescription: 'ChainForge - 安装器',
   boot: [],
   css: ["app.scss"],
   extras: ["material-icons"],

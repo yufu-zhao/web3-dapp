@@ -5,7 +5,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {AccessControlDefaultAdminRules} from "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
 import {IV2Sale,IV2LiquidityVault,IV2PriceOracle,IPancakeFactoryV2,IPancakePairV2} from "./V2Interfaces.sol";
 
-contract FileResetV2 is ERC20, AccessControlDefaultAdminRules {
+contract ProjectToken is ERC20, AccessControlDefaultAdminRules {
     uint256 public constant INITIAL_SUPPLY = 210_000_000 ether;
     uint256 public constant SUPPLY_FLOOR = 21_000_000 ether;
     uint256 public constant PRESALE_ALLOCATION = 3_000_000 ether;
@@ -57,12 +57,12 @@ contract FileResetV2 is ERC20, AccessControlDefaultAdminRules {
 
     // 部署交易发送者自动成为唯一初始超管，避免部署参数把权限授予错误地址。
     // ERC-20 名称在安装时确认，部署后由链上 name() 和 symbol() 固定提供。
-    constructor(string memory tokenName_,string memory tokenSymbol_,address usdt,address factory,address ecoWallet,address operator,address launch,address batchRegistrar,address pauser)
+    constructor(string memory tokenName_,string memory tokenSymbol_,address paymentToken_,address factory,address ecoWallet,address operator,address launch,address batchRegistrar,address pauser)
         ERC20(tokenName_,tokenSymbol_) AccessControlDefaultAdminRules(2 days,msg.sender) {
-        if (usdt.code.length == 0 || factory.code.length == 0 || ecoWallet == address(0)
+        if (paymentToken_.code.length == 0 || factory.code.length == 0 || ecoWallet == address(0)
             || ecoWallet == address(this) || operator == address(0) || launch == address(0)
             || batchRegistrar == address(0) || pauser == address(0)) revert InvalidConfiguration();
-        paymentToken=usdt;
+        paymentToken=paymentToken_;
         dexFactory=factory;
         ecosystemWallet=ecoWallet;
         // The super administrator keeps full operational and launch capability,

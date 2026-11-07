@@ -2,7 +2,7 @@
 
 Generated from the ABIs in this release package.
 
-## FileResetV2
+## ProjectToken
 
 - `constructor(address usdt, address factory, address ecoWallet, address operator, address launch, address batchRegistrar, address pauser)`；`DEFAULT_ADMIN_ROLE` 由实际部署交易发送者自动获得
 - `error AccessControlBadConfirmation()`
@@ -197,13 +197,13 @@ Generated from the ABIs in this release package.
 - `event InitialLiquiditySeeded(address pair, uint256 tokenAmount, uint256 paymentAmount, uint256 lp)`
 - `event StrategicLiquidityInjected(uint256 tokenAmount, uint256 paymentAmount, uint256 lp, uint256 injectedTotal)`
 - `event StrategicReserveUnlocked(address indexed admin, uint256 amount, uint256 unlockedTotal, uint256 remaining)`
-- `function INITIAL_FRC() view returns (uint256)`
-- `function STRATEGIC_FRC() view returns (uint256)`
+- `function INITIAL_TOKEN() view returns (uint256)`
+- `function STRATEGIC_TOKEN() view returns (uint256)`
 - `function acceptFundingWallet()`
 - `function available() view returns (uint256)`
 - `function fundingWallet() view returns (address)`
 - `function initialSeeded() view returns (bool)`
-- `function inject(uint256 amountFRC, uint256 maximumUSDT, uint256 minimumFRC, uint256 minimumUSDT, uint256 deadline) returns (uint256 usedFRC, uint256 usedUSDT, uint256 lp)`
+- `function inject(uint256 amountToken, uint256 maximumUSDT, uint256 minimumToken, uint256 minimumUSDT, uint256 deadline) returns (uint256 usedToken, uint256 usedUSDT, uint256 lp)`
 - `function injected() view returns (uint256)`
 - `function liquidityInProgress() view returns (bool)`
 - `function lpVault() view returns (address)`
@@ -221,7 +221,7 @@ Generated from the ABIs in this release package.
 
 - No callable ABI methods (contract is an LP holder).
 
-## FRCRewardVault
+## TokenRewardVault
 
 - `constructor(address token_)`
 - `error InvalidConfiguration()`
@@ -241,7 +241,7 @@ Generated from the ABIs in this release package.
 - `function staking() view returns (address)`
 - `function token() view returns (address)`
 
-## FRCStaking
+## TokenStaking
 
 - `constructor(address token_, address sale_, address vault_, address feeWallet_)`
 - `error InsufficientCoverage()`
@@ -290,7 +290,7 @@ Generated from the ABIs in this release package.
 - `function totalRewardAccrued() view returns (uint256)`
 - `function totalRewardPaid() view returns (uint256)`
 
-## FRCTimeLock
+## TokenTimeLock
 
 - `constructor(address token_)`
 - `error AlreadyClaimed()`
@@ -323,7 +323,7 @@ Generated from the ABIs in this release package.
 - `function factory() view returns (address)`
 - `function getReserves() view returns (uint112, uint112, uint32)`
 
-## FRCPriceOracleV2
+## TokenPriceOracle
 
 - `constructor(address token_, uint256 samplePeriod, uint256 minReserve)`
 - `error InvalidConfiguration()`
@@ -349,7 +349,7 @@ Generated from the ABIs in this release package.
 - `function start()`
 - `function token() view returns (address)`
 
-## FRCLimitOrders
+## TokenLimitOrders
 
 - `constructor(address token_, address router_)`
 - `error EnforcedPause()`
@@ -400,7 +400,7 @@ Generated from the ABIs in this release package.
 - `function transfer(address, uint256) returns (bool)`
 - `function transferFrom(address, address, uint256) returns (bool)`
 
-## USDTPrizeClaimVault
+## PrizeClaimVault
 
 - `constructor(address tokenAddress, address roleControllerAddress, address recoveryWalletAddress)`
 - `error AlreadyClaimed()`

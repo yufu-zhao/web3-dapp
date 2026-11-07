@@ -3,17 +3,31 @@
     <q-page-container>
       <q-page class="page-shell flex flex-center">
         <main class="starter-card">
-          <div class="brand-mark" aria-hidden="true">{{ brandMark }}</div>
-          <p class="eyebrow">{{ systemName }}</p>
+          <!-- prettier-ignore -->
+          <img
+            class="brand-mark"
+            src="/brand/chainforge-mark.png"
+            alt=""
+            aria-hidden="true"
+          >
+          <p class="eyebrow">链构（ChainForge）</p>
           <h1>管理后台</h1>
           <p class="description">
             {{ systemName }} · {{ tokenName }}（{{ tokenSymbol }}） ·
             {{ chainLabel }}
           </p>
-          <p v-if="configError" class="config-error">{{ configError }}</p>
-          <q-badge color="positive" text-color="dark" class="status-badge">
-            <q-icon name="check_circle" size="16px" class="q-mr-xs" />
-            运行就绪
+          <p
+            class="installation-state"
+            :class="{
+              'is-error': Boolean(configError),
+              'is-ready': installationStatus === 'ready',
+            }"
+          >
+            {{ statusMessage }}
+          </p>
+          <q-badge :color="statusColor" text-color="dark" class="status-badge">
+            <q-icon :name="statusIcon" size="16px" class="q-mr-xs" />
+            {{ statusLabel }}
           </q-badge>
         </main>
       </q-page>
@@ -22,33 +36,62 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref } from "vue";
 import {
   loadPublicInstallationConfig,
   type PublicInstallationConfig,
-} from "@filereset/shared-types";
+} from "@chainforge/shared-types";
 
 const identity = ref<PublicInstallationConfig | null>(null);
 const configError = ref("");
-const systemName = computed(() => identity.value?.systemName || "FileReset");
-const tokenName = computed(() => identity.value?.tokenName || "FileReset");
-const tokenSymbol = computed(() => identity.value?.tokenSymbol || "FRC");
-const brandMark = computed(
-  () => Array.from(systemName.value.trim()).slice(0, 2).join("") || "FR",
+const installationStatus = computed(
+  () => identity.value?.installationStatus ?? null,
 );
+const systemName = computed(() => identity.value?.systemName || "链构");
+const tokenName = computed(() => identity.value?.tokenName || "项目代币");
+const tokenSymbol = computed(() => identity.value?.tokenSymbol || "TOKEN");
 const chainLabel = computed(() =>
-  identity.value?.chainId
+  installationStatus.value === "ready" && identity.value?.chainId
     ? `ChainId ${identity.value.chainId}`
-    : "目标链在首次完整部署成功后锁定",
+    : installationStatus.value === "deployment_pending"
+      ? "等待合约与链上配置完成"
+      : installationStatus.value === "not_initialized"
+        ? "尚未完成安装"
+        : "正在读取安装状态",
 );
+const statusColor = computed(() => {
+  if (configError.value) return "negative";
+  if (installationStatus.value === "ready") return "positive";
+  return installationStatus.value ? "warning" : "info";
+});
+const statusIcon = computed(() => {
+  if (configError.value) return "error_outline";
+  if (installationStatus.value === "ready") return "check_circle";
+  return installationStatus.value ? "pending" : "sync";
+});
+const statusLabel = computed(() => {
+  if (configError.value) return "状态不可用";
+  if (installationStatus.value === "ready") return "已完成安装";
+  if (installationStatus.value === "deployment_pending") return "等待部署";
+  if (installationStatus.value === "not_initialized") return "待初始化";
+  return "正在检查";
+});
+const statusMessage = computed(() => {
+  if (configError.value) return `安装状态读取失败：${configError.value}`;
+  if (installationStatus.value === "ready") {
+    return "数据库、合约与链上配置均已完成并核验。";
+  }
+  if (installationStatus.value === "deployment_pending") {
+    return "数据库已初始化，需在安装器中完成合约部署与链上配置。";
+  }
+  if (installationStatus.value === "not_initialized") {
+    return "系统尚未初始化，请先运行链构安装器。";
+  }
+  return "正在读取系统安装状态。";
+});
 
-watch(
-  systemName,
-  (value) => {
-    document.title = `${value} 管理后台`;
-  },
-  { immediate: true },
-);
+// 页面标题展示产品品牌，安装实例名称保留在页面摘要中。
+document.title = "链构（ChainForge）管理后台";
 
 onMounted(async () => {
   try {
@@ -89,16 +132,12 @@ onMounted(async () => {
 }
 
 .brand-mark {
-  display: grid;
+  display: block;
   width: 56px;
   height: 56px;
   margin: 0 auto 24px;
   border-radius: 18px;
-  background: #ffc832;
-  color: #111827;
-  font-size: 18px;
-  font-weight: 800;
-  place-items: center;
+  object-fit: cover;
 }
 
 .eyebrow {
@@ -122,10 +161,19 @@ h1 {
   line-height: 1.7;
 }
 
-.config-error {
+.installation-state {
   margin: 0;
-  color: #ffc832;
+  color: #fbbf24;
   font-size: 12px;
+  line-height: 1.6;
+}
+
+.installation-state.is-ready {
+  color: #a7f3d0;
+}
+
+.installation-state.is-error {
+  color: #fca5a5;
 }
 
 .status-badge {

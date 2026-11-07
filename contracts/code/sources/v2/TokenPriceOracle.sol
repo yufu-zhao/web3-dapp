@@ -2,11 +2,11 @@
 pragma solidity 0.8.28;
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {IFRCV2,IPancakePairV2} from "./V2Interfaces.sol";
+import {IProjectToken,IPancakePairV2} from "./V2Interfaces.sol";
 
 /// @notice Permissionless V2 cumulative-price samples. No arbitrary operator price setter.
 /// @dev Deployment policy: short-period TWAP vs the closest non-stale TWAP ending >=24h earlier.
-contract FRCPriceOracleV2 {
+contract TokenPriceOracle {
     address public immutable token;
     address public pair;
     uint256 public period;
@@ -32,19 +32,19 @@ contract FRCPriceOracleV2 {
     constructor(address token_,uint256 samplePeriod,uint256 minReserve){
         if(token_.code.length==0||samplePeriod<5 minutes||samplePeriod>1 hours||minReserve==0||minReserve>type(uint112).max)revert InvalidConfiguration();
         token=token_;
-        address configuredPair=IFRCV2(token_).primaryPair();
+        address configuredPair=IProjectToken(token_).primaryPair();
         if(configuredPair!=address(0))_validatePair(configuredPair);
         pair=configuredPair;
         tokenIsZero=configuredPair!=address(0)&&IPancakePairV2(configuredPair).token0()==token_;
-        address payment=IFRCV2(token_).paymentToken();
+        address payment=IProjectToken(token_).paymentToken();
         paymentUnit=10**IERC20Metadata(payment).decimals();
         period=samplePeriod;minimumPaymentReserve=minReserve;
     }
 
     /// @notice 交易对登记到主代币后，由部署超管设置预言机交易对。
     function configurePair(address nextPair) external {
-        if(!IFRCV2(token).hasRole(bytes32(0),msg.sender))revert InvalidConfiguration();
-        if(nextPair==address(0)||IFRCV2(token).primaryPair()!=nextPair)revert InvalidConfiguration();
+        if(!IProjectToken(token).hasRole(bytes32(0),msg.sender))revert InvalidConfiguration();
+        if(nextPair==address(0)||IProjectToken(token).primaryPair()!=nextPair)revert InvalidConfiguration();
         if(pair!=address(0)) {
             if(pair==nextPair)return;
             revert InvalidConfiguration();
@@ -59,15 +59,15 @@ contract FRCPriceOracleV2 {
         if(pair_.code.length==0)revert InvalidConfiguration();
         address token0=IPancakePairV2(pair_).token0();
         address token1=IPancakePairV2(pair_).token1();
-        address payment=IFRCV2(token).paymentToken();
+        address payment=IProjectToken(token).paymentToken();
         if(!((token0==token&&token1==payment)||(token1==token&&token0==payment)))revert InvalidConfiguration();
     }
     function configureParameters(uint256 samplePeriod,uint256 minReserve) external {
-        if(!IFRCV2(token).hasRole(bytes32(0),msg.sender))revert InvalidConfiguration();
+        if(!IProjectToken(token).hasRole(bytes32(0),msg.sender))revert InvalidConfiguration();
         if(samplePeriod<5 minutes||samplePeriod>1 hours||minReserve==0||minReserve>type(uint112).max)revert InvalidConfiguration();
         period=samplePeriod;minimumPaymentReserve=minReserve;
         _reset();
-        if(IFRCV2(token).priceOracle()==address(this))IFRCV2(token).resetOracleProtection();
+        if(IProjectToken(token).priceOracle()==address(this))IProjectToken(token).resetOracleProtection();
         emit ParametersChanged(samplePeriod,minReserve);
     }
     function resetForActivation() external {
@@ -82,16 +82,16 @@ contract FRCPriceOracleV2 {
         if(pair==address(0))revert NotReady();
         IPancakePairV2 p=IPancakePairV2(pair);
         (uint112 a,uint112 b,uint32 stamp)=p.getReserves();
-        uint256 frcReserve=tokenIsZero?a:b;uint256 usdReserve=tokenIsZero?b:a;
-        if(frcReserve==0||usdReserve<minimumPaymentReserve)revert NotReady();
+        uint256 tokenReserve=tokenIsZero?a:b;uint256 usdReserve=tokenIsZero?b:a;
+        if(tokenReserve==0||usdReserve<minimumPaymentReserve)revert NotReady();
         cumulative=tokenIsZero?p.price0CumulativeLast():p.price1CumulativeLast();
         unchecked {
             uint32 elapsed=uint32(block.timestamp)-stamp;
-            cumulative+=(usdReserve*Q112/frcReserve)*elapsed;
+            cumulative+=(usdReserve*Q112/tokenReserve)*elapsed;
         }
     }
     function start() external {
-        if(pair==address(0)||initialized||IFRCV2(token).priceOracle()!=address(this)||!IFRCV2(token).tradingOpen())revert NotReady();
+        if(pair==address(0)||initialized||IProjectToken(token).priceOracle()!=address(this)||!IProjectToken(token).tradingOpen())revert NotReady();
         lastCumulative=_cumulative();lastSample=block.timestamp;initialized=true;
         emit OracleStarted(block.timestamp);
     }
@@ -125,7 +125,7 @@ contract FRCPriceOracleV2 {
         nextIndex=(nextIndex+1)%CAPACITY;if(count<CAPACITY)count++;
         lastSample=block.timestamp;lastCumulative=cumulative;latestPrice=price;
         uint256 drop=baseline>price&&baseline>0?Math.mulDiv(baseline-price,10000,baseline):0;
-        if(baseline>0)IFRCV2(token).observeDrop(drop);
+        if(baseline>0)IProjectToken(token).observeDrop(drop);
         emit PriceObserved(block.timestamp,price,baseline,drop);
     }
 }

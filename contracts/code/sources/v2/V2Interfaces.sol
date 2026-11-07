@@ -13,7 +13,7 @@ interface IV2LiquidityVault {
     function initialSeeded() external view returns (bool);
     function liquidityInProgress() external view returns (bool);
 }
-interface IFRCV2 {
+interface IProjectToken {
     function sale() external view returns (address);
     function liquidityVault() external view returns (address);
     function priceOracle() external view returns (address);

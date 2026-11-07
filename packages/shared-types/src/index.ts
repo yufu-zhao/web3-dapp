@@ -1,5 +1,6 @@
 // 安装身份是用户端、管理端与业务 API 共用的只读运行配置。
 export interface PublicInstallationConfig {
+  installationStatus: "not_initialized" | "deployment_pending" | "ready";
   chainId: number | null;
   systemName: string;
   tokenName: string;

@@ -5,13 +5,13 @@
         <div class="installer-frame">
           <aside class="sidebar">
             <div class="brand-row">
-              <div class="brand-mark">WD</div>
-              <div>
-                <strong>{{
-                  flow.installation.systemName || "Web3 Dapp"
-                }}</strong
-                ><span>系统安装器</span>
-              </div>
+              <img
+                class="brand-mark"
+                src="/brand/chainforge-mark-transparent.png"
+                alt=""
+                aria-hidden="true"
+              />
+              <div><strong>链构</strong><span>ChainForge 安装器</span></div>
             </div>
             <div class="sidebar-intro">
               <span class="release-label">INSTALLATION</span>
@@ -48,8 +48,7 @@
             <header class="topbar">
               <div>
                 <span class="topbar-label"
-                  >{{ flow.installation.systemName.toUpperCase() }} /
-                  INSTALLATION</span
+                  >链构（CHAINFORGE） / INSTALLATION</span
                 >
                 <p>安装向导 <span>·</span> {{ currentStep }} / 4</p>
               </div>
@@ -64,7 +63,7 @@
             </header>
             <div class="content-scroll"><RouterView /></div>
             <footer class="content-footer">
-              <span>{{ flow.installation.systemName }} Installation</span
+              <span>ChainForge Installation</span
               ><span>安全安装 · 版本 0.1.0</span>
             </footer>
           </main>
@@ -102,9 +101,13 @@ function canOpen(path: string) {
     return (
       flow.environmentReady &&
       flow.databaseReady &&
+      !flow.databaseReinitializing &&
       Boolean(flow.summary.installation)
     );
-  return route.path.startsWith("/complete") || Boolean(flow.selectedDeployment);
+  return (
+    !flow.databaseReinitializing &&
+    (route.path.startsWith("/complete") || Boolean(flow.selectedDeployment))
+  );
 }
 
 function openStep(path: string) {
@@ -163,18 +166,15 @@ onMounted(async () => {
 .brand-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  // gap: 12px;
 }
 .brand-mark {
-  display: grid;
-  width: 42px;
-  height: 42px;
+  display: block;
+  width: 60px;
+  height: 60px;
+  flex: 0 0 auto;
   border-radius: 13px;
-  background: #ffc832;
-  color: #242b38;
-  font-size: 14px;
-  font-weight: 900;
-  place-items: center;
+  object-fit: cover;
 }
 .brand-row strong,
 .brand-row span {

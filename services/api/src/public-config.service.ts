@@ -6,6 +6,7 @@ import {
 import { Pool } from "pg";
 
 interface PublicInstallationConfig {
+  installationStatus: "not_initialized" | "deployment_pending" | "ready";
   chainId: number | null;
   systemName: string;
   tokenName: string;
@@ -28,29 +29,46 @@ export class PublicConfigService implements OnModuleDestroy {
     });
 
     try {
+      const table = await this.pool.query<{ has_system_configs: boolean }>(
+        "SELECT to_regclass('public.system_configs') IS NOT NULL AS has_system_configs",
+      );
+      if (!table.rows[0]?.has_system_configs) {
+        return this.emptyInstallationConfig("not_initialized");
+      }
+
       const result = await this.pool.query<{
         config_key: string;
         config_value: string;
       }>(
-        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('installation_chain_id', 'system_name', 'token_name', 'token_symbol')",
+        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('installed_at', 'installation_chain_id', 'system_name', 'token_name', 'token_symbol')",
       );
       const configs = new Map(
         result.rows.map((item) => [item.config_key, item.config_value]),
       );
+      const initialized = configs.has("installed_at");
+      const chainIdValue = configs.get("installation_chain_id");
+      const chainId = chainIdValue === undefined ? null : Number(chainIdValue);
+      // installed_at 代表数据库初始化，installation_chain_id 代表完整部署与核验。
+      const installationStatus: PublicInstallationConfig["installationStatus"] =
+        !initialized
+          ? "not_initialized"
+          : chainId === null
+            ? "deployment_pending"
+            : "ready";
       const identity: PublicInstallationConfig = {
-        chainId: configs.has("installation_chain_id")
-          ? Number(configs.get("installation_chain_id"))
-          : null,
-        systemName: configs.get("system_name")?.trim() ?? "",
-        tokenName: configs.get("token_name")?.trim() ?? "",
-        tokenSymbol: configs.get("token_symbol")?.trim() ?? "",
+        installationStatus,
+        chainId,
+        systemName: configs.get("system_name")?.trim() || "链构",
+        tokenName: configs.get("token_name")?.trim() || "项目代币",
+        tokenSymbol: configs.get("token_symbol")?.trim() || "TOKEN",
       };
       if (
         (identity.chainId !== null &&
           (!Number.isSafeInteger(identity.chainId) || identity.chainId <= 0)) ||
-        !identity.systemName ||
-        !identity.tokenName ||
-        !identity.tokenSymbol
+        (initialized &&
+          (!configs.get("system_name")?.trim() ||
+            !configs.get("token_name")?.trim() ||
+            !configs.get("token_symbol")?.trim()))
       ) {
         throw new ServiceUnavailableException("安装身份配置尚未完成。");
       }
@@ -63,5 +81,17 @@ export class PublicConfigService implements OnModuleDestroy {
 
   async onModuleDestroy() {
     await this.pool?.end();
+  }
+
+  private emptyInstallationConfig(
+    installationStatus: PublicInstallationConfig["installationStatus"],
+  ): PublicInstallationConfig {
+    return {
+      installationStatus,
+      chainId: null,
+      systemName: "链构",
+      tokenName: "项目代币",
+      tokenSymbol: "TOKEN",
+    };
   }
 }

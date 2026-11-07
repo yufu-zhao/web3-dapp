@@ -1,4 +1,4 @@
--- FileReset 首次安装核心表。新增字段时应同时维护字段注释和表注释。
+-- ChainForge 首次安装核心表。新增字段时应同时维护字段注释和表注释。
 CREATE TABLE IF NOT EXISTS schema_migrations (
   version VARCHAR(32) PRIMARY KEY,
   applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS system_configs (
   description VARCHAR(255) NOT NULL DEFAULT '',
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-COMMENT ON TABLE system_configs IS 'FileReset 系统配置键值表';
+COMMENT ON TABLE system_configs IS 'ChainForge 系统配置键值表';
 COMMENT ON COLUMN system_configs.id IS '系统配置主键';
 COMMENT ON COLUMN system_configs.config_key IS '配置项唯一键，例如 project_id';
 COMMENT ON COLUMN system_configs.config_value IS '配置项文本值';

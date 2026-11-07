@@ -1,8 +1,8 @@
 // 本地默认连接安装服务；部署时可在页面脚本注入自定义服务地址。
 const apiBaseUrl =
   (
-    window as Window & { __FILERESET_INSTALLER_API__?: string }
-  ).__FILERESET_INSTALLER_API__?.replace(/\/$/, "") ?? "http://127.0.0.1:3611";
+    window as Window & { __CHAINFORGE_INSTALLER_API__?: string }
+  ).__CHAINFORGE_INSTALLER_API__?.replace(/\/$/, "") ?? "http://127.0.0.1:3611";
 
 export interface DatabaseSettings {
   host: string;

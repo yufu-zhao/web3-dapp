@@ -1,4 +1,4 @@
-# FRC DApp 角色与权限
+# TOKEN DApp 角色与权限
 
 本文件描述本次**待部署源码版本**的权限模型。`DEFAULT_ADMIN_ROLE` 是唯一授权根，拥有全部角色限制操作，并负责授予/撤销其它角色。其它角色按职责拆分；普通用户操作仍按各业务合约规则执行。
 
@@ -6,24 +6,24 @@
 
 | 角色 | 权限范围 | 初始授权建议 |
 |---|---|---|
-| `DEFAULT_ADMIN_ROLE` | 所有角色限制的管理和运营方法；在抽奖领取合约中可登记批次、暂停和回收资产 | 由部署 `FileResetV2` 的实际交易发送者自动获得；受 `AccessControlDefaultAdminRules` 单一超管和延迟转移规则约束 |
-| `OPERATOR_ROLE` | FRC 主 Pair/Oracle 初次配置、销毁倍数、生态钱包提议、预售轮次排期、初始流动性注入、质押日利率 | 部署时输入初始运营钱包 |
+| `DEFAULT_ADMIN_ROLE` | 所有角色限制的管理和运营方法；在抽奖领取合约中可登记批次、暂停和回收资产 | 由部署 `ProjectToken` 的实际交易发送者自动获得；受 `AccessControlDefaultAdminRules` 单一超管和延迟转移规则约束 |
+| `OPERATOR_ROLE` | TOKEN 主 Pair/Oracle 初次配置、销毁倍数、生态钱包提议、预售轮次排期、初始流动性注入、质押日利率 | 部署时输入初始运营钱包 |
 | `LAUNCH_ROLE` | 安排开盘、结算预售轮次 | 部署时输入初始开盘管理钱包，可与其它角色钱包分开 |
 | `BATCH_REGISTRAR_ROLE` | 登记不可覆盖的抽奖 Merkle-sum 批次 | 部署时输入初始批次登记钱包 |
 | `PAUSER_ROLE` | 暂停/恢复抽奖领取及限价单 | 部署时输入初始应急暂停钱包 |
 
-角色 ID 由 `FileResetV2` 的公开常量读取。所有角色的管理员均为 `DEFAULT_ADMIN_ROLE`。`DEFAULT_ADMIN_ROLE` 通过每个模块的授权检查直接获得其余角色权限；授权 `OPERATOR_ROLE` 不会授予超管权限。
+角色 ID 由 `ProjectToken` 的公开常量读取。所有角色的管理员均为 `DEFAULT_ADMIN_ROLE`。`DEFAULT_ADMIN_ROLE` 通过每个模块的授权检查直接获得其余角色权限；授权 `OPERATOR_ROLE` 不会授予超管权限。
 
 ## 方法权限
 
-- `FileResetV2`：超管可调用所有角色限制管理方法；`OPERATOR_ROLE` 可调用 `configurePair`、首次 `configureOracle`、`setBurnMultiplier`、`proposeEcosystemWallet`；`LAUNCH_ROLE` 可调用 `scheduleLaunch`。Oracle 已配置后的 `configureOracle` 仅超管可调用。
+- `ProjectToken`：超管可调用所有角色限制管理方法；`OPERATOR_ROLE` 可调用 `configurePair`、首次 `configureOracle`、`setBurnMultiplier`、`proposeEcosystemWallet`；`LAUNCH_ROLE` 可调用 `scheduleLaunch`。Oracle 已配置后的 `configureOracle` 仅超管可调用。
 - `FairSaleV2`：超管可调用全部角色限制方法；操作员可调用 `setRoundTimes`、`setRoundEnd`；超管可调用 `configureSaleTerms`、`proposeProceedsWallet`；超管、操作员或启动角色可调用 `finalize`。
 - `StrategicLiquidityVaultV2`：超管可调用全部角色限制方法；操作员可调用 `seedInitialLiquidity`；超管可调用 `proposeFundingWallet`、`unlockStrategic`。`inject` 仅当前 `fundingWallet` 可调用。
-- `FRCRewardVault`：超管可调用 `bindStaking`；注资 `fund` 公开；`pay` 仅绑定的 Staking 合约可调用。
-- `FRCStaking`：超管可调用全部角色限制方法；操作员可调用 `setDailyRate`；超管可调用 `proposeFeeWallet`。
-- `FRCPriceOracleV2`：超管可调用 `configureParameters`；`start`、`sample` 为满足链上条件后任何地址可调用。
-- `FRCLimitOrders`：超管或 `PAUSER_ROLE` 可调用 `pause`、`unpause`；普通用户可创建/执行订单，订单所有者可取消，任何人可触发过期退款（退款只发给订单所有者）。
-- `USDTPrizeClaimVault`：超管可登记批次、暂停/恢复、回收过期批次和未预留余额、提议更换回收钱包；待接受的新钱包可调用 `acceptRecoveryWallet`；`BATCH_REGISTRAR_ROLE` 可登记批次；`PAUSER_ROLE` 可暂停/恢复；任何人可注资；获奖钱包可领取自己的奖励。
+- `TokenRewardVault`：超管可调用 `bindStaking`；注资 `fund` 公开；`pay` 仅绑定的 Staking 合约可调用。
+- `TokenStaking`：超管可调用全部角色限制方法；操作员可调用 `setDailyRate`；超管可调用 `proposeFeeWallet`。
+- `TokenPriceOracle`：超管可调用 `configureParameters`；`start`、`sample` 为满足链上条件后任何地址可调用。
+- `TokenLimitOrders`：超管或 `PAUSER_ROLE` 可调用 `pause`、`unpause`；普通用户可创建/执行订单，订单所有者可取消，任何人可触发过期退款（退款只发给订单所有者）。
+- `PrizeClaimVault`：超管可登记批次、暂停/恢复、回收过期批次和未预留余额、提议更换回收钱包；待接受的新钱包可调用 `acceptRecoveryWallet`；`BATCH_REGISTRAR_ROLE` 可登记批次；`PAUSER_ROLE` 可暂停/恢复；任何人可注资；获奖钱包可领取自己的奖励。
 
 ## 抽奖资金回收边界
 

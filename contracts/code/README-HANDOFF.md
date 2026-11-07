@@ -1,11 +1,11 @@
-# FileReset 合约源码包 0.0.2
+# ChainForge 通用合约源码包 0.1.0
 
-本目录是唯一维护的 FileReset 合约版本。部署顺序、构造参数和部署后核验以 `config/deployment-plan.json` 为准；源码以 `sources/` 为准。
+本目录是唯一维护的 ChainForge 合约版本。部署顺序、构造参数和部署后核验以 `config/deployment-plan.json` 为准；源码以 `sources/` 为准。
 
 ## 当前范围
 
 - 当前提供 BNB Smart Chain Mainnet（chainId 56）和 BNB Smart Chain Testnet（chainId 97）配置候选。
-- 系统名称、代币名和简称在数据库初始化时确认并锁定；用户首次确认部署时，部署页把钱包实际 ChainId 写入 `system_configs`，之后的部署必须匹配该链。对应 `networks/{chainId}.json` 只预填表单默认值。部署者钱包成为 FileResetV2 的初始超管，不使用 `expectedDeployer` 白名单或私钥环境变量。
+- 系统名称、代币名和简称在数据库初始化时确认并锁定；用户首次确认部署时，部署页把钱包实际 ChainId 写入 `system_configs`，之后的部署必须匹配该链。对应 `networks/{chainId}.json` 只预填表单默认值。部署者钱包成为 ProjectToken 的初始超管，不使用 `expectedDeployer` 白名单或私钥环境变量。
 - `operatorWallet` 映射到新版 `operator`。`launch`、`batchRegistrar`、`pauser` 和 `recoveryWallet` 是不同配置项，必须分别填写。
 - `sources/test/MockUSDT.sol` 是公开 mint 的测试支付币。只有 97 配置中的已有支付币地址没有代码，且部署者明确选择时，才可单独部署 MockUSDT 并在本次部署记录中使用新地址。主网禁止此回退。
 - 测试夹具、接口合约和 MockUSDT 不属于主部署计划；部署应用不得只扫描 Solidity 文件就决定部署哪些合约。

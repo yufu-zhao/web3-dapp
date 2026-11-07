@@ -57,10 +57,10 @@ importers:
 
   apps/admin:
     dependencies:
-      '@filereset/shared-types':
+      '@chainforge/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
-      '@filereset/wallet-connect':
+      '@chainforge/wallet-connect':
         specifier: workspace:*
         version: link:../../packages/wallet-connect
       '@quasar/extras':
@@ -88,7 +88,7 @@ importers:
 
   apps/installer:
     dependencies:
-      '@filereset/wallet-connect':
+      '@chainforge/wallet-connect':
         specifier: workspace:*
         version: link:../../packages/wallet-connect
       '@quasar/extras':
@@ -119,10 +119,10 @@ importers:
 
   apps/user:
     dependencies:
-      '@filereset/shared-types':
+      '@chainforge/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
-      '@filereset/wallet-connect':
+      '@chainforge/wallet-connect':
         specifier: workspace:*
         version: link:../../packages/wallet-connect
       '@quasar/extras':

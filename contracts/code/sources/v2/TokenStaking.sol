@@ -4,8 +4,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {IFRCV2} from "./V2Interfaces.sol";
-import {FRCRewardVault} from "./FRCRewardVault.sol";
+import {IProjectToken} from "./V2Interfaces.sol";
+import {TokenRewardVault} from "./TokenRewardVault.sol";
 
 interface IStakingSale {
     function token() external view returns(address);
@@ -15,7 +15,7 @@ interface IStakingSale {
 
 /// @notice Manual principal custody + virtual staking of locked sale entitlements.
 /// No minting, rescue, early sale-principal release, or administrator principal withdrawal.
-contract FRCStaking is ReentrancyGuard {
+contract TokenStaking is ReentrancyGuard {
     using SafeERC20 for IERC20;
     uint256 private constant DENOM=10_000*1 days*100;
     bytes32 private constant OPERATOR_ROLE=keccak256("OPERATOR_ROLE");
@@ -52,19 +52,19 @@ contract FRCStaking is ReentrancyGuard {
 
     constructor(address token_,address sale_,address vault_,address feeWallet_){
         if(token_.code.length==0||sale_.code.length==0||vault_.code.length==0
-            ||IFRCV2(token_).launchTime()!=0
-            ||IStakingSale(sale_).token()!=token_||FRCRewardVault(vault_).token()!=token_
+            ||IProjectToken(token_).launchTime()!=0
+            ||IStakingSale(sale_).token()!=token_||TokenRewardVault(vault_).token()!=token_
             ||feeWallet_==address(0)||feeWallet_==token_||feeWallet_==sale_||feeWallet_==vault_)
             revert InvalidConfiguration();
         token=token_;sale=sale_;rewardVault=vault_;feeWallet=feeWallet_;
         ratePoints.push(RatePoint(block.timestamp,0,60));
     }
     function _admin() internal view {
-        if(!IFRCV2(token).hasRole(bytes32(0),msg.sender))revert Unauthorized();
+        if(!IProjectToken(token).hasRole(bytes32(0),msg.sender))revert Unauthorized();
     }
     function _ready() internal view {
-        if(!IFRCV2(token).tradingOpen()||IFRCV2(token).sale()!=sale
-            ||FRCRewardVault(rewardVault).staking()!=address(this))revert NotReady();
+        if(!IProjectToken(token).tradingOpen()||IProjectToken(token).sale()!=sale
+            ||TokenRewardVault(rewardVault).staking()!=address(this))revert NotReady();
     }
     function ratePointCount() external view returns(uint256){return ratePoints.length;}
     // Integral of basis-points * seconds. Binary search makes historical lookups bounded logarithmically.
@@ -85,7 +85,7 @@ contract FRCStaking is ReentrancyGuard {
             +50*_diff(_max(a,t0),_min(b,t1))+20*_diff(_max(a,t1),_min(b,t2));
     }
     function _numerator(uint256 principal,uint256 allocation,uint256 a,uint256 b) internal view returns(uint256){
-        uint256 start=IFRCV2(token).launchTime();
+        uint256 start=IProjectToken(token).launchTime();
         if(start==0||b<=start)return 0;
         a=_max(a,start);
         return principal*100*_diff(a,b)+allocation*_lockedIndex(a,b,start);
@@ -110,7 +110,7 @@ contract FRCStaking is ReentrancyGuard {
         return totalRewardAccrued+n/DENOM-totalRewardPaid;
     }
     function automaticPrincipal(address account) public view returns(uint256){
-        uint256 start=IFRCV2(token).launchTime();
+        uint256 start=IProjectToken(token).launchTime();
         if(start==0||block.timestamp<start)return 0;
         uint256 elapsed=block.timestamp-start;
         uint256 weight=elapsed>=365 days?0:elapsed>=180 days?20:elapsed>=90 days?50:80;
@@ -119,14 +119,14 @@ contract FRCStaking is ReentrancyGuard {
     // Conservative 30-day maximum-rate coverage for current automatic + manual principal.
     // It is an admission buffer, not a guarantee that future rewards can always be funded.
     function requiredCoverage(uint256 additionalPrincipal) public view returns(uint256){
-        uint256 start=IFRCV2(token).launchTime();uint256 weight;
+        uint256 start=IProjectToken(token).launchTime();uint256 weight;
         if(start!=0&&block.timestamp>=start){uint256 e=block.timestamp-start;weight=e>=365 days?0:e>=180 days?20:e>=90 days?50:80;}
         uint256 principal=totalManualPrincipal+additionalPrincipal+Math.mulDiv(IStakingSale(sale).sold(),weight,100);
         return rewardLiability()+1+Math.mulDiv(principal,MAX_DAILY_RATE_BPS*ADMISSION_COVERAGE_DAYS,10_000,Math.Rounding.Ceil);
     }
     function setDailyRate(uint256 next) external nonReentrant {
         // 超管可管理奖励率；日常运营钱包需单独持有运营角色。
-        if(!IFRCV2(token).hasRole(bytes32(0),msg.sender)&&!IFRCV2(token).hasRole(OPERATOR_ROLE,msg.sender))revert Unauthorized();
+        if(!IProjectToken(token).hasRole(bytes32(0),msg.sender)&&!IProjectToken(token).hasRole(OPERATOR_ROLE,msg.sender))revert Unauthorized();
         if(next<MIN_DAILY_RATE_BPS||next>MAX_DAILY_RATE_BPS)revert InvalidConfiguration();
         _checkpointGlobal();uint256 previous=dailyRateBps;
         uint256 cumulative=_integral(block.timestamp);
@@ -145,7 +145,7 @@ contract FRCStaking is ReentrancyGuard {
     }
     function stake(uint256 amount) external nonReentrant {
         _ready();if(amount==0)revert InvalidAmount();_checkpoint(msg.sender);
-        if(FRCRewardVault(rewardVault).available()<requiredCoverage(amount))revert InsufficientCoverage();
+        if(TokenRewardVault(rewardVault).available()<requiredCoverage(amount))revert InsufficientCoverage();
         uint256 beforeBalance=IERC20(token).balanceOf(address(this));
         accounts[msg.sender].principal+=amount;totalManualPrincipal+=amount;
         IERC20(token).safeTransferFrom(msg.sender,address(this),amount);
@@ -155,7 +155,7 @@ contract FRCStaking is ReentrancyGuard {
     function claimRewards() external nonReentrant {
         _ready();_checkpoint(msg.sender);Account storage u=accounts[msg.sender];
         if(u.credit==0)revert NothingToClaim();uint256 requested=u.credit;
-        u.credit=0;uint256 paid=FRCRewardVault(rewardVault).pay(msg.sender,requested);
+        u.credit=0;uint256 paid=TokenRewardVault(rewardVault).pay(msg.sender,requested);
         u.credit=requested-paid;totalRewardPaid+=paid;emit RewardsClaimed(msg.sender,paid,u.credit);
     }
     // Manual principal exits immediately. The 5% fee applies to principal only; rewards are fee-free.
@@ -179,7 +179,7 @@ contract FRCStaking is ReentrancyGuard {
         if(!e.principalPaid){e.principalPaid=true;principal=e.principal;fee=e.fee;totalExitPrincipal-=principal;
             IERC20(token).safeTransfer(e.owner,principal-fee);if(fee!=0)IERC20(token).safeTransfer(feeWallet,fee);}
         uint256 reward=e.reward;e.reward=0;
-        uint256 paid=FRCRewardVault(rewardVault).pay(e.owner,reward);
+        uint256 paid=TokenRewardVault(rewardVault).pay(e.owner,reward);
         e.reward=reward-paid;totalRewardPaid+=paid;
         emit ExitPaid(id,e.owner,principal,fee,paid,e.reward);
     }

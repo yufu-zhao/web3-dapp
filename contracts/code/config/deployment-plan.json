@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "releaseVersion": "0.0.2",
+  "releaseVersion": "0.1.0",
   "nodes": [
     {
-      "id": "FileResetV2",
-      "contractName": "FileResetV2",
+      "id": "ProjectToken",
+      "contractName": "ProjectToken",
       "kind": "transaction",
       "dependsOn": [],
       "constructorArgs": [
@@ -19,7 +19,7 @@
           "key": "installation.tokenSymbol"
         },
         {
-          "name": "usdt",
+          "name": "paymentToken",
           "source": "formInput",
           "key": "externalAddresses.paymentToken",
           "verificationGetter": "paymentToken"
@@ -93,20 +93,20 @@
           }
         }
       ],
-      "sourcePath": "sources/v2/FileResetV2.sol"
+      "sourcePath": "sources/v2/ProjectToken.sol"
     },
     {
       "id": "FairSaleV2",
       "contractName": "FairSaleV2",
       "kind": "transaction",
       "dependsOn": [
-        "FileResetV2"
+        "ProjectToken"
       ],
       "constructorArgs": [
         {
           "name": "token_",
           "source": "deployedAddress",
-          "nodeId": "FileResetV2",
+          "nodeId": "ProjectToken",
           "verificationGetter": "token"
         },
         {
@@ -119,36 +119,36 @@
       "sourcePath": "sources/v2/FairSaleV2.sol"
     },
     {
-      "id": "FRCRewardVault",
-      "contractName": "FRCRewardVault",
+      "id": "TokenRewardVault",
+      "contractName": "TokenRewardVault",
       "kind": "transaction",
       "dependsOn": [
-        "FileResetV2"
+        "ProjectToken"
       ],
       "constructorArgs": [
         {
           "name": "token_",
           "source": "deployedAddress",
-          "nodeId": "FileResetV2",
+          "nodeId": "ProjectToken",
           "verificationGetter": "token"
         }
       ],
-      "sourcePath": "sources/v2/FRCRewardVault.sol"
+      "sourcePath": "sources/v2/TokenRewardVault.sol"
     },
     {
-      "id": "FRCStaking",
-      "contractName": "FRCStaking",
+      "id": "TokenStaking",
+      "contractName": "TokenStaking",
       "kind": "transaction",
       "dependsOn": [
-        "FileResetV2",
+        "ProjectToken",
         "FairSaleV2",
-        "FRCRewardVault"
+        "TokenRewardVault"
       ],
       "constructorArgs": [
         {
           "name": "token_",
           "source": "deployedAddress",
-          "nodeId": "FileResetV2",
+          "nodeId": "ProjectToken",
           "verificationGetter": "token"
         },
         {
@@ -160,7 +160,7 @@
         {
           "name": "vault_",
           "source": "deployedAddress",
-          "nodeId": "FRCRewardVault",
+          "nodeId": "TokenRewardVault",
           "verificationGetter": "rewardVault"
         },
         {
@@ -170,37 +170,37 @@
           "verificationGetter": "feeWallet"
         }
       ],
-      "sourcePath": "sources/v2/FRCStaking.sol"
+      "sourcePath": "sources/v2/TokenStaking.sol"
     },
     {
-      "id": "FRCTimeLock",
-      "contractName": "FRCTimeLock",
+      "id": "TokenTimeLock",
+      "contractName": "TokenTimeLock",
       "kind": "transaction",
       "dependsOn": [
-        "FileResetV2"
+        "ProjectToken"
       ],
       "constructorArgs": [
         {
           "name": "token_",
           "source": "deployedAddress",
-          "nodeId": "FileResetV2",
+          "nodeId": "ProjectToken",
           "verificationGetter": "token"
         }
       ],
-      "sourcePath": "sources/v2/FRCTimeLock.sol"
+      "sourcePath": "sources/v2/TokenTimeLock.sol"
     },
     {
-      "id": "FRCPriceOracleV2",
-      "contractName": "FRCPriceOracleV2",
+      "id": "TokenPriceOracle",
+      "contractName": "TokenPriceOracle",
       "kind": "transaction",
       "dependsOn": [
-        "FileResetV2"
+        "ProjectToken"
       ],
       "constructorArgs": [
         {
           "name": "token_",
           "source": "deployedAddress",
-          "nodeId": "FileResetV2",
+          "nodeId": "ProjectToken",
           "verificationGetter": "token"
         },
         {
@@ -216,20 +216,20 @@
           "verificationGetter": "minimumPaymentReserve"
         }
       ],
-      "sourcePath": "sources/v2/FRCPriceOracleV2.sol"
+      "sourcePath": "sources/v2/TokenPriceOracle.sol"
     },
     {
-      "id": "FRCLimitOrders",
-      "contractName": "FRCLimitOrders",
+      "id": "TokenLimitOrders",
+      "contractName": "TokenLimitOrders",
       "kind": "transaction",
       "dependsOn": [
-        "FileResetV2"
+        "ProjectToken"
       ],
       "constructorArgs": [
         {
           "name": "token_",
           "source": "deployedAddress",
-          "nodeId": "FileResetV2",
+          "nodeId": "ProjectToken",
           "verificationGetter": "token"
         },
         {
@@ -239,20 +239,20 @@
           "verificationGetter": "router"
         }
       ],
-      "sourcePath": "sources/trading/FRCLimitOrders.sol"
+      "sourcePath": "sources/trading/TokenLimitOrders.sol"
     },
     {
       "id": "StrategicLiquidityVaultV2",
       "contractName": "StrategicLiquidityVaultV2",
       "kind": "transaction",
       "dependsOn": [
-        "FileResetV2"
+        "ProjectToken"
       ],
       "constructorArgs": [
         {
           "name": "token_",
           "source": "deployedAddress",
-          "nodeId": "FileResetV2",
+          "nodeId": "ProjectToken",
           "verificationGetter": "token"
         },
         {
@@ -286,11 +286,11 @@
       "sourcePath": "sources/v2/StrategicLiquidityVaultV2.sol"
     },
     {
-      "id": "USDTPrizeClaimVault",
-      "contractName": "USDTPrizeClaimVault",
+      "id": "PrizeClaimVault",
+      "contractName": "PrizeClaimVault",
       "kind": "transaction",
       "dependsOn": [
-        "FileResetV2"
+        "ProjectToken"
       ],
       "constructorArgs": [
         {
@@ -302,7 +302,7 @@
         {
           "name": "roleControllerAddress",
           "source": "deployedAddress",
-          "nodeId": "FileResetV2",
+          "nodeId": "ProjectToken",
           "verificationGetter": "roleController"
         },
         {
@@ -312,7 +312,7 @@
           "verificationGetter": "recoveryWallet"
         }
       ],
-      "sourcePath": "sources/extensions/USDTPrizeClaimVault.sol"
+      "sourcePath": "sources/extensions/PrizeClaimVault.sol"
     }
   ],
   "postDeploymentActions": [
@@ -320,8 +320,8 @@
       "id": "configureModules",
       "kind": "contractCall",
       "title": "登记预售合约和流动性金库",
-      "description": "将 3,000,000 FRC 分配给预售合约，将 18,000,000 FRC 分配给流动性金库。",
-      "targetNodeId": "FileResetV2",
+      "description": "将 3,000,000 TOKEN 分配给预售合约，将 18,000,000 TOKEN 分配给流动性金库。",
+      "targetNodeId": "ProjectToken",
       "functionName": "configureModules",
       "arguments": [
         {
@@ -341,22 +341,22 @@
         {
           "recipientNodeId": "FairSaleV2",
           "amount": "3000000",
-          "symbol": "FRC"
+          "symbol": "TOKEN"
         },
         {
           "recipientNodeId": "StrategicLiquidityVaultV2",
           "amount": "18000000",
-          "symbol": "FRC"
+          "symbol": "TOKEN"
         }
       ]
     },
     {
       "id": "ensureTradingPair",
       "kind": "getOrCreatePair",
-      "title": "检查或创建 FRC 交易对",
+      "title": "检查或创建 TOKEN 交易对",
       "description": "先读取 Factory.getPair；已存在且 Token/Factory 均匹配时复用，缺失时才请求钱包创建。",
       "dependsOn": [
-        "FileResetV2",
+        "ProjectToken",
         "configureModules"
       ],
       "factoryAbiPath": "external-abi/PancakeV2Factory.json",
@@ -367,7 +367,7 @@
       },
       "tokenA": {
         "source": "deployedAddress",
-        "nodeId": "FileResetV2"
+        "nodeId": "ProjectToken"
       },
       "tokenB": {
         "source": "formInput",
@@ -381,9 +381,9 @@
     {
       "id": "configurePair",
       "kind": "contractCall",
-      "title": "将交易对登记到 FRC 合约",
-      "description": "把已核验的 FRC/支付 Token 交易对写入主合约。",
-      "targetNodeId": "FileResetV2",
+      "title": "将交易对登记到 TOKEN 合约",
+      "description": "把已核验的 TOKEN/支付 Token 交易对写入主合约。",
+      "targetNodeId": "ProjectToken",
       "functionName": "configurePair",
       "arguments": [
         {
@@ -401,7 +401,7 @@
       "kind": "contractCall",
       "title": "为预言机绑定已登记交易对",
       "description": "交易对在主合约登记后，由部署超管将同一交易对绑定到预言机。",
-      "targetNodeId": "FRCPriceOracleV2",
+      "targetNodeId": "TokenPriceOracle",
       "functionName": "configurePair",
       "arguments": [
         {
@@ -412,26 +412,26 @@
       "dependsOn": [
         "configurePair",
         "ensureTradingPair",
-        "FRCPriceOracleV2"
+        "TokenPriceOracle"
       ]
     },
     {
       "id": "configureOracle",
       "kind": "contractCall",
-      "title": "将价格预言机登记到 FRC 合约",
+      "title": "将价格预言机登记到 TOKEN 合约",
       "description": "绑定本版本部署的价格预言机，并由合约重置其启动采样状态。",
-      "targetNodeId": "FileResetV2",
+      "targetNodeId": "ProjectToken",
       "functionName": "configureOracle",
       "arguments": [
         {
           "source": "deployedAddress",
-          "nodeId": "FRCPriceOracleV2"
+          "nodeId": "TokenPriceOracle"
         }
       ],
       "dependsOn": [
         "configureOraclePair",
         "configurePair",
-        "FRCPriceOracleV2"
+        "TokenPriceOracle"
       ]
     },
     {
@@ -439,24 +439,24 @@
       "kind": "contractCall",
       "title": "将质押合约绑定到奖励金库",
       "description": "奖励金库只允许已绑定的质押合约调用奖励支付。",
-      "targetNodeId": "FRCRewardVault",
+      "targetNodeId": "TokenRewardVault",
       "functionName": "bindStaking",
       "arguments": [
         {
           "source": "deployedAddress",
-          "nodeId": "FRCStaking"
+          "nodeId": "TokenStaking"
         }
       ],
       "dependsOn": [
-        "FRCRewardVault",
-        "FRCStaking"
+        "TokenRewardVault",
+        "TokenStaking"
       ]
     }
   ],
   "verificationRules": [
     {
       "id": "sale-module",
-      "targetNodeId": "FileResetV2",
+      "targetNodeId": "ProjectToken",
       "getter": "sale",
       "expected": {
         "source": "deployedAddress",
@@ -465,7 +465,7 @@
     },
     {
       "id": "liquidity-module",
-      "targetNodeId": "FileResetV2",
+      "targetNodeId": "ProjectToken",
       "getter": "liquidityVault",
       "expected": {
         "source": "deployedAddress",
@@ -474,41 +474,41 @@
     },
     {
       "id": "price-oracle-module",
-      "targetNodeId": "FileResetV2",
+      "targetNodeId": "ProjectToken",
       "getter": "priceOracle",
       "expected": {
         "source": "deployedAddress",
-        "nodeId": "FRCPriceOracleV2"
+        "nodeId": "TokenPriceOracle"
       }
     },
     {
       "id": "staking-binding",
-      "targetNodeId": "FRCRewardVault",
+      "targetNodeId": "TokenRewardVault",
       "getter": "staking",
       "expected": {
         "source": "deployedAddress",
-        "nodeId": "FRCStaking"
+        "nodeId": "TokenStaking"
       }
     },
     {
       "id": "primary-pair",
-      "targetNodeId": "FileResetV2",
+      "targetNodeId": "ProjectToken",
       "getter": "primaryPair",
       "expected": {
         "source": "factoryPair",
           "factoryInputPath": "externalAddresses.factory",
-        "tokenANodeId": "FileResetV2",
+        "tokenANodeId": "ProjectToken",
           "tokenBInputPath": "externalAddresses.paymentToken"
       }
     },
     {
       "id": "oracle-pair",
-      "targetNodeId": "FRCPriceOracleV2",
+      "targetNodeId": "TokenPriceOracle",
       "getter": "pair",
       "expected": {
         "source": "factoryPair",
           "factoryInputPath": "externalAddresses.factory",
-        "tokenANodeId": "FileResetV2",
+        "tokenANodeId": "ProjectToken",
           "tokenBInputPath": "externalAddresses.paymentToken"
       }
     }

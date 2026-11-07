@@ -8,7 +8,6 @@
       />
       <WalletConnect
         :project-id="props.projectId"
-        :system-name="props.installation.systemName"
         :chain-id="props.installation.chainId"
         confirm-changes
         :deployment-busy="runningSequence || deployingMock"
@@ -372,13 +371,7 @@
             </p>
           </q-card-section>
           <q-card-section align="right">
-            <q-btn
-              v-close-popup
-              outline
-              color="grey"
-              class="on-left"
-              label="取消"
-            />
+            <q-btn v-close-popup flat color="grey" label="取消" />
             <q-btn
               color="primary"
               unelevated
@@ -403,13 +396,7 @@
             </p>
           </q-card-section>
           <q-card-section align="right">
-            <q-btn
-              v-close-popup
-              outline
-              label="取消"
-              color="grey"
-              class="on-left"
-            />
+            <q-btn v-close-popup flat label="取消" color="grey" />
             <q-btn
               color="primary"
               unelevated
@@ -430,14 +417,15 @@
             </p>
             <code>{{ stepToClear?.transactionHash }}</code>
           </q-card-section>
-          <q-card-actions align="right">
-            <q-btn v-close-popup flat label="返回检查" /><q-btn
+          <q-card-section align="right">
+            <q-btn v-close-popup flat color="grey" label="返回检查" />
+            <q-btn
               color="negative"
               text-color="white"
               label="确认哈希无效并重试"
               @click="confirmClearHash"
             />
-          </q-card-actions>
+          </q-card-section>
         </q-card>
       </q-dialog>
       <q-dialog v-model="unknownTransactionOpen" persistent>
@@ -458,8 +446,8 @@
               Nonce；确认它与本部署无关后再继续。
             </p>
           </q-card-section>
-          <q-card-actions align="right">
-            <q-btn v-close-popup flat label="继续检查" />
+          <q-card-section align="right">
+            <q-btn v-close-popup flat color="grey" label="继续检查" />
             <q-btn
               color="primary"
               unelevated
@@ -470,7 +458,7 @@
               "
               @click="confirmUnknownRetry"
             />
-          </q-card-actions>
+          </q-card-section>
         </q-card>
       </q-dialog>
 
@@ -644,8 +632,8 @@ import {
   type TransactionRequest,
   type TransactionResponse,
 } from "ethers";
-import { WalletConnect } from "@filereset/wallet-connect";
-import type { ConnectedWallet } from "@filereset/wallet-connect";
+import { WalletConnect } from "@chainforge/wallet-connect";
+import type { ConnectedWallet } from "@chainforge/wallet-connect";
 import ContentHeading from "./ContentHeading.vue";
 import InstallerCard from "./InstallerCard.vue";
 import {
@@ -881,7 +869,7 @@ const actionCount = computed(
 );
 function replaceTokenSymbol(value: string) {
   // 计划文案中的默认简称使用本次安装确认的符号显示。
-  return value.replaceAll("FRC", props.installation.tokenSymbol);
+  return value.replaceAll("TOKEN", props.installation.tokenSymbol);
 }
 const minimumReserveRaw = computed(() => {
   const decimals = tokenInfo.value?.decimals ?? 18;
@@ -1924,7 +1912,7 @@ async function resolveRecordedTransaction(
       ],
       provider,
     );
-    const tokenA = String(contracts.value.FileResetV2?.address ?? "");
+    const tokenA = String(contracts.value.ProjectToken?.address ?? "");
     const tokenB = String(configuration.externalAddresses.paymentToken);
     pairAddress.value = String(
       await factory.getFunction("getPair")(tokenA, tokenB),
@@ -2218,9 +2206,9 @@ async function verifyDeployment(
         `${String(rule.id)} 核验失败：实际 ${actual}，预期 ${String(expected)}。`,
       );
   }
-  const main = contracts.value.FileResetV2;
+  const main = contracts.value.ProjectToken;
   const mainNode = packageInfo.value!.plan.nodes.find(
-    (candidate) => candidate.id === "FileResetV2",
+    (candidate) => candidate.id === "ProjectToken",
   );
   const mainArtifact =
     packageInfo.value!.artifacts[mainNode?.contractName ?? ""];

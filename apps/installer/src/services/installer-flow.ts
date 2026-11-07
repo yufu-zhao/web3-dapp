@@ -38,7 +38,7 @@ export const installerFlow = reactive({
   database: {
     host: "127.0.0.1",
     port: 5432,
-    database: "filereset",
+    database: "chainforge",
     username: "postgres",
     password: "",
     ssl: false,
@@ -46,6 +46,7 @@ export const installerFlow = reactive({
   databaseCheck: null as DatabaseCheck | null,
   databaseError: "",
   databaseReady: false,
+  databaseReinitializing: false,
   databaseSettingsSaved: false,
   administrator: {
     username: "admin",
@@ -53,9 +54,9 @@ export const installerFlow = reactive({
   },
   projectId: "",
   installation: {
-    systemName: "FileReset",
-    tokenName: "FileReset",
-    tokenSymbol: "FRC",
+    systemName: "我的 DApp",
+    tokenName: "项目代币",
+    tokenSymbol: "TOKEN",
   } as InstallationIdentityInput,
   passwordPolicy: { ...defaultPasswordPolicy } as AdminPasswordPolicy,
   summary: {} as InstallationSummary,
@@ -110,6 +111,16 @@ export async function bootstrapInstallerFlow() {
         ...config.passwordPolicy,
       };
       installerFlow.summary = summary;
+      if (summary.databaseConnection) {
+        // 用已保存的连接目标预填页面，但不从服务端回传或复原数据库密码。
+        installerFlow.database = {
+          ...installerFlow.database,
+          host: summary.databaseConnection.host,
+          port: summary.databaseConnection.port,
+          database: summary.databaseConnection.database,
+          username: summary.databaseConnection.username,
+        };
+      }
       installerFlow.databaseReady = Boolean(
         summary.installed || config.installed,
       );

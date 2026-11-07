@@ -12,10 +12,10 @@ interface IClaimRoleController {
     function paymentToken() external view returns (address);
 }
 
-/// @title USDTPrizeClaimVault
+/// @title PrizeClaimVault
 /// @notice 为积分抽奖预存固定代币奖励，并让获奖钱包自行领取。
 /// @dev 批次采用 Merkle-sum tree；管理员只能在领取期结束后回收未领取余额。
-contract USDTPrizeClaimVault is Pausable, ReentrancyGuard {
+contract PrizeClaimVault is Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     bytes32 public constant BATCH_REGISTRAR_ROLE = keccak256("BATCH_REGISTRAR_ROLE");

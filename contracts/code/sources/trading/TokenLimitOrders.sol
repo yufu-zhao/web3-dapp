@@ -6,7 +6,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
-interface ILimitFRC is IERC20 {
+interface ILimitToken is IERC20 {
     function paymentToken() external view returns(address);
     function dexFactory() external view returns(address);
     function primaryPair() external view returns(address);
@@ -19,16 +19,16 @@ interface ILimitRouter {
     function swapExactTokensForTokensSupportingFeeOnTransferTokens(uint256,uint256,address[] calldata,address,uint256) external;
 }
 
-/// @notice Fixed-input, all-or-nothing limit orders for one FRC/USDT V2 pool.
+/// @notice Fixed-input, all-or-nothing limit orders for one project-token/payment-token V2 pool.
 /// @dev Output is measured at the owner wallet AFTER token taxes. No keeper fee,
 /// arbitrary call, admin withdrawal, mutable router or principal rescue is exposed.
-contract FRCLimitOrders is ReentrancyGuard, Pausable {
+contract TokenLimitOrders is ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
     bytes32 private constant DEFAULT_ADMIN_ROLE = bytes32(0);
     bytes32 private constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     enum Status { Open, Executed, Cancelled }
     struct Order {address owner;bool buy;Status status;uint64 expiry;uint256 amountIn;uint256 minOut;}
-    ILimitFRC public immutable token;
+    ILimitToken public immutable token;
     IERC20 public immutable paymentToken;
     ILimitRouter public immutable router;
     address public immutable factory;
@@ -47,7 +47,7 @@ contract FRCLimitOrders is ReentrancyGuard, Pausable {
 
     constructor(address token_,address router_) {
         if(token_.code.length==0||router_.code.length==0)revert InvalidConfiguration();
-        token=ILimitFRC(token_);router=ILimitRouter(router_);
+        token=ILimitToken(token_);router=ILimitRouter(router_);
         address pay=token.paymentToken();address f=token.dexFactory();
         if(pay==token_||pay.code.length==0||f.code.length==0||router.factory()!=f)revert InvalidConfiguration();
         paymentToken=IERC20(pay);factory=f;

@@ -1,5 +1,5 @@
 {
-  "name": "@filereset/installer",
+  "name": "@chainforge/installer",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "typecheck": "quasar prepare && vue-tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@filereset/wallet-connect": "workspace:*",
+    "@chainforge/wallet-connect": "workspace:*",
     "@quasar/extras": "^1.16.15",
     "ethers": "^6.15.0",
     "quasar": "^2.35.2",

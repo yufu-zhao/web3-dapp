@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {IFRCV2} from "./V2Interfaces.sol";
+import {IProjectToken} from "./V2Interfaces.sol";
 
 interface IRewardConsumer {
     function token() external view returns(address);
@@ -11,7 +11,7 @@ interface IRewardConsumer {
 }
 
 /// @notice Pre-funded rewards only. No administrator withdrawal or arbitrary payout path.
-contract FRCRewardVault is ReentrancyGuard {
+contract TokenRewardVault is ReentrancyGuard {
     using SafeERC20 for IERC20;
     address public immutable token;
     address public staking;
@@ -27,7 +27,7 @@ contract FRCRewardVault is ReentrancyGuard {
     }
     // One-time binding eliminates an administrator's ability to redirect an existing funded pool.
     function bindStaking(address next) external {
-        if(!IFRCV2(token).hasRole(bytes32(0),msg.sender))revert Unauthorized();
+        if(!IProjectToken(token).hasRole(bytes32(0),msg.sender))revert Unauthorized();
         if(staking!=address(0)||next.code.length==0||IRewardConsumer(next).token()!=token
             ||IRewardConsumer(next).rewardVault()!=address(this))revert InvalidConfiguration();
         staking=next;emit StakingBound(next);

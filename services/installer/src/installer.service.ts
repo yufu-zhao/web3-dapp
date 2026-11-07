@@ -351,8 +351,10 @@ export class InstallerService {
       const configValues = new Map(
         configs.rows.map((item) => [item.config_key, item.config_value]),
       );
+      // 只有写入 installed_at 才算初始化完成；仅能连接数据库不足以解锁后续安装步骤。
+      const initialized = Boolean(configValues.get("installed_at"));
       return {
-        installed: true,
+        installed: initialized,
         database: database.rows[0]?.database_name ?? "",
         databaseConnection: this.databaseSummary,
         administrator: administrator.rows[0]?.username ?? "",

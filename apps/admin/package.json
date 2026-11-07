@@ -1,5 +1,5 @@
 {
-  "name": "@filereset/admin",
+  "name": "@chainforge/admin",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,8 +9,8 @@
     "typecheck": "quasar prepare && vue-tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@filereset/shared-types": "workspace:*",
-    "@filereset/wallet-connect": "workspace:*",
+    "@chainforge/shared-types": "workspace:*",
+    "@chainforge/wallet-connect": "workspace:*",
     "@quasar/extras": "^1.16.15",
     "quasar": "^2.35.2",
     "vue": "^3.5.45",

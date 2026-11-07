@@ -191,7 +191,7 @@ const props = withDefaults(
   }>(),
   {
     projectId: "",
-    systemName: "FileReset",
+    systemName: "链构",
     chainId: null,
     confirmChanges: false,
     deploymentBusy: false,
@@ -238,7 +238,7 @@ let contextRefreshInFlight = false;
 
 const deploymentBusy = computed(() => props.deploymentBusy);
 
-const connectionStorageKey = "filereset.wallet-connection";
+const connectionStorageKey = "chainforge.wallet-connection";
 
 interface StoredWalletSelection {
   walletType: ConnectedWallet["walletType"];
@@ -250,7 +250,7 @@ watch(
   () => [props.projectId, props.systemName, props.chainId] as const,
   ([nextProjectId, nextSystemName, nextChainId]) => {
     projectId.value = nextProjectId ?? "";
-    systemName.value = nextSystemName ?? "FileReset";
+    systemName.value = nextSystemName ?? "链构";
     chainId.value = nextChainId ?? null;
     if (mounted) scheduleRestore(100);
   },

@@ -9,10 +9,17 @@
       输入 PostgreSQL
       连接信息。不存在的数据库会自动创建；已存在且非空时会先列出数据表并要求再次确认。
     </p>
-    <q-banner v-if="flow.databaseReady" class="message-banner success-message">
+    <q-banner
+      v-if="flow.databaseReady && !reinitializeMode"
+      class="message-banner success-message"
+    >
       <template #avatar><q-icon name="task_alt" /></template>数据库
       {{ flow.summary.database }} 已初始化，管理员
       {{ flow.summary.administrator }} 已创建。
+    </q-banner>
+    <q-banner v-if="reinitializeMode" class="message-banner warning-message">
+      <template #avatar><q-icon name="swap_horiz" /></template>
+      正在为新目标数据库重新初始化。原数据库及其数据会保留；目标库已存在管理员时，服务会拒绝覆盖。
     </q-banner>
 
     <InstallerCard class="form-section">
@@ -26,7 +33,7 @@
           dense
           label="数据库主机"
           placeholder="127.0.0.1"
-          :disable="flow.databaseReady"
+          :disable="databaseFieldsDisabled"
         />
         <q-input
           v-model.number="flow.database.port"
@@ -34,15 +41,15 @@
           dense
           type="number"
           label="端口"
-          :disable="flow.databaseReady"
+          :disable="databaseFieldsDisabled"
         />
         <q-input
           v-model="flow.database.database"
           outlined
           dense
           label="数据库名称"
-          placeholder="filereset"
-          :disable="flow.databaseReady"
+          placeholder="chainforge"
+          :disable="databaseFieldsDisabled"
         />
         <q-input
           v-model="flow.database.username"
@@ -50,7 +57,7 @@
           dense
           label="数据库用户"
           placeholder="postgres"
-          :disable="flow.databaseReady"
+          :disable="databaseFieldsDisabled"
         />
         <q-input
           v-model="flow.database.password"
@@ -58,13 +65,13 @@
           dense
           type="password"
           label="数据库密码"
-          :disable="flow.databaseReady"
+          :disable="databaseFieldsDisabled"
         />
         <q-toggle
           v-model="flow.database.ssl"
           label="使用 TLS 连接"
           color="positive"
-          :disable="flow.databaseReady"
+          :disable="databaseFieldsDisabled"
         />
       </div>
       <q-banner
@@ -122,7 +129,7 @@
         icon="lan"
         label="测试数据库连接"
         :loading="checking"
-        :disable="flow.databaseReady"
+        :disable="databaseFieldsDisabled"
         @click="testDatabase"
       />
     </InstallerCard>
@@ -133,7 +140,9 @@
         ><small>ChainId 将在部署完成后从钱包读取并锁定</small>
       </div>
       <q-banner
-        v-if="flow.databaseReady && !flow.summary.installation"
+        v-if="
+          flow.databaseReady && !reinitializeMode && !flow.summary.installation
+        "
         class="message-banner warning-message"
       >
         <template #avatar><q-icon name="lock_reset" /></template>
@@ -147,8 +156,8 @@
           dense
           maxlength="80"
           label="系统名称"
-          hint="显示在用户端、管理端和钱包连接信息中"
-          :disable="flow.databaseReady && Boolean(flow.summary.installation)"
+          hint="部署后显示在用户端和管理后台；安装器品牌固定为链构。"
+          :disable="identityFieldsDisabled"
         />
         <q-input
           v-model="flow.installation.tokenName"
@@ -157,7 +166,7 @@
           maxlength="80"
           label="代币全称"
           hint="写入 ERC-20 name()，部署后不可更改"
-          :disable="flow.databaseReady && Boolean(flow.summary.installation)"
+          :disable="identityFieldsDisabled"
         />
         <q-input
           v-model="flow.installation.tokenSymbol"
@@ -166,7 +175,7 @@
           maxlength="16"
           label="代币简称"
           hint="仅允许字母、数字、点、下划线和短横线"
-          :disable="flow.databaseReady && Boolean(flow.summary.installation)"
+          :disable="identityFieldsDisabled"
         />
         <q-input
           v-model="flow.projectId"
@@ -174,7 +183,7 @@
           dense
           label="WalletConnect project_id（可选）"
           hint="配置后钱包连接组件才会显示 WalletConnect。"
-          :disable="flow.databaseReady"
+          :disable="databaseFieldsDisabled"
         />
       </div>
       <div class="policy-box">
@@ -190,25 +199,32 @@
           min="8"
           max="128"
           step="1"
-          :disable="flow.databaseReady"
+          :disable="databaseFieldsDisabled"
         />
-        <div class="policy-options">
+        <div class="policy-options row">
           <q-checkbox
             v-model="flow.passwordPolicy.requireUppercase"
             label="包含大写字母"
-            :disable="flow.databaseReady"
-          /><q-checkbox
+            :disable="databaseFieldsDisabled"
+            class="col-6 col-sm-3"
+          />
+          <q-checkbox
             v-model="flow.passwordPolicy.requireLowercase"
             label="包含小写字母"
-            :disable="flow.databaseReady"
-          /><q-checkbox
+            :disable="databaseFieldsDisabled"
+            class="col-6 col-sm-3"
+          />
+          <q-checkbox
             v-model="flow.passwordPolicy.requireNumber"
             label="包含数字"
-            :disable="flow.databaseReady"
-          /><q-checkbox
+            :disable="databaseFieldsDisabled"
+            class="col-6 col-sm-3"
+          />
+          <q-checkbox
             v-model="flow.passwordPolicy.requireSymbol"
             label="包含特殊字符"
-            :disable="flow.databaseReady"
+            :disable="databaseFieldsDisabled"
+            class="col-6 col-sm-3"
           />
         </div>
       </div>
@@ -225,7 +241,7 @@
           dense
           label="管理员账号"
           placeholder="admin"
-          :disable="flow.databaseReady"
+          :disable="databaseFieldsDisabled"
         />
         <q-input
           v-model="flow.administrator.password"
@@ -233,7 +249,7 @@
           dense
           type="password"
           label="管理员密码"
-          :disable="flow.databaseReady"
+          :disable="databaseFieldsDisabled"
         />
       </div>
     </InstallerCard>
@@ -247,7 +263,9 @@
         @click="router.push('/environment')"
       />
       <q-btn
-        v-if="flow.databaseReady && flow.summary.installation"
+        v-if="
+          flow.databaseReady && !reinitializeMode && flow.summary.installation
+        "
         color="primary"
         icon-right="arrow_forward"
         label="进入合约部署"
@@ -255,7 +273,25 @@
         @click="router.push('/deploy')"
       />
       <q-btn
-        v-else-if="flow.databaseReady"
+        v-if="flow.databaseReady && !reinitializeMode"
+        outline
+        color="dark"
+        icon="restart_alt"
+        label="更换数据库并重新初始化"
+        @click="beginReinitialize"
+      />
+      <q-btn
+        v-if="reinitializeMode"
+        flat
+        color="dark"
+        icon="close"
+        label="取消更换"
+        @click="cancelReinitialize"
+      />
+      <q-btn
+        v-if="
+          flow.databaseReady && !reinitializeMode && !flow.summary.installation
+        "
         color="primary"
         icon="lock"
         label="保存并锁定安装身份"
@@ -265,7 +301,7 @@
         @click="saveInstallationIdentity"
       />
       <q-btn
-        v-else
+        v-if="!flow.databaseReady || reinitializeMode"
         color="primary"
         icon="database"
         label="初始化数据库并创建管理员"
@@ -294,8 +330,8 @@
             </span>
           </div>
         </q-card-section>
-        <q-card-actions align="right">
-          <q-btn v-close-popup flat label="返回检查" unelevated />
+        <q-card-section align="right">
+          <q-btn v-close-popup flat color="grey" label="返回检查" />
           <q-btn
             color="primary"
             label="确认继续初始化"
@@ -303,7 +339,7 @@
             :loading="initializing"
             @click="initializeDatabase(true)"
           />
-        </q-card-actions>
+        </q-card-section>
       </q-card>
     </q-dialog>
   </section>
@@ -326,6 +362,23 @@ const flow = installerFlow;
 const checking = ref(false);
 const initializing = ref(false);
 const confirmExistingOpen = ref(false);
+const reinitializeMode = ref(false);
+const originalReinitializationSettings = ref<{
+  database: typeof flow.database;
+  installation: typeof flow.installation;
+  administrator: typeof flow.administrator;
+  projectId: string;
+  passwordPolicy: typeof flow.passwordPolicy;
+} | null>(null);
+const databaseFieldsDisabled = computed(
+  () => flow.databaseReady && !reinitializeMode.value,
+);
+const identityFieldsDisabled = computed(
+  () =>
+    flow.databaseReady &&
+    Boolean(flow.summary.installation) &&
+    !reinitializeMode.value,
+);
 const validInstallationIdentity = computed(() =>
   Boolean(
     flow.installation.systemName.trim().length > 0 &&
@@ -377,6 +430,37 @@ async function testDatabase() {
   }
 }
 
+function beginReinitialize() {
+  // 切换后续安装目标时先保存当前表单，取消后可完整恢复原安装上下文。
+  originalReinitializationSettings.value = {
+    database: { ...flow.database },
+    installation: { ...flow.installation },
+    administrator: { ...flow.administrator },
+    projectId: flow.projectId,
+    passwordPolicy: { ...flow.passwordPolicy },
+  };
+  flow.databaseError = "";
+  resetDatabaseCheck();
+  reinitializeMode.value = true;
+  flow.databaseReinitializing = true;
+}
+
+function cancelReinitialize() {
+  const original = originalReinitializationSettings.value;
+  if (original) {
+    flow.database = { ...original.database };
+    flow.installation = { ...original.installation };
+    flow.administrator = { ...original.administrator };
+    flow.projectId = original.projectId;
+    flow.passwordPolicy = { ...original.passwordPolicy };
+  }
+  flow.databaseError = "";
+  resetDatabaseCheck();
+  reinitializeMode.value = false;
+  flow.databaseReinitializing = false;
+  originalReinitializationSettings.value = null;
+}
+
 async function initializeDatabase(confirmedExisting: boolean) {
   if (
     flow.databaseCheck?.exists &&
@@ -417,16 +501,27 @@ async function initializeDatabase(confirmedExisting: boolean) {
     flow.databaseSettingsSaved = result.settingsSaved;
     flow.installation = { ...result.installation };
     flow.summary = {
-      ...flow.summary,
       installed: result.initialized,
       database: result.database,
+      databaseConnection: {
+        host: flow.database.host.trim(),
+        port: flow.database.port,
+        database: flow.database.database.trim(),
+        username: flow.database.username.trim(),
+      },
       administrator: result.administrator,
       installation: result.installation,
+      deployments: [],
       projectId: flow.projectId || null,
       passwordPolicy: { ...flow.passwordPolicy },
       settingsSaved: result.settingsSaved,
       installedAt: new Date().toISOString(),
     };
+    flow.deploymentRecords = [];
+    flow.selectedDeployment = null;
+    reinitializeMode.value = false;
+    flow.databaseReinitializing = false;
+    originalReinitializationSettings.value = null;
     await router.replace("/deploy");
   } catch (error) {
     flow.databaseError = errorMessage(error);
@@ -578,8 +673,6 @@ h2 {
 .policy-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 15px;
-  // padding-top: 4px;
   border: 1px solid #e9edf1;
   border-radius: $generic-border-radius;
 }

@@ -1,6 +1,8 @@
-# FileReset
+# 链构（ChainForge）
 
-FileReset 使用 pnpm workspace 管理用户端、管理后台、可视化安装器、业务 API、安装器服务和共享包。
+链构（ChainForge）使用 pnpm workspace 管理用户端、管理后台、可视化安装器、业务 API、安装器服务和共享包。安装实例可在初始化时自定义系统名称、代币名和简称。
+
+品牌图标与 favicon 源文件位于 `logo/`；三个前端各自的 `public/` 目录包含运行时静态资源副本。合约源码包使用通用项目代币标识，具体名称和简称在安装时配置。
 
 ## 技术结构
 
@@ -59,9 +61,10 @@ FileReset 使用 pnpm workspace 管理用户端、管理后台、可视化安装
 
 - 安装器由 `/environment`、`/database`、`/deploy`、`/complete/:deploymentId` 四个路由组成；内容较长时在主内容区滚动。数据库初始化成功后直接进入合约部署页。
 - 数据库名不存在时，安装服务会检查 CREATEDB 权限并自动创建。目标库已有用户表时，页面先列出表名并二次确认；迁移只补充缺失结构、不删除或覆盖表数据。发现已有管理员时会拒绝再创建首位管理员。
+- 数据库完成初始化后，可切换连接到新的或空数据库重新初始化；原库保留，目标库已有管理员时拒绝覆盖。安装器不提供清空当前库重装。
 - 首个迁移为 `db/migrations/0001_installer_core.sql`，创建管理员、角色、菜单、系统配置和迁移记录表。新增表或字段时必须写字段 `COMMENT` 和表 `COMMENT`，已发布迁移不回写。
 - 初始配置区可保存 WalletConnect `project_id` 和管理员密码策略；密码至少 12 位，复选的字符要求保存到 `system_configs`。选择已有非空数据库时，已存在的同名配置会保留，不被新输入覆盖。创建首位管理员时不要求重复输入密码。
-- 系统名称、主代币全称和简称在数据库初始化前确认并写入 `system_configs`；部署期间 ChainId 只记录在该链的临时部署资料中，全部合约与链上配置成功并完成核验后，安装器才将钱包实际 ChainId 写入 `system_configs`，后续必须使用同一链。存在未完成部署时，安装器要求回到该链和原部署钱包继续。业务 API 的只读 `GET /public/config` 将安装身份提供给前端，用户端和管理端不把每个安装实例的名称编译进静态资源；这些身份配置不写入 `.env`。
+- 系统名称、主代币全称和简称在数据库初始化前确认并写入 `system_configs`；系统名称只作为用户端和管理后台的实例身份展示，安装器品牌固定为链构，钱包连接元数据也使用链构。部署期间 ChainId 只记录在该链的临时部署资料中，全部合约与链上配置成功并完成核验后，安装器才将钱包实际 ChainId 写入 `system_configs`，后续必须使用同一链。存在未完成部署时，安装器要求回到该链和原部署钱包继续。业务 API 的只读 `GET /public/config` 返回 `installationStatus`：`not_initialized`、`deployment_pending` 或 `ready`；用户端和管理端据此区分未初始化、等待部署和完整安装，API 不可用时显示状态读取错误。这些身份配置不写入 `.env`。
 - 合约页直接读取 `contracts/code` 的部署计划、网络默认地址和编译产物，不提供目录选择器。缺少依赖时，点击编译会按 `package-lock.json` 执行 `npm ci`，然后运行 `npm run build`；找不到部署计划时明确提示合约包不存在。
 - DEX 地址按当前 ChainId 读取包内默认值，也允许手动输入；核验会确认 Router 与 Factory 有链上代码，且 `Router.factory()` 与 Factory 一致。支付 Token 使用可手动输入的 QSelect，核验代码、符号和精度。Oracle 最低储备按 Token 单位输入，再按核验到的小数位换算成链上整数。
 - MockUSDT 是公开 mint 的测试币，仅 ChainId 56 主网禁用；其他链由部署者自行确认。部署成功后，部署钱包、时间、ChainId、符号、精度、地址与交易哈希保存在 `contracts/deploy/{ChainId}/tokens.json`。
@@ -70,7 +73,7 @@ FileReset 使用 pnpm workspace 管理用户端、管理后台、可视化安装
 - 点击“连接钱包”后，共享组件弹出方式选择，列出 EIP-6963 与可发现的注入钱包；选项过多时列表可滚动。只有数据库 `system_configs.project_id` 有值时才显示 WalletConnect。部署页会监听并轮询当前账户与网络；检测到切换后暂存新状态，用户确认才同步，切回原状态会自动关闭提示。待确认期间禁止发起新的部署写入。
 - 安装服务默认只监听 `127.0.0.1:3611`。安装初始化后按本文件前述方式加载 `.env` 并重启需要数据库连接的服务。
 - `apps` 与 `services` 的生产构建属于发布流程：先执行 `pnpm typecheck`、`pnpm lint` 和 `pnpm build`，再发布根 `dist/` 产物；安装向导不在目标服务器构建这些应用。合约源码包的编译仍由合约部署页在缺少产物时单独触发。
-- 生产反向代理需将同源 `/api/*` 转发到业务 API 服务；用户端和管理端的 Quasar 开发服务器已将 `/api` 代理到本机 3610 端口。
+- 生产反向代理需将同源 `/api/*` 转发到业务 API 服务；用户端和管理端的 Quasar 开发服务器默认将 `/api` 代理到本机 3610 端口，也可通过 `API_PORT` 修改。
 
 ## Quasar 文档
 

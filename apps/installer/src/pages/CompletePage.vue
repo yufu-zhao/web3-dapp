@@ -78,10 +78,10 @@
           <span class="summary-icon"><q-icon name="badge" /></span>
           <div>
             <small>系统与代币身份</small>
-            <strong>{{ deploymentIdentity.systemName || "FileReset" }}</strong>
+            <strong>{{ deploymentIdentity.systemName || "链构" }}</strong>
             <span
-              >{{ deploymentIdentity.tokenName || "FileReset" }} ·
-              {{ deploymentIdentity.tokenSymbol || "FRC" }}</span
+              >{{ deploymentIdentity.tokenName || "项目代币" }} ·
+              {{ deploymentIdentity.tokenSymbol || "TOKEN" }}</span
             >
           </div>
         </InstallerCard>
@@ -347,7 +347,7 @@ function downloadDeployment() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `filereset-deployment-${deployment.value.chainId}-${deployment.value.deploymentId}.json`;
+  link.download = `chainforge-deployment-${deployment.value.chainId}-${deployment.value.deploymentId}.json`;
   link.click();
   URL.revokeObjectURL(url);
 }

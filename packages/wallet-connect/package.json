@@ -1,5 +1,5 @@
 {
-  "name": "@filereset/wallet-connect",
+  "name": "@chainforge/wallet-connect",
   "version": "0.1.0",
   "private": true,
   "type": "module",

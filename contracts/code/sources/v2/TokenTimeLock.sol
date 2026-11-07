@@ -4,11 +4,11 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {IFRCV2} from "./V2Interfaces.sol";
+import {IProjectToken} from "./V2Interfaces.sol";
 
-/// @notice Independent, non-yielding custody of FRC with user-selected durations in seconds.
+/// @notice Independent, non-yielding custody of TOKEN with user-selected durations in seconds.
 /// No administrator, upgrade, early exit, transfer of ownership, rescue, or discretionary withdrawal.
-contract FRCTimeLock is ReentrancyGuard {
+contract TokenTimeLock is ReentrancyGuard {
     using SafeERC20 for IERC20;
     address public immutable token;
     struct Position {
@@ -35,15 +35,15 @@ contract FRCTimeLock is ReentrancyGuard {
 
     constructor(address token_){
         if(token_.code.length==0||IERC20Metadata(token_).decimals()!=18)revert InvalidConfiguration();
-        // Ensure the configured asset exposes the FRC trading gate; deployment may precede opening.
-        IFRCV2(token_).tradingOpen();
+        // Ensure the configured asset exposes the TOKEN trading gate; deployment may precede opening.
+        IProjectToken(token_).tradingOpen();
         token=token_;
     }
     function positionCount() external view returns(uint256){return positions.length;}
     function ownerPositionCount(address owner) external view returns(uint256){return ownerPositions[owner].length;}
     /// @param duration Positive seconds, not days and not an absolute timestamp.
     function lock(uint256 amount,uint256 duration) external nonReentrant returns(uint256 id){
-        if(!IFRCV2(token).tradingOpen())revert TradingClosed();
+        if(!IProjectToken(token).tradingOpen())revert TradingClosed();
         if(amount==0)revert InvalidAmount();
         if(block.timestamp>type(uint64).max||duration==0||duration>type(uint64).max-block.timestamp)revert InvalidDuration();
         id=positions.length;
