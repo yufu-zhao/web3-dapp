@@ -3,8 +3,24 @@ import type { RouteRecordRaw } from "vue-router";
 const routes: RouteRecordRaw[] = [
   {
     path: "/",
+    component: () => import("../layouts/AdminLayout.vue"),
+    meta: { requiresAuth: true, title: "概览" },
+    children: [
+      {
+        path: "",
+        component: () => import("../pages/OverviewPage.vue"),
+        meta: {
+          title: "概览",
+          icon: "dashboard",
+          keepAliveName: "OverviewPage",
+        },
+      },
+    ],
+  },
+  {
+    path: "/init",
     component: () => import("../pages/IndexPage.vue"),
-    meta: { title: "初始化检查" },
+    meta: { title: "初始化检查", public: true },
   },
   {
     path: "/login",
@@ -19,19 +35,29 @@ const routes: RouteRecordRaw[] = [
       {
         path: "",
         component: () => import("../pages/AdministratorsPage.vue"),
-        meta: { permission: "admins:read", title: "管理员" },
+        meta: {
+          permission: "admins:read",
+          title: "管理员",
+          icon: "admin_panel_settings",
+          keepAliveName: "AdministratorsPage",
+        },
       },
     ],
   },
   {
     path: "/menus",
     component: () => import("../layouts/AdminLayout.vue"),
-    meta: { requiresAuth: true, permission: "menus:read", title: "系统菜单" },
+    meta: { requiresAuth: true, permission: "menus:read", title: "权限菜单" },
     children: [
       {
         path: "",
         component: () => import("../pages/MenusPage.vue"),
-        meta: { permission: "menus:read", title: "系统菜单" },
+        meta: {
+          permission: "menus:read",
+          title: "权限菜单",
+          icon: "account_tree",
+          keepAliveName: "MenusPage",
+        },
       },
     ],
   },
@@ -43,7 +69,29 @@ const routes: RouteRecordRaw[] = [
       {
         path: "",
         component: () => import("../pages/RolesPage.vue"),
-        meta: { permission: "roles:read", title: "角色" },
+        meta: {
+          permission: "roles:read",
+          title: "角色",
+          icon: "badge",
+          keepAliveName: "RolesPage",
+        },
+      },
+    ],
+  },
+  {
+    path: "/presale",
+    component: () => import("../layouts/AdminLayout.vue"),
+    meta: { requiresAuth: true, permission: "presale:read", title: "私募" },
+    children: [
+      {
+        path: "",
+        component: () => import("../pages/PresalePage.vue"),
+        meta: {
+          permission: "presale:read",
+          title: "私募",
+          icon: "payments",
+          keepAliveName: "PresalePage",
+        },
       },
     ],
   },
@@ -59,7 +107,12 @@ const routes: RouteRecordRaw[] = [
       {
         path: "",
         component: () => import("../pages/SettingsPage.vue"),
-        meta: { permission: "settings:read", title: "系统设置" },
+        meta: {
+          permission: "settings:read",
+          title: "系统设置",
+          icon: "tune",
+          keepAliveName: "SettingsPage",
+        },
       },
     ],
   },

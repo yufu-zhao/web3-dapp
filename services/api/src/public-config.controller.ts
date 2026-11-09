@@ -11,6 +11,18 @@ export class PublicConfigController {
     return this.publicConfigService.getInstallationIdentity();
   }
 
+  @Get("wallet-config")
+  @Header("Cache-Control", "no-store")
+  walletConfiguration() {
+    return this.publicConfigService.getWalletConnectConfig();
+  }
+
+  @Get("runtime-contracts")
+  @Header("Cache-Control", "no-store")
+  runtimeContracts() {
+    return this.publicConfigService.getRuntimeContracts();
+  }
+
   @Get("initialization")
   @Header("Cache-Control", "no-store")
   initialization() {

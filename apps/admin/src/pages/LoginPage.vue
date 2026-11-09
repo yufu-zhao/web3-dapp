@@ -5,9 +5,12 @@
       <q-page class="login-page flex flex-center">
         <main class="login-shell">
           <section class="login-brand-panel">
-            <div class="brand-lockup">
-              <span class="brand-symbol">链</span>
-              <span>{{ systemName }} · 管理后台</span>
+            <div>
+              <img
+                src="brand/chainforge-logo-horizontal.svg"
+                alt="logo"
+                height="48px"
+              />
             </div>
             <div class="brand-copy">
               <p class="login-kicker">CHAINFORGE CONTROL</p>
@@ -90,7 +93,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { loadAdminInitializationStatus } from "@filereset/shared-types";
+import { loadAdminInitializationStatus } from "@chainforge/shared-types";
 import { adminRequest, type AdminSessionPayload } from "../services/admin-api";
 import { firstMenuPath, saveAdminSession } from "../services/admin-session";
 
@@ -159,13 +162,7 @@ async function submitLogin() {
 .login-page {
   min-height: 100vh;
   padding: 28px;
-  background:
-    radial-gradient(
-      circle at 12% 14%,
-      rgba(255, 200, 50, 0.16),
-      transparent 28%
-    ),
-    #f1f4f8;
+  background: var(--admin-background);
 }
 
 .login-shell {
@@ -174,9 +171,9 @@ async function submitLogin() {
   width: min(100%, 960px);
   min-height: 580px;
   overflow: hidden;
-  border: 1px solid #e6ebf2;
+  border: 1px solid var(--admin-border);
   border-radius: 26px;
-  background: #fff;
+  background: var(--admin-surface);
   box-shadow: 0 30px 80px rgba(24, 39, 63, 0.14);
 }
 
@@ -208,8 +205,8 @@ async function submitLogin() {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: #ffc832;
-  color: #14213d;
+  background: var(--admin-primary);
+  color: var(--admin-on-primary);
   font-weight: 800;
   place-items: center;
 }
@@ -262,8 +259,12 @@ async function submitLogin() {
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: #fff5d6;
-  color: #a87900;
+  background: color-mix(
+    in srgb,
+    var(--admin-primary) 24%,
+    var(--admin-surface)
+  );
+  color: var(--admin-primary);
   font-size: 23px;
   place-items: center;
 }
@@ -275,13 +276,13 @@ async function submitLogin() {
 
 .form-heading h2 {
   margin: 0;
-  color: #17243b;
+  color: var(--admin-text);
   font-size: 24px;
 }
 
 .form-description {
   margin: 22px 0 28px;
-  color: #77849a;
+  color: var(--admin-muted-text);
   font-size: 13px;
 }
 

@@ -46,7 +46,11 @@ defineProps<{ items: AdminMenu[] }>();
 
 .menu-item-active {
   border-radius: 10px;
-  background: rgba(255, 200, 50, 0.14);
-  color: #ffd867;
+  background: color-mix(
+    in srgb,
+    var(--admin-primary, #ffc832) 18%,
+    transparent
+  );
+  color: var(--admin-primary, #ffd867);
 }
 </style>

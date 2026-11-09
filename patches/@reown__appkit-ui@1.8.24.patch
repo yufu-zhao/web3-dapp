@@ -1,0 +1,25 @@
+diff --git a/dist/esm/src/composites/wui-connect-button/index.js b/dist/esm/src/composites/wui-connect-button/index.js
+index 2161308910b6904423dfc1bd04102fdec609a092..84b7bbbc1549fdb76ed1115b5234e60ed5526a00 100644
+--- a/dist/esm/src/composites/wui-connect-button/index.js
++++ b/dist/esm/src/composites/wui-connect-button/index.js
+@@ -44,13 +44,18 @@ let WuiConnectButton = class WuiConnectButton extends LitElement {
+         };
+         if (!this.loading) {
+             return html ` <wui-text variant=${textVariants[this.size]} color=${colors[this.variant]}>
+-        ${this.text}
++        <!-- 链构兼容补丁：承接 AppKit 上层通过默认插槽传入的 label。 -->
++        <slot>${this.text}</slot>
+       </wui-text>`;
+         }
+         return html `<wui-loading-spinner
+       color=${colors[this.variant]}
+       size=${this.size}
+-    ></wui-loading-spinner>`;
++    ></wui-loading-spinner>
++    <wui-text variant=${textVariants[this.size]} color=${colors[this.variant]}>
++      <!-- 保留原生加载图标，同时显示上层传入的 loadingLabel。 -->
++      <slot></slot>
++    </wui-text>`;
+     }
+ };
+ WuiConnectButton.styles = [resetStyles, elementStyles, styles];

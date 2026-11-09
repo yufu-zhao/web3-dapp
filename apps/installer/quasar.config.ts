@@ -1,15 +1,22 @@
 import { defineConfig } from "#q-app";
 
 export default defineConfig(() => ({
-  productName: '链构',
-  productDescription: 'ChainForge - 安装器',
-  boot: [],
+  productName: "链构",
+  productDescription: "ChainForge - 安装器",
+  boot: ["wallet-kit"],
   css: ["app.scss"],
   extras: ["material-icons"],
   build: {
     vueRouterMode: "history",
     distDir: "../../dist/apps/installer/spa",
     allowOutsideProjectDistDir: true,
+    viteVuePluginOptions: {
+      template: {
+        compilerOptions: {
+          isCustomElement: (tag) => tag.startsWith("appkit-"),
+        },
+      },
+    },
   },
   devServer: {
     host: "127.0.0.1",

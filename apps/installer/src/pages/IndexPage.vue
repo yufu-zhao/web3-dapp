@@ -28,10 +28,10 @@
                 @click="openStep(item.path)"
               >
                 <span class="step-number">0{{ index + 1 }}</span>
-                <span class="step-nav-copy"
-                  ><strong>{{ item.title }}</strong
-                  ><small>{{ item.subtitle }}</small></span
-                >
+                <span class="step-nav-copy">
+                  <strong class="title">{{ item.title }}</strong>
+                  <small>{{ item.subtitle }}</small>
+                </span>
                 <q-icon
                   v-if="route.path.startsWith(item.path)"
                   name="chevron_right"
@@ -346,6 +346,8 @@ onMounted(async () => {
     height: 100dvh;
     min-height: 0;
     grid-template-columns: 1fr;
+    /* 侧栏按导航自身定高，剩余视口交给内容区，避免自动网格把侧栏拉长。 */
+    grid-template-rows: max-content minmax(0, 1fr);
     overflow: auto;
     border: 0;
     border-radius: 0;
@@ -373,9 +375,14 @@ onMounted(async () => {
     width: 28px;
     height: 28px;
   }
-  .step-nav-copy,
   .step-nav-item > .q-icon {
     display: none;
+  }
+  .step-nav-copy {
+    flex: none;
+    > small {
+      display: none;
+    }
   }
   .content-panel {
     min-height: 0;

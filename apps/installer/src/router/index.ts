@@ -24,5 +24,14 @@ export default defineRouter(() => {
     return true;
   });
 
+  // 按当前安装步骤更新浏览器标签，避免空标题时浏览器退回显示网址。
+  router.afterEach((to) => {
+    const pageTitle = to.meta.title;
+    document.title =
+      typeof pageTitle === "string" && pageTitle.length > 0
+        ? `${pageTitle} - 链构安装器`
+        : "链构安装器";
+  });
+
   return router;
 });

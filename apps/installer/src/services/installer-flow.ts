@@ -19,6 +19,7 @@ export interface InstallerEnvironment {
   platform: string;
   architecture: string;
   requiredNode: string;
+  walletConnectConfigured: boolean;
 }
 
 const defaultPasswordPolicy: AdminPasswordPolicy = {
@@ -52,7 +53,7 @@ export const installerFlow = reactive({
     username: "admin",
     password: "",
   },
-  projectId: "",
+  walletConnectConfigured: false,
   installation: {
     systemName: "我的 DApp",
     tokenName: "项目代币",
@@ -82,9 +83,11 @@ export async function bootstrapInstallerFlow() {
         await installerRequest<InstallerEnvironment>("/environment");
       installerFlow.environmentReady =
         installerFlow.environment.status === "ok" &&
-        installerFlow.environment.nodeSupported;
+        installerFlow.environment.nodeSupported &&
+        installerFlow.environment.walletConnectConfigured;
       if (!installerFlow.environmentReady) {
-        installerFlow.environmentError = "服务器运行环境未通过安装器检查。";
+        installerFlow.environmentError =
+          "服务器运行环境或 WALLETCONNECT_PROJECT_ID 配置未通过检查。";
       }
     } catch (error) {
       installerFlow.environmentError = errorMessage(error);
@@ -93,14 +96,14 @@ export async function bootstrapInstallerFlow() {
     try {
       const [config, summary] = await Promise.all([
         installerRequest<{
-          projectId: string | null;
+          walletConnectConfigured: boolean;
           installed: boolean;
           passwordPolicy?: AdminPasswordPolicy;
           installation?: InstallationIdentity | null;
         }>("/config"),
         installerRequest<InstallationSummary>("/summary"),
       ]);
-      installerFlow.projectId = config.projectId ?? "";
+      installerFlow.walletConnectConfigured = config.walletConnectConfigured;
       if (config.installation) {
         installerFlow.installation = { ...config.installation };
       } else if (summary.installation) {

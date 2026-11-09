@@ -128,12 +128,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import {
   loadAdminInitializationStatus,
   type AdminInitializationStatus,
   type PublicInstallationConfig,
-} from "@filereset/shared-types";
+} from "@chainforge/shared-types";
 
 type InitializationState =
   AdminInitializationStatus["state"] | "loading" | "error";
@@ -146,6 +146,8 @@ const installationStatus = computed(
   () => identity.value?.installationStatus ?? null,
 );
 const systemName = computed(() => identity.value?.systemName || "链构");
+// 管理台品牌标记跟随安装配置中的系统名称首字。
+const brandMark = computed(() => systemName.value.slice(0, 1) || "链");
 const tokenName = computed(() => identity.value?.tokenName || "项目代币");
 const tokenSymbol = computed(() => identity.value?.tokenSymbol || "TOKEN");
 const chainLabel = computed(() =>

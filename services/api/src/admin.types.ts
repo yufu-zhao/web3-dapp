@@ -6,13 +6,23 @@ export const ADMIN_PASSWORD_MAX_LENGTH = 1024;
 
 export type AdminPermission =
   | "admins:read"
-  | "admins:write"
+  | "admins:create"
+  | "admins:update"
+  | "admins:delete"
   | "menus:read"
-  | "menus:write"
+  | "menus:update"
   | "roles:read"
-  | "roles:write"
+  | "roles:create"
+  | "roles:update"
+  | "roles:delete"
   | "settings:read"
-  | "settings:write";
+  | "settings:update"
+  | "presale:read"
+  | "presale:terms"
+  | "presale:schedule"
+  | "presale:finalize";
+
+export type AdminMenuType = "directory" | "menu" | "button";
 
 export interface AdminPrincipal {
   id: string;
@@ -29,6 +39,8 @@ export interface AdminMenuNode {
   name: string;
   path: string;
   icon: string;
+  type: AdminMenuType;
+  permissionCode: string | null;
   parentId: string | null;
   sortOrder: number;
   isVisible: boolean;

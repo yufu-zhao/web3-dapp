@@ -1,8 +1,12 @@
 <template>
   <section class="workspace-section">
     <q-banner v-if="successMessage" rounded class="success-banner">
-      <template #avatar><q-icon name="check_circle" /></template
-      >{{ successMessage }}
+      <template #avatar><q-icon name="check_circle" /></template>
+      {{ successMessage }}
+    </q-banner>
+    <q-banner v-if="permissionError" rounded class="warning-banner">
+      <template #avatar><q-icon name="info_outline" /></template>
+      {{ permissionError }}
     </q-banner>
     <AdminDataTable
       title="角色与权限"
@@ -15,7 +19,7 @@
       :page="state.page"
       :page-size="state.pageSize"
       :search="state.search"
-      :allow-create="canWrite"
+      :allow-create="canCreate"
       :empty-label="
         state.search ? '没有匹配的角色' : '暂无角色，请新建一个角色'
       "
@@ -47,8 +51,9 @@
         </div>
       </template>
       <template #actions="{ row }">
-        <div v-if="canWrite" class="row-actions">
+        <div v-if="canUpdate || canDelete" class="row-actions">
           <q-btn
+            v-if="canUpdate"
             flat
             dense
             color="primary"
@@ -57,6 +62,7 @@
             @click="openEdit(row as unknown as AdminRole)"
           />
           <q-btn
+            v-if="canDelete"
             flat
             dense
             color="negative"
@@ -72,7 +78,7 @@
 
     <q-dialog v-model="formOpen" persistent>
       <q-card class="form-dialog">
-        <q-form @submit.prevent="saveRole">
+        <q-form class="dialog-form" @submit.prevent="saveRole">
           <q-card-section class="dialog-heading">
             <div>
               <p class="dialog-kicker">ROLE PERMISSIONS</p>
@@ -107,6 +113,7 @@
               dense
               label="角色名称"
               maxlength="128"
+              :disable="form.code === 'super_admin'"
               :rules="[(value) => Boolean(value) || '请输入角色名称']"
             />
             <q-input
@@ -117,6 +124,7 @@
               autogrow
               label="说明"
               maxlength="500"
+              :disable="form.code === 'super_admin'"
             />
             <div class="permissions-section">
               <div class="permissions-heading">
@@ -131,15 +139,14 @@
               >
                 超级管理员保留全部权限，不能通过此表单更改。
               </q-banner>
-              <q-checkbox
-                v-for="permission in permissionOptions"
-                :key="permission.value"
-                v-model="form.permissions"
-                :val="permission.value"
-                :label="permission.label"
-                :disable="form.code === 'super_admin'"
+              <q-tree
+                v-model:ticked="form.permissions"
+                :nodes="treeNodes"
+                node-key="key"
+                tick-strategy="strict"
+                default-expand-all
                 color="primary"
-                class="permission-checkbox"
+                no-nodes-label="暂无权限"
               />
             </div>
             <q-toggle
@@ -152,8 +159,9 @@
               {{ formError }}
             </q-banner>
           </q-card-section>
-          <q-card-actions align="right" class="dialog-actions">
+          <q-card-section class="dialog-actions">
             <q-btn
+              v-if="form.code !== 'super_admin'"
               flat
               label="取消"
               :disable="saving"
@@ -167,7 +175,7 @@
               label="保存"
               :loading="saving"
             />
-          </q-card-actions>
+          </q-card-section>
         </q-form>
       </q-card>
     </q-dialog>
@@ -186,7 +194,7 @@
             {{ deleteError }}
           </q-banner>
         </q-card-section>
-        <q-card-actions align="right">
+        <q-card-section class="dialog-actions">
           <q-btn
             flat
             label="取消"
@@ -200,7 +208,7 @@
             :loading="deleting"
             @click="deleteRole"
           />
-        </q-card-actions>
+        </q-card-section>
       </q-card>
     </q-dialog>
   </section>
@@ -212,17 +220,27 @@ import AdminDataTable, {
   type AdminTableColumn,
 } from "../components/AdminDataTable.vue";
 import {
+  getPermissionTree,
   createRecord,
   deleteRecord,
   updateRecord,
+  type AdminMenu,
   type AdminRole,
 } from "../services/admin-api";
 import { useAdminPage } from "../services/use-admin-page";
-import { canAccess } from "../services/admin-session";
+import { adminSession, canAccess } from "../services/admin-session";
+
+defineOptions({ name: "RolesPage" });
 
 const { state, load, setSearch, setPage, setPageSize } =
   useAdminPage<AdminRole>("roles");
-const canWrite = computed(() => canAccess("roles:write"));
+const canCreate = computed(
+  () => canAccess("roles:create") && permissionTreeLoaded.value,
+);
+const canUpdate = computed(
+  () => canAccess("roles:update") && permissionTreeLoaded.value,
+);
+const canDelete = computed(() => canAccess("roles:delete"));
 const successMessage = ref("");
 const formOpen = ref(false);
 const deleteOpen = ref(false);
@@ -232,6 +250,9 @@ const editingId = ref<string | null>(null);
 const selectedRole = ref<AdminRole | null>(null);
 const formError = ref("");
 const deleteError = ref("");
+const permissionError = ref("");
+const permissionTreeLoaded = ref(false);
+const permissionTree = ref<AdminMenu[]>([]);
 const activeFilter = ref<boolean | null>(null);
 const statusOptions = [
   { label: "已启用", value: true },
@@ -244,16 +265,48 @@ const form = ref({
   permissions: [] as string[],
   isActive: true,
 });
-const permissionOptions = [
-  { value: "admins:read", label: "查看管理员" },
-  { value: "admins:write", label: "维护管理员" },
-  { value: "menus:read", label: "查看系统菜单" },
-  { value: "menus:write", label: "维护系统菜单" },
-  { value: "roles:read", label: "查看角色" },
-  { value: "roles:write", label: "维护角色" },
-  { value: "settings:read", label: "查看系统设置" },
-  { value: "settings:write", label: "修改系统设置" },
-];
+const permissionOptions = computed(() => {
+  const options: Array<{ value: string; label: string; depth: number }> = [];
+  const visit = (nodes: AdminMenu[], depth: number) => {
+    for (const node of nodes) {
+      if (node.permissionCode) {
+        const kind = node.type === "button" ? "操作" : "访问页面";
+        options.push({
+          value: node.permissionCode,
+          label: `${kind}：${node.name}`,
+          depth,
+        });
+      }
+      visit(node.children ?? [], depth + 1);
+    }
+  };
+  visit(permissionTree.value, 0);
+  return options;
+});
+
+// 保留不可授权的既有权限，避免编辑其他字段时意外移除。
+const treeNodes = computed(() => {
+  const own = adminSession.user?.permissions ?? [];
+  const build = (nodes: AdminMenu[]): object[] =>
+    nodes.map((node) => {
+      const allowed =
+        node.permissionCode &&
+        (own.includes("*") || own.includes(node.permissionCode));
+      return {
+        key: node.permissionCode ?? `directory:${node.id}`,
+        label:
+          node.name +
+          (node.permissionCode && !allowed ? "（超出自身权限）" : ""),
+        icon: node.type === "button" ? "lock_outline" : node.icon || "folder",
+        tickable: Boolean(
+          node.permissionCode && (allowed || form.value.code === "super_admin"),
+        ),
+        disabled: form.value.code === "super_admin",
+        children: build(node.children ?? []),
+      };
+    });
+  return build(permissionTree.value);
+});
 
 const columns: AdminTableColumn[] = [
   { name: "name", label: "角色名称", field: "name", align: "left" },
@@ -293,6 +346,7 @@ function resetFilters() {
 }
 
 function openCreate() {
+  if (!canCreate.value || !permissionTreeLoaded.value) return;
   editingId.value = null;
   form.value = {
     code: "",
@@ -313,7 +367,7 @@ function openEdit(role: AdminRole) {
     name: role.name,
     description: role.description,
     permissions: role.permissions.includes("*")
-      ? permissionOptions.map((item) => item.value)
+      ? permissionOptions.value.map((item) => item.value)
       : [...role.permissions],
     isActive: role.isActive,
   };
@@ -323,7 +377,8 @@ function openEdit(role: AdminRole) {
 }
 
 async function saveRole() {
-  if (!canWrite.value) return;
+  const canSave = editingId.value ? canAccess("roles:update") : canCreate.value;
+  if (!canSave || !permissionTreeLoaded.value) return;
   saving.value = true;
   formError.value = "";
   successMessage.value = "";
@@ -356,7 +411,7 @@ function confirmDelete(role: AdminRole) {
 }
 
 async function deleteRole() {
-  if (!canWrite.value || !selectedRole.value) return;
+  if (!canDelete.value || !selectedRole.value) return;
   deleting.value = true;
   deleteError.value = "";
   try {
@@ -372,7 +427,18 @@ async function deleteRole() {
   }
 }
 
-onMounted(() => void load());
+async function loadPermissionOptions() {
+  permissionError.value = "";
+  try {
+    permissionTree.value = await getPermissionTree();
+    permissionTreeLoaded.value = true;
+  } catch (error) {
+    permissionError.value =
+      error instanceof Error ? error.message : "无法读取角色权限菜单。";
+  }
+}
+
+onMounted(() => void Promise.all([load(), loadPermissionOptions()]));
 </script>
 
 <style lang="scss" scoped>
@@ -385,6 +451,11 @@ onMounted(() => void load());
 .success-banner {
   background: #e9fbf3;
   color: #13734b;
+}
+
+.warning-banner {
+  background: #fff8df;
+  color: #785c0d;
 }
 
 .filter-row {
@@ -414,6 +485,30 @@ onMounted(() => void load());
   width: min(100vw - 32px, 540px);
   max-width: 540px;
   border-radius: 18px;
+}
+
+.form-dialog {
+  max-height: min(90vh, 900px);
+  overflow: hidden;
+}
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  max-height: min(90vh, 900px);
+}
+.dialog-fields {
+  overflow-y: auto;
+  min-height: 0;
+}
+.dialog-heading,
+.dialog-actions {
+  flex: 0 0 auto;
+}
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid #e7ecf3;
 }
 
 .dialog-heading {

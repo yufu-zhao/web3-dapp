@@ -2,7 +2,6 @@
   <section class="step-content">
     <ContractDeploymentPanel
       v-if="flow.summary.installation"
-      :project-id="flow.projectId"
       :installation="flow.summary.installation"
       @completed="onCompleted"
     />

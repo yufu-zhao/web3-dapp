@@ -45,15 +45,11 @@
         <InstallerCard tag="article" class="summary-card">
           <span class="summary-icon"><q-icon name="qr_code_2" /></span>
           <div>
-            <small>WalletConnect</small
+            <small>Reown AppKit</small
             ><strong>{{
-              deployment.configuration?.projectId
-                ? "已配置"
-                : summary.projectId
-                  ? `已配置 · ${summary.projectId.slice(-6)}`
-                  : "未配置"
+              summary.walletConnectConfigured ? "已配置" : "未配置"
             }}</strong
-            ><span>仅 project_id 已配置时显示 WalletConnect 连接方式</span>
+            ><span>Project ID 从根目录 .env 加载，供三个前端共享</span>
           </div>
         </InstallerCard>
         <InstallerCard tag="article" class="summary-card">
@@ -200,13 +196,19 @@
             unelevated
             icon="done_all"
             label="完成安装"
-            @click="finished = true"
+            :loading="finishing"
+            @click="completeInstallation"
           />
         </div>
       </div>
       <q-banner v-if="finished" class="message-banner success-message">
         <template #avatar><q-icon name="task_alt" /></template
-        >安装摘要已确认。部署资料保存在上述 contracts/deploy 目录中。
+        >安装摘要已确认，ChainId、部署 ID 和合约地址已写入
+        runtime_contract_binding。部署资料保存在上述 contracts/deploy 目录中。
+      </q-banner>
+      <q-banner v-if="finishError" class="message-banner error-message">
+        <template #avatar><q-icon name="error_outline" /></template>
+        {{ finishError }}
       </q-banner>
     </template>
   </section>
@@ -234,6 +236,8 @@ const environment = ref<InstallerEnvironment | null>(flow.environment);
 const loading = ref(true);
 const loadError = ref("");
 const finished = ref(false);
+const finishing = ref(false);
+const finishError = ref("");
 const summary = computed(() => flow.summary);
 const contractEntries = computed(() =>
   Object.values(deployment.value?.contracts ?? {}).sort((left, right) =>
@@ -350,6 +354,23 @@ function downloadDeployment() {
   link.download = `chainforge-deployment-${deployment.value.chainId}-${deployment.value.deploymentId}.json`;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+async function completeInstallation() {
+  if (!deployment.value || finishing.value) return;
+  finishing.value = true;
+  finishError.value = "";
+  try {
+    await installerRequest(
+      `/contracts/deployments/${deployment.value.chainId}/${encodeURIComponent(deployment.value.deploymentId)}/activate`,
+      { method: "POST", body: "{}" },
+    );
+    finished.value = true;
+  } catch (error) {
+    finishError.value = errorMessage(error);
+  } finally {
+    finishing.value = false;
+  }
 }
 
 onMounted(() => {

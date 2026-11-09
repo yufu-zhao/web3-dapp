@@ -1,4 +1,7 @@
 import "reflect-metadata";
+import { access } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { NestFactory } from "@nestjs/core";
 import {
   FastifyAdapter,
@@ -6,7 +9,38 @@ import {
 } from "@nestjs/platform-fastify";
 import { AppModule } from "./app.module.js";
 
+async function loadWorkspaceEnvironment() {
+  const starts = [process.cwd(), dirname(fileURLToPath(import.meta.url))];
+  let workspaceRoot: string | undefined;
+  for (const start of starts) {
+    let directory = resolve(start);
+    for (let level = 0; level < 8; level += 1) {
+      try {
+        await access(join(directory, "pnpm-workspace.yaml"));
+        workspaceRoot = directory;
+        break;
+      } catch {
+        directory = dirname(directory);
+      }
+    }
+    if (workspaceRoot) break;
+  }
+  if (!workspaceRoot) return;
+
+  try {
+    // 避免空环境变量阻止 Node 从根目录 .env 读取必填的 AppKit Project ID。
+    if (!process.env.WALLETCONNECT_PROJECT_ID?.trim()) {
+      delete process.env.WALLETCONNECT_PROJECT_ID;
+    }
+    // 安装服务和业务 API 使用同一份根目录 .env 配置。
+    process.loadEnvFile(join(workspaceRoot, ".env"));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+}
+
 async function bootstrap() {
+  await loadWorkspaceEnvironment();
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({ logger: true }),

@@ -1,13 +1,20 @@
 import { defineConfig } from "#q-app";
 
 export default defineConfig(() => ({
-  boot: [],
+  boot: ["theme", "wallet-kit"],
   css: ["app.scss"],
-  extras: ["material-icons"],
+  extras: ["material-icons", "fontawesome-v6"],
   build: {
     vueRouterMode: "history",
     distDir: "../../dist/apps/admin/spa",
     allowOutsideProjectDistDir: true,
+    viteVuePluginOptions: {
+      template: {
+        compilerOptions: {
+          isCustomElement: (tag) => tag.startsWith("appkit-"),
+        },
+      },
+    },
   },
   devServer: {
     host: "127.0.0.1",
@@ -28,7 +35,14 @@ export default defineConfig(() => ({
         primary: "#FFC832",
       },
     },
-    plugins: [],
+    plugins: [
+      "Dialog",
+      "Notify",
+      "Loading",
+      "LocalStorage",
+      "LoadingBar",
+      "AppFullscreen",
+    ],
   },
   animations: [],
 }));

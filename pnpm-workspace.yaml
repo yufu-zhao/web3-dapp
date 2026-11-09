@@ -5,3 +5,6 @@ packages:
 allowBuilds:
   "@parcel/watcher": true
   "@reown/appkit": true
+patchedDependencies:
+  # 恢复原生按钮对 label/loadingLabel 插槽的渲染，升级 AppKit 时需复核此补丁。
+  "@reown/appkit-ui@1.8.24": patches/@reown__appkit-ui@1.8.24.patch

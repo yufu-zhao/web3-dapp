@@ -222,9 +222,9 @@ function onRequest(event: {
 <style lang="scss" scoped>
 .data-card {
   overflow: hidden;
-  border: 1px solid #e3e8ef;
+  border: 1px solid var(--admin-border, #e3e8ef);
   border-radius: 16px;
-  background: #fff;
+  background: var(--admin-surface, #fff);
   box-shadow: 0 10px 28px rgba(23, 43, 77, 0.05);
 }
 
@@ -238,7 +238,7 @@ function onRequest(event: {
 
 .table-heading h2 {
   margin: 0;
-  color: #14213d;
+  color: var(--admin-text, #14213d);
   font-size: 17px;
   font-weight: 700;
 }
@@ -246,7 +246,7 @@ function onRequest(event: {
 .table-heading span {
   display: block;
   margin-top: 5px;
-  color: #79869b;
+  color: var(--admin-muted-text, #79869b);
   font-size: 12px;
 }
 
@@ -276,7 +276,7 @@ function onRequest(event: {
 }
 
 .admin-table {
-  border-top: 1px solid #edf0f5;
+  border-top: 1px solid var(--admin-border, #edf0f5);
 }
 
 .row-actions {

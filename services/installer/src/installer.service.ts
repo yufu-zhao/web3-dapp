@@ -56,15 +56,17 @@ export interface DatabaseCheck {
   tableCount: number;
   tables: string[];
   canCreateDatabase: boolean;
+  existingInstallation?: {
+    administrator: string;
+    installation: InstallationIdentity;
+  };
 }
 
 interface InitializeInput {
   database: DatabaseSettings;
   administrator: { username: string; password: string };
-  projectId?: string;
   installation: InstallationIdentityInput;
   passwordPolicy?: AdminPasswordPolicy;
-  allowExistingNonEmpty?: boolean;
 }
 
 export interface DeploymentRecord {
@@ -87,6 +89,7 @@ interface ContractPackagePlan {
 export class InstallerService {
   private runtimePool?: Pool;
   private databaseSettingsSaved = false;
+  private databaseSettingsSaveAttempted = false;
   private databaseSummary?: {
     host: string;
     port: number;
@@ -110,6 +113,7 @@ export class InstallerService {
       architecture: process.arch,
       availableMemoryBytes: process.availableMemory?.() ?? null,
       requiredNode: ">=22.22.0 <23",
+      walletConnectConfigured: Boolean(this.walletConnectProjectId()),
     };
   }
 
@@ -158,19 +162,142 @@ export class InstallerService {
     }
   }
 
+  async useExistingDatabase(settings?: DatabaseSettings) {
+    if (settings) this.validateDatabaseSettings(settings);
+    const pool = settings
+      ? new Pool(this.createPoolConfig(settings))
+      : await this.getPool();
+    if (!pool) throw new ConflictException("请先检查目标数据库连接。");
+    try {
+      // 跳过只读取并绑定已有安装，不执行迁移、不创建管理员、不覆盖系统配置。
+      const existing = await this.recognizeInstallation(pool);
+      if (!existing) {
+        throw new ConflictException(
+          "目标数据库非空，但未识别到完整的链构安装，请更换数据库。",
+        );
+      }
+      if (settings) {
+        this.databaseSettingsSaveAttempted = true;
+        this.databaseSettingsSaved = await this.persistDatabaseUrl(
+          settings,
+        ).catch(() => false);
+        this.replaceRuntimePool(pool);
+        this.databaseSummary = {
+          host: settings.host.trim(),
+          port: settings.port,
+          database: settings.database.trim(),
+          username: settings.username.trim(),
+        };
+      }
+      return await this.installationSummary();
+    } catch (error) {
+      if (error instanceof ConflictException) throw error;
+      throw new ServiceUnavailableException(this.describeError(error));
+    } finally {
+      if (pool !== this.runtimePool) await pool.end();
+    }
+  }
+
+  private async recognizeInstallation(pool: Pool) {
+    try {
+      // 核心表、首版迁移、管理员和安装身份共同识别，避免仅凭同名表误认其他系统。
+      const tables = await pool.query<{ total: string }>(
+        "SELECT COUNT(*)::text AS total FROM pg_tables WHERE schemaname = 'public' AND tablename = ANY($1::text[])",
+        [
+          [
+            "schema_migrations",
+            "admin_users",
+            "roles",
+            "menus",
+            "system_configs",
+          ],
+        ],
+      );
+      if (Number(tables.rows[0]?.total) !== 5) return undefined;
+      const [migration, admin, configs] = await Promise.all([
+        pool.query(
+          "SELECT 1 FROM public.schema_migrations WHERE version = '0001_installer_core'",
+        ),
+        pool.query<{ username: string }>(
+          "SELECT username FROM public.admin_users ORDER BY id LIMIT 1",
+        ),
+        pool.query<{ config_key: string; config_value: string }>(
+          "SELECT config_key, config_value FROM public.system_configs WHERE config_key IN ('installed_at', 'system_name', 'token_name', 'token_symbol')",
+        ),
+      ]);
+      const values = new Map(
+        configs.rows.map((row) => [row.config_key, row.config_value]),
+      );
+      const installation = this.parseInstallationIdentity(values);
+      if (
+        !migration.rowCount ||
+        !admin.rows[0] ||
+        !values.get("installed_at") ||
+        !installation
+      )
+        return undefined;
+      this.validateInstallationIdentity(installation);
+      installation.chainId =
+        (await this.readRuntimeBinding(pool))?.chainId ?? null;
+      return { administrator: admin.rows[0].username, installation };
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async readRuntimeBinding(pool: Pool) {
+    const table = await pool.query<{ exists: boolean }>(
+      "SELECT to_regclass('public.runtime_contract_binding') IS NOT NULL AS exists",
+    );
+    const result = table.rows[0]?.exists
+      ? await pool.query<{ chain_id: string; deployment_id: string }>(
+          "SELECT chain_id::text, deployment_id FROM runtime_contract_binding WHERE singleton = TRUE",
+        )
+      : { rows: [] as Array<{ chain_id: string; deployment_id: string }> };
+    const row = result.rows[0];
+    if (row) {
+      const chainId = Number(row.chain_id);
+      if (
+        !Number.isSafeInteger(chainId) ||
+        chainId <= 0 ||
+        !row.deployment_id
+      ) {
+        throw new ServiceUnavailableException("生效合约绑定数据无效。");
+      }
+      return { chainId, deploymentId: row.deployment_id };
+    }
+    // 兼容尚未完成回填的旧安装；绑定成功后安装器会删除旧配置键。
+    const legacy = await pool.query<{
+      config_key: string;
+      config_value: string;
+    }>(
+      "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('installation_chain_id', 'deployment_id')",
+    );
+    const values = new Map(
+      legacy.rows.map((item) => [item.config_key, item.config_value]),
+    );
+    const chainId = Number(values.get("installation_chain_id"));
+    if (!Number.isSafeInteger(chainId) || chainId <= 0) return null;
+    const deploymentId = values.get("deployment_id") ?? "";
+    if (deploymentId && !/^[0-9]+-[a-f0-9]{8}$/.test(deploymentId)) {
+      throw new ServiceUnavailableException("生效合约绑定数据无效。");
+    }
+    return { chainId, deploymentId };
+  }
+
   async initialize(input: InitializeInput) {
     this.validateInitializeInput(input);
+    this.validateAdminPassword(
+      input.administrator.password,
+      this.normalizePasswordPolicy(input.passwordPolicy),
+    );
     const databaseState = await this.inspectDatabase(input.database);
-    if (!databaseState.exists) await this.createDatabase(input.database);
-    if (
-      databaseState.exists &&
-      !databaseState.empty &&
-      !input.allowExistingNonEmpty
-    ) {
+    if (databaseState.exists && !databaseState.empty) {
       throw new ConflictException(
-        "目标数据库已有数据，请先检查表清单并确认后再初始化。",
+        "目标数据库非空，不能初始化。链构已有安装请确认后跳过，否则请更换数据库。",
       );
     }
+    if (!databaseState.exists) await this.createDatabase(input.database);
 
     const pool = new Pool(this.createPoolConfig(input.database));
     let client: PoolClient;
@@ -197,6 +324,16 @@ export class InstallerService {
       }
 
       await client.query("BEGIN");
+      // 与迁移共用锁，并再次检查空库，防止检查后被另一安装请求抢先初始化。
+      await client.query("SELECT pg_advisory_xact_lock(4102, 3)");
+      const occupied = await client.query(
+        "SELECT 1 FROM pg_tables WHERE schemaname NOT IN ('pg_catalog', 'information_schema') LIMIT 1",
+      );
+      if (occupied.rowCount) {
+        throw new ConflictException(
+          "目标数据库已非空，请重新检查后选择跳过或更换数据库。",
+        );
+      }
       await this.applyPendingMigrations(client);
 
       const current = await client.query<{ total: string }>(
@@ -256,14 +393,6 @@ export class InstallerService {
         ],
       );
 
-      if (input.projectId?.trim()) {
-        await client.query(
-          `INSERT INTO system_configs (config_key, config_value, description)
-           VALUES ('project_id', $1, 'WalletConnect Cloud 项目 ID')
-           ON CONFLICT (config_key) DO NOTHING`,
-          [input.projectId.trim()],
-        );
-      }
       await client.query(
         `INSERT INTO system_configs (config_key, config_value, description)
          VALUES ('admin_password_policy', $1, '管理员密码强度策略')
@@ -287,12 +416,13 @@ export class InstallerService {
       const settingsSaved = await this.persistDatabaseUrl(input.database).catch(
         () => false,
       );
+      this.databaseSettingsSaveAttempted = true;
       this.databaseSettingsSaved = settingsSaved;
       return {
         initialized: true,
         database: input.database.database,
         administrator: input.administrator.username.trim(),
-        projectIdConfigured: Boolean(input.projectId?.trim()),
+        walletConnectConfigured: Boolean(this.walletConnectProjectId()),
         installation,
         settingsSaved,
       };
@@ -308,14 +438,20 @@ export class InstallerService {
 
   async publicConfig() {
     const pool = await this.getPool();
-    if (!pool) return { projectId: null, installed: false };
+    const projectId = this.walletConnectProjectId();
+    if (!pool) {
+      return {
+        walletConnectConfigured: Boolean(projectId),
+        installed: false,
+      };
+    }
 
     try {
       const result = await pool.query<{
         config_key: string;
         config_value: string;
       }>(
-        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('project_id', 'admin_password_policy', 'installation_chain_id', 'system_name', 'token_name', 'token_symbol')",
+        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('admin_password_policy', 'system_name', 'token_name', 'token_symbol')",
       );
       const installed = await pool.query(
         "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'",
@@ -323,17 +459,31 @@ export class InstallerService {
       const configs = new Map(
         result.rows.map((item) => [item.config_key, item.config_value]),
       );
+      const installation = this.parseInstallationIdentity(configs);
+      if (installation) {
+        installation.chainId =
+          (await this.readRuntimeBinding(pool))?.chainId ?? null;
+      }
       return {
-        projectId: configs.get("project_id") ?? null,
+        walletConnectConfigured: Boolean(projectId),
         passwordPolicy: this.parsePasswordPolicy(
           configs.get("admin_password_policy"),
         ),
-        installation: this.parseInstallationIdentity(configs),
+        installation,
         installed: installed.rowCount === 1,
       };
     } catch {
-      return { projectId: null, installation: null, installed: false };
+      return {
+        walletConnectConfigured: Boolean(projectId),
+        installation: null,
+        installed: false,
+      };
     }
+  }
+
+  walletConnectConfig() {
+    const projectId = this.walletConnectProjectId();
+    return { projectId: projectId || null };
   }
 
   async saveInstallationIdentity(identity: InstallationIdentityInput) {
@@ -370,39 +520,45 @@ export class InstallerService {
     if (!pool) return { installed: false };
 
     try {
-      const [database, administrator, records, configs] = await Promise.all([
-        pool.query<{ database_name: string }>(
-          "SELECT current_database() AS database_name",
-        ),
-        pool.query<{ username: string }>(
-          "SELECT username FROM admin_users ORDER BY id LIMIT 1",
-        ),
-        pool.query<{ config_value: string }>(
-          "SELECT config_value FROM system_configs WHERE config_key = 'deployment_records'",
-        ),
-        pool.query<{ config_key: string; config_value: string }>(
-          "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('project_id', 'admin_password_policy', 'installed_at', 'installation_chain_id', 'system_name', 'token_name', 'token_symbol')",
-        ),
-      ]);
+      const [database, administrator, records, configs, binding] =
+        await Promise.all([
+          pool.query<{ database_name: string }>(
+            "SELECT current_database() AS database_name",
+          ),
+          pool.query<{ username: string }>(
+            "SELECT username FROM admin_users ORDER BY id LIMIT 1",
+          ),
+          pool.query<{ config_value: string }>(
+            "SELECT config_value FROM system_configs WHERE config_key = 'deployment_records'",
+          ),
+          pool.query<{ config_key: string; config_value: string }>(
+            "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('admin_password_policy', 'installed_at', 'system_name', 'token_name', 'token_symbol')",
+          ),
+          this.readRuntimeBinding(pool),
+        ]);
       const configValues = new Map(
         configs.rows.map((item) => [item.config_key, item.config_value]),
       );
       // 只有写入 installed_at 才算初始化完成；仅能连接数据库不足以解锁后续安装步骤。
       const initialized = Boolean(configValues.get("installed_at"));
+      const installation = this.parseInstallationIdentity(configValues);
+      if (installation) installation.chainId = binding?.chainId ?? null;
       return {
         installed: initialized,
         database: database.rows[0]?.database_name ?? "",
         databaseConnection: this.databaseSummary,
         administrator: administrator.rows[0]?.username ?? "",
         deployments: this.parseDeploymentRecords(records.rows[0]?.config_value),
-        projectId: configValues.get("project_id") ?? null,
+        walletConnectConfigured: Boolean(this.walletConnectProjectId()),
         passwordPolicy: this.parsePasswordPolicy(
           configValues.get("admin_password_policy"),
         ),
-        installation: this.parseInstallationIdentity(configValues),
+        installation,
         installedAt: configValues.get("installed_at") ?? null,
-        settingsSaved:
-          this.databaseSettingsSaved || (await this.hasSavedDatabaseUrl()),
+        // 切换保存失败时不能把原目标库的 .env 误报为当前目标已保存。
+        settingsSaved: this.databaseSettingsSaveAttempted
+          ? this.databaseSettingsSaved
+          : await this.hasSavedDatabaseUrl(),
       };
     } catch {
       return { installed: false };
@@ -556,6 +712,25 @@ export class InstallerService {
     return deployment;
   }
 
+  async activateSavedDeployment(chainId: number, deploymentId: string) {
+    const safeChainId = this.validateChainId(chainId);
+    const deployment = await this.getSavedDeployment(safeChainId, deploymentId);
+    if (
+      Number(deployment.chainId) !== safeChainId ||
+      deployment.deploymentId !== deploymentId
+    ) {
+      throw new ConflictException("部署资料与当前网络或部署标识不匹配。");
+    }
+    // 完成页允许对已归档部署幂等登记，修复旧服务版本漏写的数据库配置。
+    const installation = await this.lockCompletedInstallationDeployment(
+      safeChainId,
+      deploymentId,
+      deployment,
+      true,
+    );
+    return { deploymentId, chainId: safeChainId, installation };
+  }
+
   async getPendingDeployment(chainId: number) {
     return (
       (await this.readJsonFile<Record<string, unknown>>(
@@ -638,8 +813,6 @@ export class InstallerService {
     ) {
       throw new ServiceUnavailableException("部署完成资料的链 ID 或状态无效。");
     }
-    // 只有部署与链上核验全部成功后，才将钱包 ChainId 写为正式安装配置。
-    const installation = await this.lockCompletedInstallationChain(safeChainId);
     const deploymentId = `${Date.now()}-${randomBytes(4).toString("hex")}`;
     const directory = join(
       await this.chainDeployDirectory(safeChainId),
@@ -653,18 +826,40 @@ export class InstallerService {
       outputPath,
       completedAt: new Date().toISOString(),
     };
-    await this.writeJsonFile(join(directory, "deployment.json"), saved);
+    const deploymentFile = join(directory, "deployment.json");
+    await this.writeJsonFile(deploymentFile, saved);
+    let installation: InstallationIdentity;
+    try {
+      // 只有归档文件写入成功后，才在同一数据库事务中登记运行时合约绑定。
+      installation = await this.lockCompletedInstallationDeployment(
+        safeChainId,
+        deploymentId,
+        saved,
+        false,
+      );
+    } catch (error) {
+      await rm(directory, { recursive: true, force: true }).catch(
+        () => undefined,
+      );
+      throw error;
+    }
     await this.clearPendingDeployment(safeChainId).catch(() => undefined);
     return { deploymentId, outputPath, deployment: saved, installation };
   }
 
-  private async lockCompletedInstallationChain(chainId: number) {
+  private async lockCompletedInstallationDeployment(
+    chainId: number,
+    deploymentId: string,
+    deployment: Record<string, unknown>,
+    allowLegacyVerification: boolean,
+  ) {
     const pool = await this.getPool();
     if (!pool) throw new ServiceUnavailableException("请先初始化数据库。");
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      // 与后台设置写入共用锁，确保目标链锁定和代币身份修改串行完成。
+      await this.applyPendingMigrations(client);
+      // 与后台设置写入共用锁，确保当前合约绑定和身份设置串行完成。
       await client.query("SELECT pg_advisory_xact_lock(4102, 4)");
       const installed = await client.query(
         "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'",
@@ -676,7 +871,7 @@ export class InstallerService {
         config_key: string;
         config_value: string;
       }>(
-        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('installation_chain_id', 'system_name', 'token_name', 'token_symbol')",
+        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('system_name', 'token_name', 'token_symbol')",
       );
       const configs = new Map(
         current.rows.map((item) => [item.config_key, item.config_value]),
@@ -685,25 +880,113 @@ export class InstallerService {
       if (!identity) {
         throw new ConflictException("请先确认系统名称和代币信息。");
       }
-      if (identity.chainId !== null && identity.chainId !== chainId) {
+      const existingBinding = await client.query<{ chain_id: string }>(
+        "SELECT chain_id::text FROM runtime_contract_binding WHERE singleton = TRUE FOR UPDATE",
+      );
+      const existingChainId = existingBinding.rows[0]
+        ? Number(existingBinding.rows[0].chain_id)
+        : null;
+      if (existingChainId !== null && existingChainId !== chainId) {
         throw new ConflictException(
-          `安装目标链已锁定为 ChainId ${identity.chainId}，当前部署为 ${chainId}。`,
+          `当前合约已绑定 ChainId ${existingChainId}，当前部署为 ${chainId}。`,
         );
       }
+      if (
+        Number(deployment.chainId) !== chainId ||
+        deployment.status !== "complete"
+      ) {
+        throw new ConflictException(
+          "部署归档与当前 ChainId 或完成状态不匹配。",
+        );
+      }
+      const sourceContracts = deployment.contracts;
+      if (
+        !sourceContracts ||
+        typeof sourceContracts !== "object" ||
+        Array.isArray(sourceContracts)
+      ) {
+        throw new ConflictException("部署归档缺少合约地址映射。");
+      }
+      const runtimeContracts: Record<
+        string,
+        { address: string; transactionHash: string | null }
+      > = {};
+      for (const [name, value] of Object.entries(sourceContracts)) {
+        const item = value as Record<string, unknown>;
+        const address = String(item.address ?? "");
+        const transactionHash = String(item.transactionHash ?? "");
+        if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+          throw new ConflictException(`部署归档中的 ${name} 地址无效。`);
+        }
+        runtimeContracts[name] = {
+          address,
+          transactionHash: /^0x[a-fA-F0-9]{64}$/.test(transactionHash)
+            ? transactionHash
+            : null,
+        };
+      }
+      if (!runtimeContracts.ProjectToken || !runtimeContracts.FairSaleV2) {
+        throw new ConflictException("部署归档缺少主代币或预售合约地址。");
+      }
+      const pairAddress = String(deployment.pairAddress ?? "");
+      if (!/^0x[a-fA-F0-9]{40}$/.test(pairAddress)) {
+        throw new ConflictException("部署归档中的交易对地址无效。");
+      }
+      const releaseVersion = String(deployment.releaseVersion ?? "").trim();
+      if (!releaseVersion || releaseVersion.length > 64) {
+        throw new ConflictException("部署归档中的合约发布版本无效。");
+      }
+      const verifiedBlockValue = deployment.verifiedBlockNumber;
+      const verifiedBlock =
+        typeof verifiedBlockValue === "number" &&
+        Number.isSafeInteger(verifiedBlockValue) &&
+        verifiedBlockValue >= 0
+          ? verifiedBlockValue
+          : null;
+      const verifiedBlockHashValue = String(deployment.verifiedBlockHash ?? "");
+      const verifiedBlockHash = /^0x[a-fA-F0-9]{64}$/.test(
+        verifiedBlockHashValue,
+      )
+        ? verifiedBlockHashValue
+        : null;
+      if (
+        !allowLegacyVerification &&
+        (verifiedBlock === null || !verifiedBlockHash)
+      ) {
+        throw new ConflictException(
+          "部署归档缺少最终链上核验证据，请重新核验。",
+        );
+      }
+      // 数据库只保留运行时需要的地址映射和部署核验摘要，不复制完整安装档案。
       await client.query(
-        `INSERT INTO system_configs (config_key, config_value, description)
-         VALUES ('installation_chain_id', $1, '首次完整部署与链上核验成功后锁定的 ChainId')
-         ON CONFLICT (config_key) DO NOTHING`,
-        [String(chainId)],
+        `INSERT INTO runtime_contract_binding (
+           singleton, chain_id, deployment_id, release_version, contracts,
+           pair_address, verified_block, verified_block_hash, bound_at
+         ) VALUES (TRUE, $1, $2, $3, $4::jsonb, $5, $6, $7, NOW())
+         ON CONFLICT (singleton) DO UPDATE
+           SET chain_id = EXCLUDED.chain_id,
+               deployment_id = EXCLUDED.deployment_id,
+               release_version = EXCLUDED.release_version,
+               contracts = EXCLUDED.contracts,
+               pair_address = EXCLUDED.pair_address,
+               verified_block = EXCLUDED.verified_block,
+               verified_block_hash = EXCLUDED.verified_block_hash,
+               bound_at = EXCLUDED.bound_at`,
+        [
+          chainId,
+          deploymentId,
+          releaseVersion,
+          JSON.stringify(runtimeContracts),
+          pairAddress,
+          verifiedBlock,
+          verifiedBlockHash,
+        ],
       );
-      const savedChain = await client.query<{ config_value: string }>(
-        "SELECT config_value FROM system_configs WHERE config_key = 'installation_chain_id'",
+      // 完成绑定后清理由旧版本使用的配置键，ChainId 只保存在运行时绑定表。
+      await client.query(
+        "DELETE FROM system_configs WHERE config_key = ANY($1::text[])",
+        [["installation_chain_id", "deployment_id", "chain_id"]],
       );
-      if (Number(savedChain.rows[0]?.config_value) !== chainId) {
-        throw new ConflictException(
-          `安装目标链已锁定为 ChainId ${savedChain.rows[0]?.config_value}，当前部署为 ${chainId}。`,
-        );
-      }
       await client.query("COMMIT");
       return { ...identity, chainId };
     } catch (error) {
@@ -958,6 +1241,9 @@ export class InstallerService {
         tableCount: tables.length,
         tables,
         canCreateDatabase,
+        existingInstallation: tables.length
+          ? await this.recognizeInstallation(targetPool)
+          : undefined,
       };
     } finally {
       await targetPool.end();
@@ -1018,9 +1304,15 @@ export class InstallerService {
         "首位管理员密码不能为空且最多为 1024 个字符。",
       );
     }
-    if ((input.projectId?.length ?? 0) > 200) {
-      throw new ServiceUnavailableException("WalletConnect 项目 ID 长度无效。");
+    if (!this.walletConnectProjectId()) {
+      throw new ServiceUnavailableException(
+        "缺少必填配置 WALLETCONNECT_PROJECT_ID，请在根目录 .env 中设置并重启安装服务。",
+      );
     }
+  }
+
+  private walletConnectProjectId() {
+    return process.env.WALLETCONNECT_PROJECT_ID?.trim() ?? "";
   }
 
   private validateInstallationIdentity(identity: InstallationIdentityInput) {
@@ -1081,7 +1373,7 @@ export class InstallerService {
       config_key: string;
       config_value: string;
     }>(
-      "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('installation_chain_id', 'system_name', 'token_name', 'token_symbol')",
+      "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('system_name', 'token_name', 'token_symbol')",
     );
     const configs = new Map(
       saved.rows.map((item) => [item.config_key, item.config_value]),
@@ -1096,22 +1388,11 @@ export class InstallerService {
   private parseInstallationIdentity(
     configs: Map<string, string>,
   ): InstallationIdentity | null {
-    const chainIdValue = configs.get("installation_chain_id");
-    const chainId = chainIdValue ? Number(chainIdValue) : null;
     const systemName = configs.get("system_name")?.trim() ?? "";
     const tokenName = configs.get("token_name")?.trim() ?? "";
     const tokenSymbol = configs.get("token_symbol")?.trim() ?? "";
-    if (
-      (chainId !== null &&
-        (!Number.isSafeInteger(chainId) ||
-          chainId <= 0 ||
-          chainId > 999999999)) ||
-      !systemName ||
-      !tokenName ||
-      !tokenSymbol
-    )
-      return null;
-    return { chainId, systemName, tokenName, tokenSymbol };
+    if (!systemName || !tokenName || !tokenSymbol) return null;
+    return { chainId: null, systemName, tokenName, tokenSymbol };
   }
 
   private validateDatabaseSettings(database: DatabaseSettings) {

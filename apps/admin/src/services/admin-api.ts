@@ -1,3 +1,5 @@
+import type { ThemePalettes } from "@chainforge/shared-types";
+
 export interface AdminUser extends Record<string, unknown> {
   id: string;
   username: string;
@@ -24,6 +26,8 @@ export interface AdminMenu extends Record<string, unknown> {
   name: string;
   path: string;
   icon: string;
+  type: "directory" | "menu" | "button";
+  permissionCode: string | null;
   parentId: string | null;
   sortOrder: number;
   isVisible: boolean;
@@ -46,6 +50,10 @@ export interface AdminSessionPayload {
   menus: AdminMenu[];
 }
 
+export function getPermissionTree() {
+  return adminRequest<AdminMenu[]>("/permissions");
+}
+
 export interface PageResult<T> {
   items: T[];
   total: number;
@@ -65,9 +73,9 @@ export interface AdminSettings {
   systemName: string;
   tokenName: string;
   tokenSymbol: string;
-  projectId: string | null;
   passwordPolicy: AdminPasswordPolicy;
   installationChainId: number | null;
+  themePalettes: ThemePalettes;
 }
 
 export class AdminApiError extends Error {
@@ -140,10 +148,7 @@ export function getPage<T>(
   return adminRequest<PageResult<T>>(`/${resource}?${query.toString()}`);
 }
 
-export function createRecord<T>(
-  resource: "users" | "roles" | "menus",
-  value: unknown,
-) {
+export function createRecord<T>(resource: "users" | "roles", value: unknown) {
   return adminRequest<T>(`/${resource}`, {
     method: "POST",
     body: JSON.stringify(value),
@@ -161,10 +166,7 @@ export function updateRecord<T>(
   });
 }
 
-export function deleteRecord(
-  resource: "users" | "roles" | "menus",
-  id: string,
-) {
+export function deleteRecord(resource: "users" | "roles", id: string) {
   return adminRequest<void>(`/${resource}/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });

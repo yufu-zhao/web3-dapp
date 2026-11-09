@@ -89,6 +89,13 @@ const checks = computed(() => {
       ok: environment.nodeSupported,
     },
     {
+      label: "Reown AppKit Project ID",
+      detail: environment.walletConnectConfigured
+        ? "已从根目录 .env 读取"
+        : "请在根目录 .env 设置 WALLETCONNECT_PROJECT_ID 并重启服务",
+      ok: environment.walletConnectConfigured,
+    },
+    {
       label: "运行平台",
       detail: `${environment.platform} · ${environment.architecture}`,
       ok: true,
@@ -103,9 +110,13 @@ async function checkEnvironment() {
     flow.environment =
       await installerRequest<InstallerEnvironment>("/environment");
     flow.environmentReady =
-      flow.environment.status === "ok" && flow.environment.nodeSupported;
+      flow.environment.status === "ok" &&
+      flow.environment.nodeSupported &&
+      flow.environment.walletConnectConfigured;
     if (!flow.environmentReady)
-      flow.environmentError = "运行环境版本不符合安装要求。";
+      flow.environmentError = flow.environment.walletConnectConfigured
+        ? "运行环境版本不符合安装要求。"
+        : "请先配置 WALLETCONNECT_PROJECT_ID 并重启服务。";
   } catch (error) {
     flow.environmentReady = false;
     flow.environmentError = errorMessage(error);

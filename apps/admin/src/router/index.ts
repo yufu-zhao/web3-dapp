@@ -1,12 +1,7 @@
 import { defineRouter } from "#q-app";
 import { createRouter, createWebHistory } from "vue-router";
-import { loadAdminInitializationStatus } from "@filereset/shared-types";
-import { AdminApiError } from "../services/admin-api";
-import {
-  canAccess,
-  firstMenuPath,
-  loadAdminSession,
-} from "../services/admin-session";
+import { loadAdminInitializationStatus } from "@chainforge/shared-types";
+import { canAccess, loadAdminSession } from "../services/admin-session";
 import routes from "./routes";
 
 export default defineRouter(() => {
@@ -17,22 +12,28 @@ export default defineRouter(() => {
   });
 
   router.beforeEach(async (to) => {
-    let ready = false;
+    let ready: boolean;
     try {
       ready = (await loadAdminInitializationStatus()).state === "ready";
     } catch {
       // 安装状态无法读取时回到初始化页，由页面显示具体错误并提供重试。
-      return to.path === "/" ? true : "/";
+      return to.path === "/init" ? true : "/init";
     }
 
-    if (!ready) return to.path === "/" ? true : "/";
+    if (!ready) return to.path === "/init" ? true : "/init";
+
+    if (to.path === "/init") {
+      try {
+        return (await loadAdminSession()) ? "/" : "/login";
+      } catch {
+        return "/login";
+      }
+    }
 
     if (to.path === "/") {
       try {
         const session = await loadAdminSession();
-        return session
-          ? (firstMenuPath(session.menus) ?? "/forbidden")
-          : "/login";
+        return session ? true : { path: "/login", query: { redirect: "/" } };
       } catch {
         return "/login";
       }
@@ -41,7 +42,7 @@ export default defineRouter(() => {
     if (to.path === "/login") {
       try {
         const session = await loadAdminSession();
-        return session ? (firstMenuPath(session.menus) ?? "/forbidden") : true;
+        return session ? "/" : true;
       } catch {
         return true;
       }
@@ -59,8 +60,7 @@ export default defineRouter(() => {
         return "/forbidden";
       }
       return true;
-    } catch (error) {
-      if (error instanceof AdminApiError) return "/login";
+    } catch {
       return "/login";
     }
   });

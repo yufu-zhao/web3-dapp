@@ -20,7 +20,7 @@
       :page="state.page"
       :page-size="state.pageSize"
       :search="state.search"
-      allow-create
+      :allow-create="canCreate"
       :empty-label="state.search ? '没有匹配的管理员' : '尚未创建管理员账号'"
       @refresh="load"
       @create="openCreate"
@@ -60,8 +60,9 @@
         </div>
       </template>
       <template #actions="{ row }">
-        <div v-if="canWrite" class="row-actions">
+        <div v-if="canUpdate || canDelete" class="row-actions">
           <q-btn
+            v-if="canUpdate"
             flat
             dense
             color="primary"
@@ -70,6 +71,7 @@
             @click="openEdit(row as unknown as AdminUser)"
           />
           <q-btn
+            v-if="canDelete"
             flat
             dense
             color="negative"
@@ -207,9 +209,13 @@ import {
 import { useAdminPage } from "../services/use-admin-page";
 import { canAccess } from "../services/admin-session";
 
+defineOptions({ name: "AdministratorsPage" });
+
 const { state, load, setSearch, setPage, setPageSize } =
   useAdminPage<AdminUser>("users");
-const canWrite = computed(() => canAccess("admins:write"));
+const canCreate = computed(() => canAccess("admins:create"));
+const canUpdate = computed(() => canAccess("admins:update"));
+const canDelete = computed(() => canAccess("admins:delete"));
 const roleOptions = ref<Array<{ label: string; value: string }>>([]);
 const passwordPolicy = ref<AdminPasswordPolicy>({
   minimumLength: 12,
@@ -358,7 +364,8 @@ function openEdit(user: AdminUser) {
 }
 
 async function saveUser() {
-  if (!canWrite.value || validatePassword(form.value.password) !== true) return;
+  const canSave = editingId.value ? canUpdate.value : canCreate.value;
+  if (!canSave || validatePassword(form.value.password) !== true) return;
   saving.value = true;
   formError.value = "";
   successMessage.value = "";
@@ -394,7 +401,7 @@ function confirmDelete(user: AdminUser) {
 }
 
 async function deleteUser() {
-  if (!canWrite.value || !selectedUser.value) return;
+  if (!canDelete.value || !selectedUser.value) return;
   deleting.value = true;
   deleteError.value = "";
   try {

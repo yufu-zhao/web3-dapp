@@ -1,13 +1,20 @@
 import { defineConfig } from "#q-app";
 
 export default defineConfig(() => ({
-  boot: [],
+  boot: ["theme", "wallet-kit"],
   css: ["app.scss"],
   extras: ["material-icons"],
   build: {
     vueRouterMode: "history",
     distDir: "../../dist/apps/user/spa",
     allowOutsideProjectDistDir: true,
+    viteVuePluginOptions: {
+      template: {
+        compilerOptions: {
+          isCustomElement: (tag) => tag.startsWith("appkit-"),
+        },
+      },
+    },
   },
   devServer: {
     host: "127.0.0.1",

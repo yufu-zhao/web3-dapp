@@ -4,6 +4,7 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  Header,
   Param,
   Post,
   Query,
@@ -44,9 +45,27 @@ export class InstallerController {
     return this.installerService.migrateDatabase();
   }
 
+  @Post("database/use-existing")
+  useExistingDatabase(
+    @Req() request: FastifyRequest,
+    @Body() body: { database?: DatabaseSettings },
+  ) {
+    // 切换本机安装目标会保存连接凭据，只允许本机安装器发起。
+    if (!isLoopbackAddress(request.ip)) {
+      throw new ForbiddenException("使用已有数据库仅允许本机安装器调用。");
+    }
+    return this.installerService.useExistingDatabase(body.database);
+  }
+
   @Get("config")
   publicConfig() {
     return this.installerService.publicConfig();
+  }
+
+  @Get("wallet-config")
+  @Header("Cache-Control", "no-store")
+  walletConfig() {
+    return this.installerService.walletConnectConfig();
   }
 
   @Post("config/installation")
@@ -102,6 +121,17 @@ export class InstallerController {
     @Body() body: Record<string, unknown>,
   ) {
     return this.installerService.saveCompletedDeployment(Number(chainId), body);
+  }
+
+  @Post("contracts/deployments/:chainId/:deploymentId/activate")
+  activateSavedDeployment(
+    @Param("chainId") chainId: string,
+    @Param("deploymentId") deploymentId: string,
+  ) {
+    return this.installerService.activateSavedDeployment(
+      Number(chainId),
+      deploymentId,
+    );
   }
 
   @Get("contracts/pending")

@@ -22,6 +22,28 @@ import type { AdminRequest } from "./admin.types.js";
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  // 在钱包请求前重新核验后台会话权限；链上角色仍由合约独立校验。
+  @Get("presale/authorize/terms")
+  @Header("Cache-Control", "no-store")
+  @RequireAdminPermission("presale:terms")
+  authorizePresaleTerms() {
+    return { allowed: true };
+  }
+
+  @Get("presale/authorize/schedule")
+  @Header("Cache-Control", "no-store")
+  @RequireAdminPermission("presale:schedule")
+  authorizePresaleSchedule() {
+    return { allowed: true };
+  }
+
+  @Get("presale/authorize/finalize")
+  @Header("Cache-Control", "no-store")
+  @RequireAdminPermission("presale:finalize")
+  authorizePresaleFinalize() {
+    return { allowed: true };
+  }
+
   @Get("users")
   @Header("Cache-Control", "no-store")
   @RequireAdminPermission("admins:read")
@@ -30,13 +52,13 @@ export class AdminController {
   }
 
   @Post("users")
-  @RequireAdminPermission("admins:write")
+  @RequireAdminPermission("admins:create")
   createUser(@Body() body: unknown) {
     return this.adminService.createUser(body);
   }
 
   @Patch("users/:id")
-  @RequireAdminPermission("admins:write")
+  @RequireAdminPermission("admins:update")
   updateUser(
     @Param("id") id: string,
     @Body() body: unknown,
@@ -46,7 +68,7 @@ export class AdminController {
   }
 
   @Delete("users/:id")
-  @RequireAdminPermission("admins:write")
+  @RequireAdminPermission("admins:delete")
   deleteUser(@Param("id") id: string, @Req() request: AdminRequest) {
     return this.adminService.deleteUser(id, request.adminPrincipal!.id);
   }
@@ -58,20 +80,38 @@ export class AdminController {
     return this.adminService.listRoles(query);
   }
 
+  @Get("permissions")
+  @Header("Cache-Control", "no-store")
+  @RequireAdminPermission("roles:read")
+  listRolePermissions() {
+    return this.adminService.listPermissionTree();
+  }
+
   @Post("roles")
-  @RequireAdminPermission("roles:write")
-  createRole(@Body() body: unknown) {
-    return this.adminService.createRole(body);
+  @RequireAdminPermission("roles:create")
+  createRole(@Body() body: unknown, @Req() request: AdminRequest) {
+    return this.adminService.createRole(
+      body,
+      request.adminPrincipal!.permissions,
+    );
   }
 
   @Patch("roles/:id")
-  @RequireAdminPermission("roles:write")
-  updateRole(@Param("id") id: string, @Body() body: unknown) {
-    return this.adminService.updateRole(id, body);
+  @RequireAdminPermission("roles:update")
+  updateRole(
+    @Param("id") id: string,
+    @Body() body: unknown,
+    @Req() request: AdminRequest,
+  ) {
+    return this.adminService.updateRole(
+      id,
+      body,
+      request.adminPrincipal!.permissions,
+    );
   }
 
   @Delete("roles/:id")
-  @RequireAdminPermission("roles:write")
+  @RequireAdminPermission("roles:delete")
   deleteRole(@Param("id") id: string) {
     return this.adminService.deleteRole(id);
   }
@@ -83,22 +123,10 @@ export class AdminController {
     return this.adminService.listMenus(query);
   }
 
-  @Post("menus")
-  @RequireAdminPermission("menus:write")
-  createMenu(@Body() body: unknown) {
-    return this.adminService.createMenu(body);
-  }
-
   @Patch("menus/:id")
-  @RequireAdminPermission("menus:write")
+  @RequireAdminPermission("menus:update")
   updateMenu(@Param("id") id: string, @Body() body: unknown) {
     return this.adminService.updateMenu(id, body);
-  }
-
-  @Delete("menus/:id")
-  @RequireAdminPermission("menus:write")
-  deleteMenu(@Param("id") id: string) {
-    return this.adminService.deleteMenu(id);
   }
 
   @Get("settings")
@@ -109,7 +137,7 @@ export class AdminController {
   }
 
   @Patch("settings")
-  @RequireAdminPermission("settings:write")
+  @RequireAdminPermission("settings:update")
   updateSettings(@Body() body: unknown) {
     return this.adminService.updateSettings(body);
   }

@@ -1,20 +1,19 @@
 {
-    "params": {
-        "icon": "public/brand/chainforge-mark-transparent.png"
+  "params": {
+    "icon": "public/brand/chainforge-mark-transparent.png"
+  },
+  "assets": [
+    {
+      "generator": "png",
+      "name": "favicon-{size}x{size}.png",
+      "folder": "public/icons",
+      "sizes": [16, 32, 96, 128, 256],
+      "tag": "<link rel=\"icon\" type=\"image/png\" sizes=\"{size}x{size}\" href=\"icons/{name}\">"
     },
-    "assets": [
-        {
-            "generator": "png",
-            "name": "favicon-{size}x{size}.png",
-            "folder": "public/icons",
-            "sizes": [
-                16,
-                32,
-                96,
-                128,
-                256
-            ],
-            "tag": "<link rel=\"icon\" type=\"image/png\" sizes=\"{size}x{size}\" href=\"icons/{name}\">"
-        }
-    ]
+    {
+      "generator": "ico",
+      "name": "favicon.ico",
+      "folder": "public"
+    }
+  ]
 }

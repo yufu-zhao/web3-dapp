@@ -7,8 +7,6 @@
         :icon="{ icon: 'gavel', color: 'teal-1', textColor: 'teal-9' }"
       />
       <WalletConnect
-        :project-id="props.projectId"
-        :chain-id="props.installation.chainId"
         confirm-changes
         :deployment-busy="runningSequence || deployingMock"
         @connected="onWalletConnected"
@@ -632,7 +630,7 @@ import {
   type TransactionRequest,
   type TransactionResponse,
 } from "ethers";
-import { WalletConnect } from "@chainforge/wallet-connect";
+import WalletConnect from "./WalletConnect.vue";
 import type { ConnectedWallet } from "@chainforge/wallet-connect";
 import ContentHeading from "./ContentHeading.vue";
 import InstallerCard from "./InstallerCard.vue";
@@ -757,6 +755,8 @@ interface PendingDeployment {
   configuration?: DeploymentConfiguration;
   contracts?: Record<string, DeploymentContract>;
   pairAddress?: string;
+  verifiedBlockNumber?: number;
+  verifiedBlockHash?: string;
   steps?: LocalStep[];
 }
 interface StepResult {
@@ -767,7 +767,6 @@ interface StepResult {
 }
 
 const props = defineProps<{
-  projectId: string;
   installation: InstallationIdentity;
 }>();
 const emit = defineEmits<{ completed: [deployment: SavedDeployment] }>();
@@ -824,6 +823,7 @@ const localSteps = ref<LocalStep[]>([]);
 const activeStep = ref("");
 const stepperPanel = ref<HTMLElement | null>(null);
 const pairAddress = ref("");
+const verifiedBlock = ref<{ number: number; hash: string } | null>(null);
 // 按消息来源展示：开始前校验靠近操作按钮，流程级异常放在进度卡片。
 const preflightError = ref("");
 const progressNotice = ref("");
@@ -1152,6 +1152,14 @@ async function loadChainData(resetDefaults: boolean) {
         if (pending.configuration) applyConfiguration(pending.configuration);
         contracts.value = pending.contracts ?? {};
         pairAddress.value = String(pending.pairAddress ?? "");
+        verifiedBlock.value =
+          typeof pending.verifiedBlockNumber === "number" &&
+          typeof pending.verifiedBlockHash === "string"
+            ? {
+                number: pending.verifiedBlockNumber,
+                hash: pending.verifiedBlockHash,
+              }
+            : null;
         restorePendingSteps(pending.steps ?? []);
       }
     } else {
@@ -1160,6 +1168,7 @@ async function loadChainData(resetDefaults: boolean) {
       pendingLoaded.value = false;
       contracts.value = {};
       pairAddress.value = "";
+      verifiedBlock.value = null;
       createSteps();
     }
     lastLoadedChain.value = chainId;
@@ -1616,6 +1625,9 @@ async function startDeployment() {
         "钱包状态已变化，部署资料尚未完成归档；请切回本次部署的钱包后继续。",
       );
     await assertWalletContext(currentWallet);
+    // 续跑旧版临时进度时没有区块证据，完成前重新执行最终只读核验。
+    if (!verifiedBlock.value)
+      await verifyDeployment(browserProvider(), configuration);
     await completeDeployment(currentWallet, configuration);
   } catch (error) {
     if (!failedInStep) progressNotice.value = describeError(error);
@@ -1739,6 +1751,8 @@ async function persistPending(
     configuration,
     contracts: contracts.value,
     pairAddress: pairAddress.value,
+    verifiedBlockNumber: verifiedBlock.value?.number,
+    verifiedBlockHash: verifiedBlock.value?.hash,
     steps: localSteps.value,
   };
   pendingDeployment.value = pending;
@@ -2246,6 +2260,9 @@ async function verifyDeployment(
         throw new Error(`${roleGetter} 未授予预期钱包 ${address}。`);
     }
   }
+  const block = await provider.getBlock("latest");
+  if (!block?.hash) throw new Error("最终核验完成，但无法读取核验区块哈希。");
+  verifiedBlock.value = { number: block.number, hash: block.hash };
 }
 
 async function completeDeployment(
@@ -2261,6 +2278,8 @@ async function completeDeployment(
     contracts: contracts.value,
     steps: localSteps.value,
     pairAddress: pairAddress.value,
+    verifiedBlockNumber: verifiedBlock.value?.number,
+    verifiedBlockHash: verifiedBlock.value?.hash,
   };
   const result = await postJson<{
     deployment: SavedDeployment;
@@ -2560,7 +2579,7 @@ h2 {
 }
 @media (max-width: 960px) {
   .deployment-heading {
-    flex-direction: column;
+    // flex-direction: column;
   }
   .deployment-columns {
     grid-template-columns: minmax(0, 1fr);

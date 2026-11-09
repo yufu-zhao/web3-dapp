@@ -15,8 +15,8 @@ import { DatabaseService } from "./database.service.js";
 import {
   ADMIN_SESSION_TTL_SECONDS,
   ADMIN_PASSWORD_MAX_LENGTH,
+  type AdminMenuType,
   type AdminMenuNode,
-  type AdminPermission,
   type AdminPrincipal,
 } from "./admin.types.js";
 
@@ -48,6 +48,8 @@ interface AdminMenuRow {
   name: string;
   path: string;
   icon: string;
+  type: AdminMenuType;
+  permission_code: string | null;
   parent_id: string | null;
   sort_order: number;
   is_visible: boolean;
@@ -58,13 +60,6 @@ const LOGIN_WINDOW_MINUTES = 15;
 const LOGIN_FAILURE_LIMIT = 5;
 const DUMMY_SALT = Buffer.alloc(16, 0x6a);
 const DUMMY_HASH = scryptSync("not-a-real-admin-password", DUMMY_SALT, 64);
-const MENU_PERMISSION: Record<string, AdminPermission> = {
-  administrators: "admins:read",
-  "system-menus": "menus:read",
-  roles: "roles:read",
-  "system-settings": "settings:read",
-};
-
 @Injectable()
 export class AdminAuthService {
   constructor(private readonly databaseService: DatabaseService) {}
@@ -332,16 +327,22 @@ export class AdminAuthService {
 
   private async visibleMenuTree(permissions: string[]) {
     const result = await this.databaseService.getPool().query<AdminMenuRow>(
-      `SELECT id::text, code, name, path, icon, parent_id::text,
+      `SELECT id::text, code, name, path, icon,
+              menu_type AS type, permission_code, parent_id::text,
               sort_order, is_visible, is_active
          FROM menus
-        WHERE is_active = TRUE AND is_visible = TRUE
+        WHERE menu_type <> 'button'
+          AND is_active = TRUE AND is_visible = TRUE
         ORDER BY sort_order, id`,
     );
     const canRead = (menu: AdminMenuRow) => {
-      if (menu.code === "system-management") return true;
-      const permission = MENU_PERMISSION[menu.code] ?? "menus:read";
-      return permissions.includes("*") || permissions.includes(permission);
+      // 目录仅组织页面菜单，具体页面仍由各自的读取权限保护。
+      if (menu.code === "overview" || menu.type === "directory") return true;
+      return (
+        !menu.permission_code ||
+        permissions.includes("*") ||
+        permissions.includes(menu.permission_code)
+      );
     };
     const nodes = new Map<string, AdminMenuNode>();
     for (const row of result.rows.filter(canRead)) {
@@ -351,6 +352,8 @@ export class AdminAuthService {
         name: row.name,
         path: row.path,
         icon: row.icon,
+        type: row.type,
+        permissionCode: row.permission_code,
         parentId: row.parent_id,
         sortOrder: row.sort_order,
         isVisible: row.is_visible,

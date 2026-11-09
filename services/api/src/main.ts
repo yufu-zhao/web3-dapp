@@ -28,6 +28,10 @@ async function loadWorkspaceEnvironment() {
   if (!workspaceRoot) return;
 
   try {
+    // 避免空环境变量阻止 Node 从根目录 .env 读取必填的 AppKit Project ID。
+    if (!process.env.WALLETCONNECT_PROJECT_ID?.trim()) {
+      delete process.env.WALLETCONNECT_PROJECT_ID;
+    }
     // API_PORT 等显式进程变量优先，根目录 .env 为本地开发提供默认值。
     process.loadEnvFile(join(workspaceRoot, ".env"));
   } catch (error) {

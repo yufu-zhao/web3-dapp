@@ -6,43 +6,102 @@
       :icon="{ icon: 'lan', color: 'amber-1', textColor: 'amber-9' }"
     />
     <p class="content-description">
-      输入 PostgreSQL
-      连接信息。不存在的数据库会自动创建；已存在且非空时会先列出数据表并要求再次确认。
+      不存在的数据库将自动创建，空库直接初始化；非空库仅在识别为链构已有安装后，才允许确认跳过。
     </p>
-    <q-banner
-      v-if="flow.databaseReady && !reinitializeMode"
-      class="message-banner success-message"
-    >
-      <template #avatar><q-icon name="task_alt" /></template>数据库
-      {{ flow.summary.database }} 已初始化，管理员
-      {{ flow.summary.administrator }} 已创建。
-    </q-banner>
-    <q-banner
-      v-if="flow.databaseReady"
-      class="message-banner info-message migration-banner"
-    >
-      <template #avatar><q-icon name="system_update_alt" /></template>
-      检查并应用管理后台所需的数据库版本迁移。此操作仅允许在安装器本机执行。
-      <template #action>
+    <InstallerCard v-if="hasSavedDatabase" class="form-section">
+      <div class="row items-center justify-between q-gutter-sm">
+        <strong>当前数据库</strong>
         <q-btn
           flat
-          color="primary"
-          label="应用待执行迁移"
-          icon="system_update_alt"
-          :loading="migrating"
-          @click="applyPendingMigrations"
+          dense
+          icon="swap_horiz"
+          label="更换数据库"
+          :disable="busy"
+          @click="beginReinitialize"
         />
-      </template>
-    </q-banner>
-    <q-banner v-if="migrationResult" class="message-banner success-message">
-      <template #avatar><q-icon name="task_alt" /></template>
-      {{ migrationResult }}
-    </q-banner>
-
-    <InstallerCard class="form-section">
-      <div class="form-section-title">
-        <span>PostgreSQL 连接</span><small>凭据只提交给本机安装服务</small>
       </div>
+      <div class="database-summary">
+        <span
+          >{{ flow.summary.databaseConnection?.host }}:{{
+            flow.summary.databaseConnection?.port
+          }}
+          / {{ flow.summary.database }}</span
+        >
+        <span>管理员：{{ flow.summary.administrator }}</span>
+        <span v-if="flow.summary.installation"
+          >系统：{{ flow.summary.installation.systemName }} ·
+          {{ flow.summary.installation.tokenName }}（{{
+            flow.summary.installation.tokenSymbol
+          }}）</span
+        >
+        <span
+          >Reown AppKit：{{
+            flow.walletConnectConfigured ? "已配置" : "未配置"
+          }}
+          · 管理员密码最少 {{ flow.passwordPolicy.minimumLength }} 位</span
+        >
+      </div>
+      <q-banner
+        v-if="!flow.databaseSettingsSaved"
+        class="message-banner warning-message"
+      >
+        当前数据库连接未能保存到本机配置文件，安装服务重启后需重新选择此数据库。
+      </q-banner>
+      <q-banner class="message-banner warning-message">
+        <template #avatar><q-icon name="info_outline" /></template>
+        当前数据库已有安装数据。确认跳过后将沿用原有配置，不重新导入、不创建管理员，也不自动执行后续迁移。
+      </q-banner>
+      <q-expansion-item
+        icon="build"
+        label="数据库维护"
+        caption="需要升级已有数据库结构时使用"
+        :disable="busy"
+      >
+        <div class="q-pa-md column items-start q-gutter-md">
+          <span
+            >操作目标：{{
+              flow.summary.database
+            }}。手动检查并应用待执行迁移。</span
+          >
+          <q-btn
+            outline
+            label="检查并应用迁移"
+            icon="system_update_alt"
+            :loading="migrating"
+            :disable="initializing"
+            @click="applyPendingMigrations"
+          />
+          <q-banner
+            v-if="migrationResult || migrationError"
+            class="message-banner"
+            :class="migrationError ? 'error-message' : 'success-message'"
+          >
+            <!-- 迁移反馈仅在维护区显示。 -->
+            {{ migrationError || migrationResult }}
+          </q-banner>
+        </div>
+      </q-expansion-item>
+    </InstallerCard>
+
+    <InstallerCard v-if="!hasSavedDatabase" class="form-section">
+      <div class="row items-center justify-between q-gutter-sm">
+        <div class="form-section-title">
+          <span>PostgreSQL 连接</span><small>凭据只提交给本机安装服务</small>
+        </div>
+        <q-btn
+          v-if="reinitializeMode"
+          flat
+          dense
+          icon="close"
+          label="取消更换"
+          :disable="busy"
+          @click="cancelReinitialize"
+        />
+      </div>
+      <q-banner v-if="reinitializeMode" class="message-banner info-message">
+        <!-- 更换目标库不清理原数据库。 -->
+        正在选择新目标库，原数据库保留。非空目标库不会执行初始化。
+      </q-banner>
       <div class="form-grid">
         <q-input
           v-model="flow.database.host"
@@ -127,7 +186,11 @@
         <template v-else>
           目标库已有
           {{ flow.databaseCheck.tableCount }}
-          张用户表。确认后只新增缺失的核心表，不删除或覆盖已有数据。
+          张用户表，已停止初始化。{{
+            flow.databaseCheck.existingInstallation
+              ? "已识别为链构已有安装，可确认后跳过。"
+              : "未识别到完整的链构安装，请更换数据库。"
+          }}
         </template>
       </q-banner>
       <div v-if="flow.databaseCheck?.tables.length" class="table-list">
@@ -135,23 +198,12 @@
           table
         }}</span>
       </div>
-      <q-banner v-if="flow.databaseError" class="message-banner error-message">
-        <template #avatar><q-icon name="error_outline" /></template
-        >{{ flow.databaseError }}
-      </q-banner>
-      <q-btn
-        class="test-database-button"
-        outline
-        color="dark"
-        icon="lan"
-        label="测试数据库连接"
-        :loading="checking"
-        :disable="databaseFieldsDisabled"
-        @click="testDatabase"
-      />
     </InstallerCard>
 
-    <InstallerCard class="form-section config-section">
+    <InstallerCard
+      v-if="!hasSavedDatabase || !flow.summary.installation"
+      class="form-section config-section"
+    >
       <div class="form-section-title">
         <span>初始配置</span
         ><small>ChainId 将在部署完成后从钱包读取并锁定</small>
@@ -193,14 +245,6 @@
           label="代币简称"
           hint="仅允许字母、数字、点、下划线和短横线"
           :disable="identityFieldsDisabled"
-        />
-        <q-input
-          v-model="flow.projectId"
-          outlined
-          dense
-          label="WalletConnect project_id（可选）"
-          hint="配置后钱包连接组件才会显示 WalletConnect。"
-          :disable="databaseFieldsDisabled"
         />
       </div>
       <div class="policy-box">
@@ -247,7 +291,7 @@
       </div>
     </InstallerCard>
 
-    <InstallerCard class="form-section admin-section">
+    <InstallerCard v-if="!hasSavedDatabase" class="form-section admin-section">
       <div class="form-section-title">
         <span>首位管理员</span><small>密码需满足上方策略，无需重复确认</small>
       </div>
@@ -271,61 +315,50 @@
       </div>
     </InstallerCard>
 
+    <q-banner
+      v-if="flow.databaseError"
+      class="message-banner error-message q-mt-md"
+    >
+      <template #avatar><q-icon name="error_outline" /></template
+      >{{ flow.databaseError }}
+    </q-banner>
     <div class="actions-row">
       <q-btn
         flat
         color="dark"
         icon="arrow_back"
         label="上一步"
+        :disable="busy"
         @click="router.push('/environment')"
       />
       <q-btn
-        v-if="
-          flow.databaseReady && !reinitializeMode && flow.summary.installation
-        "
+        v-if="hasSavedDatabase && flow.summary.installation"
         color="primary"
         icon-right="arrow_forward"
-        label="进入合约部署"
+        label="跳过并进入合约部署"
+        :disable="busy"
         unelevated
-        @click="router.push('/deploy')"
+        @click="confirmExistingOpen = true"
       />
       <q-btn
-        v-if="flow.databaseReady && !reinitializeMode"
-        outline
-        color="dark"
-        icon="restart_alt"
-        label="更换数据库并重新初始化"
-        @click="beginReinitialize"
-      />
-      <q-btn
-        v-if="reinitializeMode"
-        flat
-        color="dark"
-        icon="close"
-        label="取消更换"
-        @click="cancelReinitialize"
-      />
-      <q-btn
-        v-if="
-          flow.databaseReady && !reinitializeMode && !flow.summary.installation
-        "
+        v-else-if="hasSavedDatabase"
         color="primary"
         icon="lock"
-        label="保存并锁定安装身份"
+        label="保存安装身份并继续"
         :loading="initializing"
-        :disable="!canSaveInstallation"
+        :disable="busy || !canSaveInstallation"
         unelevated
         @click="saveInstallationIdentity"
       />
       <q-btn
-        v-if="!flow.databaseReady || reinitializeMode"
+        v-else
         color="primary"
-        icon="database"
-        label="初始化数据库并创建管理员"
+        icon-right="arrow_forward"
+        :label="checking ? '正在检查数据库' : '初始化并继续'"
         :loading="initializing"
-        :disable="!canInitialize"
+        :disable="busy || !canInitialize"
         unelevated
-        @click="initializeDatabase(false)"
+        @click="initializeDatabase"
       />
     </div>
 
@@ -333,30 +366,55 @@
       <q-card class="confirm-card">
         <q-card-section>
           <div class="confirm-title">
-            <q-icon name="warning_amber" size="24px" />确认使用已有数据库
+            <q-icon name="warning_amber" size="24px" />数据库非空
           </div>
-          <p>
-            将保留现有表和数据，仅补充缺失结构与配置项；已有同名配置会继续保留，不会被当前输入覆盖。若已存在管理员，安装服务会拒绝创建第二位管理员。
+          <p v-if="reuseInstallation">
+            已识别为链构已有安装。跳过后将使用数据库内保存的配置，本页新填写的初始配置和管理员信息不会写入；不会导入数据或执行迁移。确认继续吗？
           </p>
-          <div class="table-list dialog-tables">
+          <p v-else>
+            目标数据库已有数据，但未识别到完整的链构安装。为保护已有数据，不能初始化或跳过，请更换数据库。
+          </p>
+          <div v-if="reuseInstallation" class="database-summary">
+            <strong>{{ reuseInstallation.systemName }}</strong>
+            <span
+              >{{ reuseInstallation.tokenName }}（{{
+                reuseInstallation.tokenSymbol
+              }}）</span
+            >
+          </div>
+          <div class="table-list dialog-tables q-mt-md">
             <span
               v-for="table in flow.databaseCheck?.tables ?? []"
               :key="table"
+              >{{ table }}</span
             >
-              {{ table }}
-            </span>
           </div>
+          <q-banner
+            v-if="reuseError"
+            class="message-banner error-message q-mt-md"
+          >
+            <!-- 重验失败保留确认窗口，避免误入部署。 -->
+            {{ reuseError }}
+          </q-banner>
         </q-card-section>
-        <q-card-section align="right">
-          <q-btn v-close-popup flat color="grey" label="返回检查" />
+        <q-card-actions align="right">
           <q-btn
+            v-close-popup
+            flat
+            color="grey"
+            label="返回检查"
+            :disable="busy"
+          />
+          <q-btn
+            v-if="reuseInstallation"
             color="primary"
-            label="确认继续初始化"
+            label="跳过并进入合约部署"
             unelevated
             :loading="initializing"
-            @click="initializeDatabase(true)"
+            :disable="busy"
+            @click="useExistingDatabase"
           />
-        </q-card-section>
+        </q-card-actions>
       </q-card>
     </q-dialog>
   </section>
@@ -366,8 +424,13 @@
 import ContentHeading from "../components/ContentHeading.vue";
 import InstallerCard from "../components/InstallerCard.vue";
 import { computed, ref, watch } from "vue";
-import { useRouter } from "vue-router";
-import { postJson, type DatabaseCheck } from "../services/installer-api";
+import { onBeforeRouteLeave, useRouter } from "vue-router";
+import {
+  installerRequest,
+  postJson,
+  type DatabaseCheck,
+  type InstallationSummary,
+} from "../services/installer-api";
 import {
   errorMessage,
   installerFlow,
@@ -380,23 +443,34 @@ const checking = ref(false);
 const initializing = ref(false);
 const migrating = ref(false);
 const migrationResult = ref("");
+const migrationError = ref("");
+const reuseError = ref("");
 const confirmExistingOpen = ref(false);
+const continuing = ref(false);
 const reinitializeMode = ref(false);
 const originalReinitializationSettings = ref<{
   database: typeof flow.database;
   installation: typeof flow.installation;
   administrator: typeof flow.administrator;
-  projectId: string;
   passwordPolicy: typeof flow.passwordPolicy;
 } | null>(null);
-const databaseFieldsDisabled = computed(
+// 所有数据库操作互斥，操作期间锁定表单与离开入口，保持请求目标一致。
+const busy = computed(() => initializing.value || migrating.value);
+const hasSavedDatabase = computed(
   () => flow.databaseReady && !reinitializeMode.value,
+);
+const databaseFieldsDisabled = computed(
+  () => busy.value || hasSavedDatabase.value,
 );
 const identityFieldsDisabled = computed(
   () =>
-    flow.databaseReady &&
-    Boolean(flow.summary.installation) &&
-    !reinitializeMode.value,
+    busy.value ||
+    (hasSavedDatabase.value && Boolean(flow.summary.installation)),
+);
+const reuseInstallation = computed(() =>
+  hasSavedDatabase.value
+    ? flow.summary.installation
+    : flow.databaseCheck?.existingInstallation?.installation,
 );
 const validInstallationIdentity = computed(() =>
   Boolean(
@@ -409,8 +483,16 @@ const validInstallationIdentity = computed(() =>
 );
 const canInitialize = computed(() =>
   Boolean(
-    flow.databaseCheck?.connected &&
-    (flow.databaseCheck.exists || flow.databaseCheck.canCreateDatabase) &&
+    flow.database.host.trim() &&
+    flow.database.database.trim() &&
+    flow.database.username.trim() &&
+    Number.isInteger(flow.database.port) &&
+    flow.database.port >= 1 &&
+    flow.database.port <= 65535,
+  ),
+);
+const validInitialConfiguration = computed(() =>
+  Boolean(
     Number.isInteger(flow.passwordPolicy.minimumLength) &&
     flow.passwordPolicy.minimumLength >= 8 &&
     flow.passwordPolicy.minimumLength <= 128 &&
@@ -431,28 +513,53 @@ watch(
   () => resetDatabaseCheck(),
 );
 
-async function testDatabase() {
-  checking.value = true;
+// 写入过程中拦截侧栏与浏览器返回；成功后的主动跳转放行。
+onBeforeRouteLeave(() => {
+  if (busy.value && !continuing.value) return false;
+  if (reinitializeMode.value && !continuing.value) cancelReinitialize();
+  return true;
+});
+
+function beginReinitialize() {
+  // 切换安装目标前暂存当前表单，取消后恢复原数据库与配置。
+  originalReinitializationSettings.value = {
+    database: { ...flow.database },
+    installation: { ...flow.installation },
+    administrator: { ...flow.administrator },
+    passwordPolicy: { ...flow.passwordPolicy },
+  };
+  flow.databaseError = "";
+  migrationError.value = "";
+  migrationResult.value = "";
+  reuseError.value = "";
   resetDatabaseCheck();
-  try {
-    flow.databaseCheck = await postJson<DatabaseCheck>(
-      "/database/check",
-      flow.database,
-    );
-    if (!flow.databaseCheck.exists && !flow.databaseCheck.canCreateDatabase)
-      flow.databaseError =
-        "目标数据库不存在，当前 PostgreSQL 用户没有 CREATEDB 权限。";
-  } catch (error) {
-    flow.databaseError = errorMessage(error);
-  } finally {
-    checking.value = false;
+  reinitializeMode.value = true;
+  flow.databaseReinitializing = true;
+}
+
+function cancelReinitialize() {
+  const original = originalReinitializationSettings.value;
+  if (original) {
+    flow.database = { ...original.database };
+    flow.installation = { ...original.installation };
+    flow.administrator = { ...original.administrator };
+    flow.passwordPolicy = { ...original.passwordPolicy };
   }
+  flow.databaseError = "";
+  migrationError.value = "";
+  migrationResult.value = "";
+  reuseError.value = "";
+  resetDatabaseCheck();
+  reinitializeMode.value = false;
+  flow.databaseReinitializing = false;
+  originalReinitializationSettings.value = null;
 }
 
 async function applyPendingMigrations() {
+  if (busy.value) return;
   migrating.value = true;
   migrationResult.value = "";
-  flow.databaseError = "";
+  migrationError.value = "";
   try {
     const result = await postJson<{ applied: string[] }>(
       "/database/migrate",
@@ -462,83 +569,101 @@ async function applyPendingMigrations() {
       ? `已应用 ${result.applied.length} 个数据库迁移版本：${result.applied.join("、")}`
       : "数据库结构已是最新版本，无需迁移。";
   } catch (error) {
-    flow.databaseError = errorMessage(error);
+    migrationError.value = errorMessage(error);
   } finally {
     migrating.value = false;
   }
 }
 
-async function initializeDatabase(confirmedExisting: boolean) {
-  if (
-    flow.databaseCheck?.exists &&
-    !flow.databaseCheck.empty &&
-    !confirmedExisting
-  ) {
-    confirmExistingOpen.value = true;
-    return;
-  }
+function finishDatabaseStep(summary: InstallationSummary) {
+  if (!summary.installed || !summary.installation)
+    throw new Error("数据库安装配置不完整，无法进入合约部署。");
+  flow.summary = summary;
+  flow.databaseReady = true;
+  flow.databaseSettingsSaved = Boolean(summary.settingsSaved);
+  flow.installation = { ...summary.installation };
+  flow.walletConnectConfigured = Boolean(summary.walletConnectConfigured);
+  if (summary.passwordPolicy)
+    flow.passwordPolicy = { ...summary.passwordPolicy };
+  flow.administrator = {
+    username: summary.administrator ?? "admin",
+    password: "",
+  };
+  flow.deploymentRecords = summary.deployments ?? [];
+  flow.selectedDeployment = null;
+  reinitializeMode.value = false;
+  flow.databaseReinitializing = false;
+  originalReinitializationSettings.value = null;
+}
+
+async function initializeDatabase() {
+  if (busy.value || !canInitialize.value) return;
   initializing.value = true;
-  flow.databaseError = "";
+  checking.value = true;
+  resetDatabaseCheck();
+  reuseError.value = "";
   try {
-    const result = await postJson<{
-      initialized: boolean;
-      database: string;
-      administrator: string;
-      settingsSaved: boolean;
-      installation: {
-        chainId: number | null;
-        systemName: string;
-        tokenName: string;
-        tokenSymbol: string;
-      };
-    }>("/database/initialize", {
-      database: flow.database,
-      administrator: flow.administrator,
-      projectId: flow.projectId,
-      installation: {
-        systemName: flow.installation.systemName.trim(),
-        tokenName: flow.installation.tokenName.trim(),
-        tokenSymbol: flow.installation.tokenSymbol.trim(),
-      },
-      passwordPolicy: flow.passwordPolicy,
-      allowExistingNonEmpty: confirmedExisting,
-    });
-    confirmExistingOpen.value = false;
-    flow.databaseReady = result.initialized;
-    flow.databaseSettingsSaved = result.settingsSaved;
-    flow.installation = { ...result.installation };
-    flow.summary = {
-      installed: result.initialized,
-      database: result.database,
-      databaseConnection: {
-        host: flow.database.host.trim(),
-        port: flow.database.port,
-        database: flow.database.database.trim(),
-        username: flow.database.username.trim(),
-      },
-      administrator: result.administrator,
-      installation: result.installation,
-      deployments: [],
-      projectId: flow.projectId || null,
+    // 同一次操作先只读检查；非空库必须停下等待用户确认，绝不走初始化接口。
+    const database = { ...flow.database };
+    flow.databaseCheck = await postJson<DatabaseCheck>(
+      "/database/check",
+      database,
+    );
+    checking.value = false;
+    if (flow.databaseCheck.exists && !flow.databaseCheck.empty) {
+      confirmExistingOpen.value = true;
+      return;
+    }
+    if (!flow.databaseCheck.exists && !flow.databaseCheck.canCreateDatabase)
+      throw new Error(
+        "目标数据库不存在，当前 PostgreSQL 用户没有 CREATEDB 权限。",
+      );
+    if (!validInitialConfiguration.value)
+      throw new Error(
+        "目标库可初始化，请补全初始配置、管理员账号和符合密码策略的管理员密码，再点击初始化并继续。",
+      );
+    await postJson("/database/initialize", {
+      database,
+      administrator: { ...flow.administrator },
+      installation: { ...flow.installation },
       passwordPolicy: { ...flow.passwordPolicy },
-      settingsSaved: result.settingsSaved,
-      installedAt: new Date().toISOString(),
-    };
-    flow.deploymentRecords = [];
-    flow.selectedDeployment = null;
-    reinitializeMode.value = false;
-    flow.databaseReinitializing = false;
-    originalReinitializationSettings.value = null;
+    });
+    finishDatabaseStep(await installerRequest<InstallationSummary>("/summary"));
+    continuing.value = true;
     await router.replace("/deploy");
   } catch (error) {
     flow.databaseError = errorMessage(error);
   } finally {
     initializing.value = false;
+    checking.value = false;
+    continuing.value = false;
+  }
+}
+
+async function useExistingDatabase() {
+  if (busy.value || !reuseInstallation.value) return;
+  initializing.value = true;
+  reuseError.value = "";
+  try {
+    // 服务端重新识别目标库，只有用户主动确认后才保存目标连接并解锁部署。
+    const summary = await postJson<InstallationSummary>(
+      "/database/use-existing",
+      hasSavedDatabase.value ? {} : { database: { ...flow.database } },
+    );
+    finishDatabaseStep(summary);
+    confirmExistingOpen.value = false;
+    continuing.value = true;
+    await router.replace("/deploy");
+  } catch (error) {
+    reuseError.value = errorMessage(error);
+  } finally {
+    initializing.value = false;
+    continuing.value = false;
   }
 }
 
 async function saveInstallationIdentity() {
-  if (!canSaveInstallation.value) return;
+  if (busy.value || !canSaveInstallation.value) return;
   initializing.value = true;
   flow.databaseError = "";
   try {
@@ -557,11 +682,13 @@ async function saveInstallationIdentity() {
     });
     flow.installation = { ...result.installation };
     flow.summary.installation = { ...result.installation };
+    continuing.value = true;
     await router.replace("/deploy");
   } catch (error) {
     flow.databaseError = errorMessage(error);
   } finally {
     initializing.value = false;
+    continuing.value = false;
   }
 }
 </script>
@@ -662,8 +789,11 @@ h2 {
   font-family: monospace;
   font-size: 11px;
 }
-.test-database-button {
-  justify-self: start;
+.database-summary {
+  display: grid;
+  gap: 8px;
+  overflow-wrap: anywhere;
+  color: #596579;
 }
 .policy-box {
   display: grid;

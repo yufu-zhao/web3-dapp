@@ -1,0 +1,399 @@
+{
+  "status": "complete",
+  "chainId": 97,
+  "releaseVersion": "0.1.0",
+  "deployer": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+  "configuration": {
+    "installation": {
+      "chainId": 97,
+      "systemName": "IChainForge",
+      "tokenName": "IChainForge",
+      "tokenSymbol": "ICF"
+    },
+    "externalAddresses": {
+      "router": "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
+      "factory": "0x6725F303b657a9451d8BA641348b6761A6CC7a17",
+      "paymentToken": "0x5Ef66f51AB44776d6981F0af34CDdea6F29Fab2d"
+    },
+    "roleWallets": {
+      "operator": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "launch": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "batchRegistrar": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "pauser": "0x63660d0c39ec620d4585a60e356399258f86ab65"
+    },
+    "assetWallets": {
+      "ecosystemWallet": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "proceedsWallet": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "fundingWallet": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "feeWallet": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "recoveryWallet": "0x63660d0c39ec620d4585a60e356399258f86ab65"
+    },
+    "oracle": {
+      "samplePeriodSeconds": 300,
+      "minimumPaymentReserve": "1000",
+      "minimumPaymentReserveRaw": "1000000000000000000000",
+      "tokenDecimals": 18
+    },
+    "deployer": "0x63660d0c39ec620d4585a60e356399258f86ab65"
+  },
+  "contracts": {
+    "ProjectToken": {
+      "contractName": "ProjectToken",
+      "nodeId": "ProjectToken",
+      "address": "0xE07B2c4B7dC49527569a1C87b4c0d0815155cF11",
+      "transactionHash": "0x416dcac9de5871245d0c1997c81dce9606b66c397d7c81d02ed699ec2a0297c0",
+      "chainId": 97,
+      "deployer": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "createdAt": "2026-11-07T06:12:52.078Z"
+    },
+    "FairSaleV2": {
+      "contractName": "FairSaleV2",
+      "nodeId": "FairSaleV2",
+      "address": "0x468eAb92894D9418F4Ea7D7E123840c698f281f2",
+      "transactionHash": "0xdb89025c8ca89afb3db9f28f2841e672388ef75641076842b1374948157bc4ab",
+      "chainId": 97,
+      "deployer": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "createdAt": "2026-11-07T06:12:57.143Z"
+    },
+    "TokenRewardVault": {
+      "contractName": "TokenRewardVault",
+      "nodeId": "TokenRewardVault",
+      "address": "0xfc138B763D98ED1657467aB3FB108A9152cFE7A5",
+      "transactionHash": "0x531a3e1c5a6f17431aa877001dc10601f31033c809b709412b2228d4fc317a62",
+      "chainId": 97,
+      "deployer": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "createdAt": "2026-11-07T06:13:02.834Z"
+    },
+    "TokenStaking": {
+      "contractName": "TokenStaking",
+      "nodeId": "TokenStaking",
+      "address": "0xd3Ea4dd961ac0b55Ef116c27f7DC2e1A8de09962",
+      "transactionHash": "0xd53b667b6e9c13c313bd3b1f4edf30ec737a40370bbdc84904405f782f23ebe2",
+      "chainId": 97,
+      "deployer": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "createdAt": "2026-11-07T06:13:07.060Z"
+    },
+    "TokenTimeLock": {
+      "contractName": "TokenTimeLock",
+      "nodeId": "TokenTimeLock",
+      "address": "0xF6B8B63275487Cc2d65fAC940FbBC75B383ef0FE",
+      "transactionHash": "0xaa5cf70189c9d80128c66fcb9a2ecefe2dfbfcf55a9aede29944769b76c472c3",
+      "chainId": 97,
+      "deployer": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "createdAt": "2026-11-07T06:13:11.643Z"
+    },
+    "TokenPriceOracle": {
+      "contractName": "TokenPriceOracle",
+      "nodeId": "TokenPriceOracle",
+      "address": "0x170D81A9c437B1cE5daA8F3bA262d547626813f1",
+      "transactionHash": "0x4d66f4bb462f430837900032beab959926e15b53480697e2ab9695c6d4600a89",
+      "chainId": 97,
+      "deployer": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "createdAt": "2026-11-07T06:13:53.385Z"
+    },
+    "TokenLimitOrders": {
+      "contractName": "TokenLimitOrders",
+      "nodeId": "TokenLimitOrders",
+      "address": "0x1C9b865733BEe0B1DCEfB2D36c09672FA881fdB6",
+      "transactionHash": "0x881a1a1c6caec6c37876eb1d53854c28fd1aaaf306aaae89ccea533c7696ea83",
+      "chainId": 97,
+      "deployer": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "createdAt": "2026-11-07T06:13:57.639Z"
+    },
+    "StrategicLiquidityVaultV2": {
+      "contractName": "StrategicLiquidityVaultV2",
+      "nodeId": "StrategicLiquidityVaultV2",
+      "address": "0xFE1B18d250f7d495C2baF23DCb2c58D6F227b36B",
+      "transactionHash": "0x9d468495c874dac3e49690ab96cde715a0673d818ae5631d9457bb506048543c",
+      "chainId": 97,
+      "deployer": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "createdAt": "2026-11-07T06:14:02.521Z"
+    },
+    "PermanentLPVaultV2": {
+      "contractName": "PermanentLPVaultV2",
+      "nodeId": "PermanentLPVaultV2",
+      "address": "0x7cD1b725efdA1D3f12E2854165e3D24b6C3Ee7A9",
+      "chainId": 97,
+      "deployer": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "createdAt": "2026-11-07T06:14:02.844Z",
+      "source": "StrategicLiquidityVaultV2.lpVault"
+    },
+    "PrizeClaimVault": {
+      "contractName": "PrizeClaimVault",
+      "nodeId": "PrizeClaimVault",
+      "address": "0x66dC5c6875C819B3b56f442FFCFe88e368f8789E",
+      "transactionHash": "0x19217f49f8309f9f8cf8fe629564a4cd0da69b7007322be2d13dfa47cb5d6b57",
+      "chainId": 97,
+      "deployer": "0x63660d0c39ec620d4585a60e356399258f86ab65",
+      "createdAt": "2026-11-07T06:14:07.012Z"
+    }
+  },
+  "steps": [
+    {
+      "id": "ProjectToken",
+      "title": "ProjectToken",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 129,
+      "transactionHash": "0x416dcac9de5871245d0c1997c81dce9606b66c397d7c81d02ed699ec2a0297c0",
+      "attempts": [
+        "0x416dcac9de5871245d0c1997c81dce9606b66c397d7c81d02ed699ec2a0297c0"
+      ],
+      "completedAt": "2026-11-07T06:12:52.078Z",
+      "address": "0xE07B2c4B7dC49527569a1C87b4c0d0815155cF11"
+    },
+    {
+      "id": "FairSaleV2",
+      "title": "FairSaleV2",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 130,
+      "transactionHash": "0xdb89025c8ca89afb3db9f28f2841e672388ef75641076842b1374948157bc4ab",
+      "attempts": [
+        "0xdb89025c8ca89afb3db9f28f2841e672388ef75641076842b1374948157bc4ab"
+      ],
+      "completedAt": "2026-11-07T06:12:57.143Z",
+      "address": "0x468eAb92894D9418F4Ea7D7E123840c698f281f2"
+    },
+    {
+      "id": "TokenRewardVault",
+      "title": "TokenRewardVault",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 131,
+      "transactionHash": "0x531a3e1c5a6f17431aa877001dc10601f31033c809b709412b2228d4fc317a62",
+      "attempts": [
+        "0x531a3e1c5a6f17431aa877001dc10601f31033c809b709412b2228d4fc317a62"
+      ],
+      "completedAt": "2026-11-07T06:13:02.834Z",
+      "address": "0xfc138B763D98ED1657467aB3FB108A9152cFE7A5"
+    },
+    {
+      "id": "TokenStaking",
+      "title": "TokenStaking",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 132,
+      "transactionHash": "0xd53b667b6e9c13c313bd3b1f4edf30ec737a40370bbdc84904405f782f23ebe2",
+      "attempts": [
+        "0xd53b667b6e9c13c313bd3b1f4edf30ec737a40370bbdc84904405f782f23ebe2"
+      ],
+      "completedAt": "2026-11-07T06:13:07.060Z",
+      "address": "0xd3Ea4dd961ac0b55Ef116c27f7DC2e1A8de09962"
+    },
+    {
+      "id": "TokenTimeLock",
+      "title": "TokenTimeLock",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 133,
+      "transactionHash": "0xaa5cf70189c9d80128c66fcb9a2ecefe2dfbfcf55a9aede29944769b76c472c3",
+      "attempts": [
+        "0xaa5cf70189c9d80128c66fcb9a2ecefe2dfbfcf55a9aede29944769b76c472c3"
+      ],
+      "completedAt": "2026-11-07T06:13:11.643Z",
+      "address": "0xF6B8B63275487Cc2d65fAC940FbBC75B383ef0FE"
+    },
+    {
+      "id": "TokenPriceOracle",
+      "title": "TokenPriceOracle",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 134,
+      "transactionHash": "0x4d66f4bb462f430837900032beab959926e15b53480697e2ab9695c6d4600a89",
+      "attempts": [
+        "0x4d66f4bb462f430837900032beab959926e15b53480697e2ab9695c6d4600a89"
+      ],
+      "completedAt": "2026-11-07T06:13:53.385Z",
+      "address": "0x170D81A9c437B1cE5daA8F3bA262d547626813f1"
+    },
+    {
+      "id": "TokenLimitOrders",
+      "title": "TokenLimitOrders",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 135,
+      "transactionHash": "0x881a1a1c6caec6c37876eb1d53854c28fd1aaaf306aaae89ccea533c7696ea83",
+      "attempts": [
+        "0x881a1a1c6caec6c37876eb1d53854c28fd1aaaf306aaae89ccea533c7696ea83"
+      ],
+      "completedAt": "2026-11-07T06:13:57.639Z",
+      "address": "0x1C9b865733BEe0B1DCEfB2D36c09672FA881fdB6"
+    },
+    {
+      "id": "StrategicLiquidityVaultV2",
+      "title": "StrategicLiquidityVaultV2",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 136,
+      "transactionHash": "0x9d468495c874dac3e49690ab96cde715a0673d818ae5631d9457bb506048543c",
+      "attempts": [
+        "0x9d468495c874dac3e49690ab96cde715a0673d818ae5631d9457bb506048543c"
+      ],
+      "completedAt": "2026-11-07T06:14:02.521Z",
+      "address": "0xFE1B18d250f7d495C2baF23DCb2c58D6F227b36B"
+    },
+    {
+      "id": "PermanentLPVaultV2",
+      "title": "PermanentLPVaultV2",
+      "status": "success",
+      "phase": "preparing",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "completedAt": "2026-11-07T06:14:02.844Z",
+      "address": "0x7cD1b725efdA1D3f12E2854165e3D24b6C3Ee7A9"
+    },
+    {
+      "id": "PrizeClaimVault",
+      "title": "PrizeClaimVault",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 137,
+      "transactionHash": "0x19217f49f8309f9f8cf8fe629564a4cd0da69b7007322be2d13dfa47cb5d6b57",
+      "attempts": [
+        "0x19217f49f8309f9f8cf8fe629564a4cd0da69b7007322be2d13dfa47cb5d6b57"
+      ],
+      "completedAt": "2026-11-07T06:14:07.012Z",
+      "address": "0x66dC5c6875C819B3b56f442FFCFe88e368f8789E"
+    },
+    {
+      "id": "configureModules",
+      "title": "登记预售合约和流动性金库",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 138,
+      "transactionHash": "0x75d5a915ac824cdecc85433230787f21cb5dc0e04e8af80005839676114c724d",
+      "attempts": [
+        "0x75d5a915ac824cdecc85433230787f21cb5dc0e04e8af80005839676114c724d"
+      ],
+      "completedAt": "2026-11-07T06:14:11.916Z",
+      "result": "交易已确认：0x75d5a915ac824cdecc85433230787f21cb5dc0e04e8af80005839676114c724d"
+    },
+    {
+      "id": "ensureTradingPair",
+      "title": "检查或创建 ICF 交易对",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 139,
+      "transactionHash": "0xdd5d066ccc73d4f644a7138750dcfcf1b0a87b2d88fda62f0fb0ab8ce8003416",
+      "attempts": [
+        "0xdd5d066ccc73d4f644a7138750dcfcf1b0a87b2d88fda62f0fb0ab8ce8003416"
+      ],
+      "completedAt": "2026-11-07T06:14:17.119Z",
+      "result": "0xbfc8B3063e7AA1CF37178E0b403A82968D4Ee1ee"
+    },
+    {
+      "id": "configurePair",
+      "title": "将交易对登记到 ICF 合约",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 140,
+      "transactionHash": "0x6ae7d9a579802cbd8d7c719eaf365df55ac8a502b241a37ef817080813edc71f",
+      "attempts": [
+        "0x6ae7d9a579802cbd8d7c719eaf365df55ac8a502b241a37ef817080813edc71f"
+      ],
+      "completedAt": "2026-11-07T06:14:21.698Z",
+      "result": "交易已确认：0x6ae7d9a579802cbd8d7c719eaf365df55ac8a502b241a37ef817080813edc71f"
+    },
+    {
+      "id": "configureOraclePair",
+      "title": "为预言机绑定已登记交易对",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 141,
+      "transactionHash": "0x71160406b953cfb8b379f27c8d93b4fd48a9596f767045bc5f0aba2efd8339ea",
+      "attempts": [
+        "0x71160406b953cfb8b379f27c8d93b4fd48a9596f767045bc5f0aba2efd8339ea"
+      ],
+      "completedAt": "2026-11-07T06:14:26.343Z",
+      "result": "交易已确认：0x71160406b953cfb8b379f27c8d93b4fd48a9596f767045bc5f0aba2efd8339ea"
+    },
+    {
+      "id": "configureOracle",
+      "title": "将价格预言机登记到 ICF 合约",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 142,
+      "transactionHash": "0xb504ea55e3d0280b62d1326abf2f841b301efe122fba1c67180e8bdf7916f007",
+      "attempts": [
+        "0xb504ea55e3d0280b62d1326abf2f841b301efe122fba1c67180e8bdf7916f007"
+      ],
+      "completedAt": "2026-11-07T06:14:32.552Z",
+      "result": "交易已确认：0xb504ea55e3d0280b62d1326abf2f841b301efe122fba1c67180e8bdf7916f007"
+    },
+    {
+      "id": "bindStaking",
+      "title": "将质押合约绑定到奖励金库",
+      "status": "success",
+      "phase": "waiting_receipt",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "startingNonce": 143,
+      "transactionHash": "0x4ed235f8ea5522b89674a70bb85a27a592a71cb71f9850eff0b60f8154b9aa4d",
+      "attempts": [
+        "0x4ed235f8ea5522b89674a70bb85a27a592a71cb71f9850eff0b60f8154b9aa4d"
+      ],
+      "completedAt": "2026-11-07T06:14:37.167Z",
+      "result": "交易已确认：0x4ed235f8ea5522b89674a70bb85a27a592a71cb71f9850eff0b60f8154b9aa4d"
+    },
+    {
+      "id": "verify-deployment",
+      "title": "最终链上核验",
+      "status": "success",
+      "phase": "preparing",
+      "walletRequestSlow": false,
+      "recoveryRequired": false,
+      "recoveryBlocked": false,
+      "completedAt": "2026-11-07T06:14:39.116Z",
+      "result": "已核验 6 条部署计划规则与角色授权。"
+    }
+  ],
+  "pairAddress": "0xbfc8B3063e7AA1CF37178E0b403A82968D4Ee1ee",
+  "deploymentId": "1794032079150-1d5d820f",
+  "outputPath": "contracts/deploy/97/runs/1794032079150-1d5d820f/deployment.json",
+  "completedAt": "2026-11-07T06:14:39.151Z"
+}

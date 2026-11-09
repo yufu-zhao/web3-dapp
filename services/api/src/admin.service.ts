@@ -1,14 +1,18 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   HttpException,
   Injectable,
   NotFoundException,
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { randomBytes, scryptSync } from "node:crypto";
-import type { PoolClient } from "pg";
-import { ADMIN_PASSWORD_MAX_LENGTH } from "./admin.types.js";
+import type { Pool, PoolClient } from "pg";
+import {
+  ADMIN_PASSWORD_MAX_LENGTH,
+  type AdminMenuType,
+} from "./admin.types.js";
 import { DatabaseService } from "./database.service.js";
 
 export interface PageQuery {
@@ -55,12 +59,15 @@ interface MenuRecord {
   name: string;
   path: string;
   icon: string;
+  type: AdminMenuType;
+  permissionCode: string | null;
   parentId: string | null;
   parentName: string | null;
   sortOrder: number;
   isVisible: boolean;
   isActive: boolean;
   createdAt: string;
+  children?: MenuRecord[];
 }
 
 interface AdminPasswordPolicy {
@@ -71,13 +78,35 @@ interface AdminPasswordPolicy {
   requireSymbol: boolean;
 }
 
+interface UserThemePalette {
+  accent: string;
+  background: string;
+  surface: string;
+  text: string;
+  mutedText: string;
+}
+
+interface AdminThemePalette {
+  primary: string;
+  background: string;
+  surface: string;
+  text: string;
+  mutedText: string;
+  border: string;
+}
+
+interface ThemePalettes {
+  user: UserThemePalette;
+  admin: AdminThemePalette;
+}
+
 interface AdminSettings {
   systemName: string;
   tokenName: string;
   tokenSymbol: string;
-  projectId: string;
   passwordPolicy: AdminPasswordPolicy;
   installationChainId: number | null;
+  themePalettes: ThemePalettes;
 }
 
 const DEFAULT_PASSWORD_POLICY: AdminPasswordPolicy = {
@@ -88,15 +117,41 @@ const DEFAULT_PASSWORD_POLICY: AdminPasswordPolicy = {
   requireSymbol: true,
 };
 
+const DEFAULT_THEME_PALETTES: ThemePalettes = {
+  user: {
+    accent: "#ffc832",
+    background: "#111827",
+    surface: "#1b2434",
+    text: "#f9fafb",
+    mutedText: "#cbd5e1",
+  },
+  admin: {
+    primary: "#ffc832",
+    background: "#f3f6fa",
+    surface: "#ffffff",
+    text: "#202d42",
+    mutedText: "#738096",
+    border: "#d9e0e9",
+  },
+};
+
 const ALLOWED_ROLE_PERMISSIONS = new Set([
   "admins:read",
-  "admins:write",
+  "admins:create",
+  "admins:update",
+  "admins:delete",
   "menus:read",
-  "menus:write",
+  "menus:update",
   "roles:read",
-  "roles:write",
+  "roles:create",
+  "roles:update",
+  "roles:delete",
   "settings:read",
-  "settings:write",
+  "settings:update",
+  "presale:read",
+  "presale:terms",
+  "presale:schedule",
+  "presale:finalize",
 ]);
 
 @Injectable()
@@ -371,9 +426,14 @@ export class AdminService {
     }
   }
 
-  async createRole(input: unknown) {
+  async createRole(input: unknown, actorPermissions: string[]) {
     const body = this.record(input);
     const value = this.validateRoleInput(body, false);
+    this.assertDelegablePermissions(
+      value.permissions ?? [],
+      actorPermissions,
+      [],
+    );
     if (value.code === "super_admin") {
       throw new ConflictException("超级管理员角色为系统保留角色。");
     }
@@ -401,21 +461,32 @@ export class AdminService {
     };
   }
 
-  async updateRole(idValue: string, input: unknown) {
+  async updateRole(
+    idValue: string,
+    input: unknown,
+    actorPermissions: string[],
+  ) {
     const id = this.parseId(idValue, "id");
     const body = this.record(input);
     const client = await this.databaseService.getPool().connect();
     try {
       await client.query("BEGIN");
-      const current = await client.query<{ code: string }>(
-        "SELECT code FROM roles WHERE id = $1 FOR UPDATE",
-        [id],
-      );
+      const current = await client.query<{
+        code: string;
+        permissions: unknown;
+      }>("SELECT code, permissions FROM roles WHERE id = $1 FOR UPDATE", [id]);
       if (!current.rows[0]) throw new NotFoundException("角色不存在。");
       if (current.rows[0].code === "super_admin") {
         throw new ConflictException("超级管理员角色为系统保留角色。");
       }
       const value = this.validateRoleInput(body, true);
+      if (value.permissions) {
+        this.assertDelegablePermissions(
+          value.permissions,
+          actorPermissions,
+          this.parsePermissions(current.rows[0].permissions),
+        );
+      }
       if (value.code === "super_admin") {
         throw new ConflictException("超级管理员角色为系统保留角色。");
       }
@@ -535,6 +606,7 @@ export class AdminService {
       const [items, count] = await Promise.all([
         pool.query<MenuRecord>(
           `SELECT m.id::text, m.code, m.name, m.path, m.icon,
+                  m.menu_type AS type, m.permission_code AS "permissionCode",
                   m.parent_id::text AS "parentId", p.name AS "parentName",
                   m.sort_order AS "sortOrder", m.is_visible AS "isVisible",
                   m.is_active AS "isActive", m.created_at AS "createdAt"
@@ -555,66 +627,65 @@ export class AdminService {
     }
   }
 
-  async createMenu(input: unknown) {
-    const body = this.record(input);
-    const value = this.validateMenuInput(body, false);
-    const client = await this.databaseService.getPool().connect();
+  async listPermissionTree(): Promise<MenuRecord[]> {
     try {
-      await client.query("BEGIN");
-      // 菜单树修改串行执行，防止并发调整同时构造出循环层级。
-      await client.query("SELECT pg_advisory_xact_lock(4102, 2)");
-      await this.assertMenuParent(value.parentId, undefined, client);
-      const result = await client.query<MenuRecord>(
-        `INSERT INTO menus AS target
-         (code, name, path, icon, parent_id, sort_order, is_visible, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING target.id::text, target.code, target.name, target.path,
-                 target.icon, target.parent_id::text AS "parentId",
-                 (SELECT parent.name FROM menus parent WHERE parent.id = target.parent_id) AS "parentName",
-                 target.sort_order AS "sortOrder", target.is_visible AS "isVisible",
-                 target.is_active AS "isActive", target.created_at AS "createdAt"`,
-        [
-          value.code,
-          value.name,
-          value.path,
-          value.icon,
-          value.parentId,
-          value.sortOrder,
-          value.isVisible,
-          value.isActive,
-        ],
+      const result = await this.databaseService.getPool().query<MenuRecord>(
+        `SELECT menu.id::text, menu.code, menu.name, menu.path, menu.icon,
+                menu.menu_type AS type,
+                menu.permission_code AS "permissionCode",
+                menu.parent_id::text AS "parentId",
+                parent.name AS "parentName",
+                menu.sort_order AS "sortOrder",
+                menu.is_visible AS "isVisible",
+                menu.is_active AS "isActive",
+                menu.created_at AS "createdAt"
+           FROM menus menu
+           LEFT JOIN menus parent ON parent.id = menu.parent_id
+          ORDER BY menu.sort_order, menu.id`,
       );
-      await client.query("COMMIT");
-      return result.rows[0];
-    } catch (error) {
-      await client.query("ROLLBACK").catch(() => undefined);
-      throw this.translateWriteError(error, "无法创建菜单。");
-    } finally {
-      client.release();
+      const nodes = new Map<string, MenuRecord>();
+      for (const row of result.rows)
+        nodes.set(row.id, { ...row, children: [] });
+      const roots: MenuRecord[] = [];
+      for (const node of nodes.values()) {
+        const parent = node.parentId ? nodes.get(node.parentId) : undefined;
+        if (parent) parent.children?.push(node);
+        else roots.push(node);
+      }
+      return roots;
+    } catch {
+      throw new ServiceUnavailableException("无法读取角色权限菜单。");
     }
   }
 
   async updateMenu(idValue: string, input: unknown) {
     const id = this.parseId(idValue, "id");
     const body = this.record(input);
-    const value = this.validateMenuInput(body, true);
+    const value = this.validateMenuInput(body);
     const client = await this.databaseService.getPool().connect();
     try {
       await client.query("BEGIN");
-      // 与新增及删除菜单共用锁，保证环路校验使用稳定的菜单树。
+      // 菜单树修改串行执行，避免调整上级时并发造成循环层级。
       await client.query("SELECT pg_advisory_xact_lock(4102, 2)");
-      const current = await client.query<{ id: string }>(
-        "SELECT id::text FROM menus WHERE id = $1 FOR UPDATE",
+      const current = await client.query<{ id: string; type: AdminMenuType }>(
+        "SELECT id::text, menu_type AS type FROM menus WHERE id = $1 FOR UPDATE",
         [id],
       );
       if (!current.rows[0]) throw new NotFoundException("菜单不存在。");
+      if (current.rows[0].type === "button") {
+        throw new ConflictException("页面按钮权限由系统维护，不能编辑。");
+      }
       if (Object.hasOwn(body, "parentId")) {
-        await this.assertMenuParent(value.parentId, id, client);
+        await this.assertMenuParent(
+          value.parentId,
+          id,
+          current.rows[0].type,
+          client,
+        );
       }
       const fields: string[] = [];
       const values: unknown[] = [];
       const fieldMap = [
-        ["code", "code"],
         ["name", "name"],
         ["path", "path"],
         ["icon", "icon"],
@@ -635,7 +706,9 @@ export class AdminService {
         `UPDATE menus AS target SET ${fields.join(", ")}, updated_at = NOW()
           WHERE id = $${values.length}
         RETURNING target.id::text, target.code, target.name, target.path,
-                  target.icon, target.parent_id::text AS "parentId",
+                  target.icon, target.menu_type AS type,
+                  target.permission_code AS "permissionCode",
+                  target.parent_id::text AS "parentId",
                   (SELECT parent.name FROM menus parent WHERE parent.id = target.parent_id) AS "parentName",
                   target.sort_order AS "sortOrder", target.is_visible AS "isVisible",
                   target.is_active AS "isActive", target.created_at AS "createdAt"`,
@@ -651,35 +724,6 @@ export class AdminService {
     }
   }
 
-  async deleteMenu(idValue: string) {
-    const id = this.parseId(idValue, "id");
-    const client = await this.databaseService.getPool().connect();
-    try {
-      await client.query("BEGIN");
-      // 与其他菜单树修改串行执行，避免检查子级后又并发插入引用。
-      await client.query("SELECT pg_advisory_xact_lock(4102, 2)");
-      const current = await client.query(
-        "SELECT id FROM menus WHERE id = $1 FOR UPDATE",
-        [id],
-      );
-      if (!current.rowCount) throw new NotFoundException("菜单不存在。");
-      const children = await client.query(
-        "SELECT 1 FROM menus WHERE parent_id = $1 LIMIT 1",
-        [id],
-      );
-      if (children.rowCount)
-        throw new ConflictException("请先移除或调整子菜单。");
-      await client.query("DELETE FROM menus WHERE id = $1", [id]);
-      await client.query("COMMIT");
-      return { deleted: true };
-    } catch (error) {
-      await client.query("ROLLBACK").catch(() => undefined);
-      throw this.translateWriteError(error, "无法删除菜单。");
-    } finally {
-      client.release();
-    }
-  }
-
   async getSettings() {
     return { settings: await this.readSettings() };
   }
@@ -690,8 +734,8 @@ export class AdminService {
       "systemName",
       "tokenName",
       "tokenSymbol",
-      "projectId",
       "passwordPolicy",
+      "themePalettes",
     ]);
     for (const key of Object.keys(body)) {
       if (!allowed.has(key))
@@ -716,25 +760,20 @@ export class AdminService {
       }
       changes.push(["token_symbol", value, "链上主代币简称"]);
     }
-    if (Object.hasOwn(body, "projectId")) {
-      if (
-        body.projectId !== null &&
-        (typeof body.projectId !== "string" ||
-          body.projectId.trim().length > 200)
-      ) {
-        throw new BadRequestException("projectId 长度无效。");
-      }
-      // 前端用 null 表示清空项目 ID，写入时统一为移除配置项。
-      const value =
-        typeof body.projectId === "string" ? body.projectId.trim() : "";
-      changes.push(["project_id", value, "WalletConnect Cloud 项目 ID"]);
-    }
     if (Object.hasOwn(body, "passwordPolicy")) {
       const policy = this.validatePasswordPolicyInput(body.passwordPolicy);
       changes.push([
         "admin_password_policy",
         JSON.stringify(policy),
         "管理员密码强度策略",
+      ]);
+    }
+    if (Object.hasOwn(body, "themePalettes")) {
+      const palettes = this.validateThemePalettesInput(body.themePalettes);
+      changes.push([
+        "theme_palettes",
+        JSON.stringify(palettes),
+        "用户端与管理后台配色方案",
       ]);
     }
 
@@ -758,13 +797,6 @@ export class AdminService {
             value,
             current.installationChainId,
           );
-        }
-        if (key === "project_id" && !value) {
-          await client.query(
-            "DELETE FROM system_configs WHERE config_key = $1",
-            [key],
-          );
-          continue;
         }
         await client.query(
           `INSERT INTO system_configs (config_key, config_value, description)
@@ -809,16 +841,15 @@ export class AdminService {
           "system_name",
           "token_name",
           "token_symbol",
-          "project_id",
           "admin_password_policy",
-          "installation_chain_id",
+          "theme_palettes",
         ],
       ],
     );
     const values = new Map(
       result.rows.map((row) => [row.config_key, row.config_value]),
     );
-    const chainValue = values.get("installation_chain_id");
+    const installationChainId = await this.readRuntimeChainId(database);
     const policy = this.parsePasswordPolicy(
       values.get("admin_password_policy"),
     );
@@ -826,9 +857,73 @@ export class AdminService {
       systemName: values.get("system_name") ?? "",
       tokenName: values.get("token_name") ?? "",
       tokenSymbol: values.get("token_symbol") ?? "",
-      projectId: values.get("project_id") ?? "",
       passwordPolicy: policy,
-      installationChainId: chainValue ? Number(chainValue) : null,
+      installationChainId,
+      themePalettes: this.parseThemePalettes(values.get("theme_palettes")),
+    };
+  }
+
+  private async readRuntimeChainId(database: Pool | PoolClient) {
+    const table = await database.query<{ exists: boolean }>(
+      "SELECT to_regclass('public.runtime_contract_binding') IS NOT NULL AS exists",
+    );
+    const binding = table.rows[0]?.exists
+      ? await database.query<{ chain_id: string }>(
+          "SELECT chain_id::text FROM runtime_contract_binding WHERE singleton = TRUE",
+        )
+      : { rows: [] as Array<{ chain_id: string }> };
+    let value = binding.rows[0]?.chain_id;
+    if (value === undefined) {
+      // 兼容尚未由安装器回填到运行时绑定表的旧安装。
+      const legacy = await database.query<{ config_value: string }>(
+        "SELECT config_value FROM system_configs WHERE config_key = 'installation_chain_id'",
+      );
+      value = legacy.rows[0]?.config_value;
+    }
+    if (value === undefined) return null;
+    const chainId = Number(value);
+    if (!Number.isSafeInteger(chainId) || chainId <= 0) {
+      throw new ServiceUnavailableException("生效合约绑定的 ChainId 无效。");
+    }
+    return chainId;
+  }
+
+  private parseThemePalettes(value?: string): ThemePalettes {
+    if (!value) return structuredClone(DEFAULT_THEME_PALETTES);
+    try {
+      return this.validateThemePalettesInput(JSON.parse(value) as unknown);
+    } catch {
+      return structuredClone(DEFAULT_THEME_PALETTES);
+    }
+  }
+
+  private validateThemePalettesInput(input: unknown): ThemePalettes {
+    const value = this.record(input);
+    const user = this.record(value.user);
+    const admin = this.record(value.admin);
+    const validateColor = (raw: unknown, name: string) => {
+      if (typeof raw !== "string" || !/^#[\da-f]{6}$/i.test(raw)) {
+        throw new BadRequestException(`${name} 须为六位十六进制颜色值。`);
+      }
+      return raw.toLowerCase();
+    };
+
+    return {
+      user: {
+        accent: validateColor(user.accent, "user.accent"),
+        background: validateColor(user.background, "user.background"),
+        surface: validateColor(user.surface, "user.surface"),
+        text: validateColor(user.text, "user.text"),
+        mutedText: validateColor(user.mutedText, "user.mutedText"),
+      },
+      admin: {
+        primary: validateColor(admin.primary, "admin.primary"),
+        background: validateColor(admin.background, "admin.background"),
+        surface: validateColor(admin.surface, "admin.surface"),
+        text: validateColor(admin.text, "admin.text"),
+        mutedText: validateColor(admin.mutedText, "admin.mutedText"),
+        border: validateColor(admin.border, "admin.border"),
+      },
     };
   }
 
@@ -924,18 +1019,25 @@ export class AdminService {
 
   private async assertMenuParent(
     parentId: string | null,
-    currentId?: string,
+    currentId: string,
+    currentType: AdminMenuType,
     queryable?: PoolClient,
   ) {
     if (!parentId) return;
     if (parentId === currentId)
       throw new ConflictException("菜单不能以自身为父菜单。");
     const db = queryable ?? this.databaseService.getPool();
-    const exists = await db.query("SELECT 1 FROM menus WHERE id = $1", [
-      parentId,
-    ]);
-    if (!exists.rowCount) throw new BadRequestException("父菜单不存在。");
-    if (!currentId) return;
+    const parent = await db.query<{ type: AdminMenuType }>(
+      "SELECT menu_type AS type FROM menus WHERE id = $1",
+      [parentId],
+    );
+    if (!parent.rows[0]) throw new BadRequestException("父目录不存在。");
+    if (parent.rows[0].type !== "directory") {
+      throw new BadRequestException("目录和菜单的上级只能选择目录。");
+    }
+    if (currentType !== "directory" && currentType !== "menu") {
+      throw new BadRequestException("当前菜单类型不支持调整上级目录。");
+    }
     const descendant = await db.query(
       `WITH RECURSIVE descendants AS (
          SELECT id FROM menus WHERE id = $1
@@ -950,9 +1052,8 @@ export class AdminService {
       throw new ConflictException("不能将菜单移到自己的子级下。");
   }
 
-  private validateMenuInput(body: Record<string, unknown>, partial: boolean) {
+  private validateMenuInput(body: Record<string, unknown>) {
     const output: {
-      code?: string;
       name?: string;
       path?: string;
       icon?: string;
@@ -962,7 +1063,6 @@ export class AdminService {
       isActive?: boolean;
     } = {};
     const fields: Array<keyof typeof output> = [
-      "code",
       "name",
       "path",
       "icon",
@@ -971,23 +1071,9 @@ export class AdminService {
       "isVisible",
       "isActive",
     ];
-    if (!partial) {
-      for (const field of ["code", "name", "path", "icon"] as const) {
-        if (!Object.hasOwn(body, field))
-          throw new BadRequestException(`缺少字段 ${field}。`);
-      }
-    }
     for (const field of fields) {
       if (!Object.hasOwn(body, field)) continue;
       switch (field) {
-        case "code": {
-          const value = this.validateText(body.code, "code", 96);
-          if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]{1,95}$/.test(value)) {
-            throw new BadRequestException("菜单 code 格式无效。");
-          }
-          output.code = value;
-          break;
-        }
         case "name":
           output.name = this.validateText(body.name, "name", 128);
           break;
@@ -1001,7 +1087,11 @@ export class AdminService {
         }
         case "icon": {
           const value = this.validateText(body.icon, "icon", 96, true);
-          if (value && !/^[a-zA-Z0-9_-]+$/.test(value)) {
+          // 兼容 Material 图标名称与 Font Awesome 的字体类名。
+          if (
+            value &&
+            !/^(?:[a-zA-Z0-9_-]+|(?:fas|far|fab) fa-[a-z0-9-]+)$/.test(value)
+          ) {
             throw new BadRequestException("菜单 icon 格式无效。");
           }
           output.icon = value;
@@ -1030,7 +1120,6 @@ export class AdminService {
       }
     }
     return {
-      code: output.code,
       name: output.name,
       path: output.path,
       icon: output.icon,
@@ -1039,6 +1128,23 @@ export class AdminService {
       isVisible: output.isVisible ?? true,
       isActive: output.isActive ?? true,
     };
+  }
+
+  // 允许保留角色原有权限，但不得新增操作者未拥有的权限。
+  private assertDelegablePermissions(
+    next: string[],
+    actor: string[],
+    existing: string[],
+  ) {
+    if (actor.includes("*")) return;
+    if (
+      next.some(
+        (permission) =>
+          !actor.includes(permission) && !existing.includes(permission),
+      )
+    ) {
+      throw new ForbiddenException("不能授予超出自身权限的操作。");
+    }
   }
 
   private validateRoleInput(body: Record<string, unknown>, partial: boolean) {

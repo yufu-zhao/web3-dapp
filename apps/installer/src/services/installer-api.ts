@@ -43,6 +43,10 @@ export interface DatabaseCheck {
   tableCount: number;
   tables: string[];
   canCreateDatabase: boolean;
+  existingInstallation?: {
+    administrator: string;
+    installation: InstallationIdentity;
+  };
 }
 
 export interface DeploymentRecord {
@@ -67,7 +71,7 @@ export interface InstallationSummary {
   passwordPolicy?: AdminPasswordPolicy;
   installation?: InstallationIdentity | null;
   deployments?: DeploymentRecord[];
-  projectId?: string | null;
+  walletConnectConfigured?: boolean;
   installedAt?: string | null;
   settingsSaved?: boolean;
 }
