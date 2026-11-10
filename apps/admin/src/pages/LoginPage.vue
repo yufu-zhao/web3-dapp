@@ -6,11 +6,7 @@
         <main class="login-shell">
           <section class="login-brand-panel">
             <div>
-              <img
-                src="brand/chainforge-logo-horizontal.svg"
-                alt="logo"
-                height="48px"
-              />
+              <BrandLogo :height="48" />
             </div>
             <div class="brand-copy">
               <p class="login-kicker">CHAINFORGE CONTROL</p>
@@ -94,6 +90,7 @@
 import { onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { loadAdminInitializationStatus } from "@chainforge/shared-types";
+import { BrandLogo } from "@chainforge/brand-ui";
 import { adminRequest, type AdminSessionPayload } from "../services/admin-api";
 import { firstMenuPath, saveAdminSession } from "../services/admin-session";
 

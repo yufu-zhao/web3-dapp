@@ -1,73 +1,62 @@
 <template>
   <section class="step-content complete-step">
     <div v-if="loading" class="loading-state">
-      <q-spinner-dots size="36px" color="primary" /><span
-        >正在读取安装与部署资料…</span
-      >
+      <q-spinner-dots size="36px" color="primary" />
+      <span>正在读取安装与部署资料…</span>
     </div>
     <q-banner v-else-if="loadError" class="message-banner error-message">
-      <template #avatar><q-icon name="error_outline" /></template
-      >{{ loadError }}
+      <template #avatar><q-icon name="error_outline" /></template>
+      {{ loadError }}
     </q-banner>
     <template v-else-if="deployment">
       <div class="complete-hero">
         <div class="complete-check"><q-icon name="check" size="34px" /></div>
         <p class="content-kicker">步骤 04 · 安装完成</p>
         <h2>部署资料已准备完成</h2>
-        <p>
-          本页包含数据库、首位管理员、钱包网络、链上部署结果和资料输出位置。
-        </p>
+        <p>本页包含数据库、首位管理员、钱包网络、链上部署结果和资料输出位置。</p>
       </div>
       <div class="summary-grid">
         <InstallerCard tag="article" class="summary-card">
           <span class="summary-icon"><q-icon name="dns" /></span>
           <div>
-            <small>数据库</small
-            ><strong>{{ summary.database || "PostgreSQL" }}</strong
-            ><span
-              >{{ summary.databaseConnection?.host ?? "本机配置" }}:{{
-                summary.databaseConnection?.port ?? ""
-              }}
-              · 用户 {{ summary.databaseConnection?.username ?? "—" }}</span
-            >
+            <small>数据库</small>
+            <strong>{{ summary.database || "PostgreSQL" }}</strong>
+            <span>
+              {{ summary.databaseConnection?.host ?? "本机配置" }}:{{ summary.databaseConnection?.port ?? "" }} · 用户
+              {{ summary.databaseConnection?.username ?? "—" }}
+            </span>
           </div>
         </InstallerCard>
         <InstallerCard tag="article" class="summary-card">
-          <span class="summary-icon"
-            ><q-icon name="admin_panel_settings"
-          /></span>
+          <span class="summary-icon"><q-icon name="admin_panel_settings" /></span>
           <div>
-            <small>首位管理员</small
-            ><strong>{{ summary.administrator || "已初始化" }}</strong
-            ><span>角色：超级管理员</span>
+            <small>首位管理员</small>
+            <strong>{{ summary.administrator || "已初始化" }}</strong>
+            <span>角色：超级管理员</span>
           </div>
         </InstallerCard>
         <InstallerCard tag="article" class="summary-card">
           <span class="summary-icon"><q-icon name="qr_code_2" /></span>
           <div>
-            <small>Reown AppKit</small
-            ><strong>{{
-              summary.walletConnectConfigured ? "已配置" : "未配置"
-            }}</strong
-            ><span>Project ID 从根目录 .env 加载，供三个前端共享</span>
+            <small>Reown AppKit</small>
+            <strong>{{ summary.walletConnectConfigured ? "已配置" : "未配置" }}</strong>
+            <span>Project ID 从根目录 .env 加载，供三个前端共享</span>
           </div>
         </InstallerCard>
         <InstallerCard tag="article" class="summary-card">
-          <span class="summary-icon"
-            ><q-icon name="account_balance_wallet"
-          /></span>
+          <span class="summary-icon"><q-icon name="account_balance_wallet" /></span>
           <div>
-            <small>部署网络</small
-            ><strong>ChainId {{ deployment.chainId }}</strong
-            ><span>部署者 {{ deployment.deployer }}</span>
+            <small>部署网络</small>
+            <strong>ChainId {{ deployment.chainId }}</strong>
+            <span>部署者 {{ deployment.deployer }}</span>
           </div>
         </InstallerCard>
         <InstallerCard tag="article" class="summary-card">
           <span class="summary-icon"><q-icon name="schedule" /></span>
           <div>
-            <small>完成时间</small
-            ><strong>{{ formatDate(deployment.completedAt) }}</strong
-            ><span>合约包版本 {{ deployment.releaseVersion }}</span>
+            <small>完成时间</small>
+            <strong>{{ formatDate(deployment.completedAt) }}</strong>
+            <span>合约包版本 {{ deployment.releaseVersion }}</span>
           </div>
         </InstallerCard>
         <InstallerCard tag="article" class="summary-card">
@@ -75,80 +64,63 @@
           <div>
             <small>系统与代币身份</small>
             <strong>{{ deploymentIdentity.systemName || "链构" }}</strong>
-            <span
-              >{{ deploymentIdentity.tokenName || "项目代币" }} ·
-              {{ deploymentIdentity.tokenSymbol || "TOKEN" }}</span
-            >
+            <span>
+              {{ deploymentIdentity.tokenName || "项目代币" }} · {{ deploymentIdentity.tokenSymbol || "TOKEN" }}
+            </span>
           </div>
         </InstallerCard>
         <InstallerCard tag="article" class="summary-card">
           <span class="summary-icon"><q-icon name="terminal" /></span>
           <div>
-            <small>安装运行环境</small
-            ><strong>Node.js {{ environment?.nodeVersion ?? "—" }}</strong
-            ><span
-              >{{ environment?.platform ?? "" }} ·
-              {{ environment?.architecture ?? "" }}</span
-            >
+            <small>安装运行环境</small>
+            <strong>Node.js {{ environment?.nodeVersion ?? "—" }}</strong>
+            <span>{{ environment?.platform ?? "" }} · {{ environment?.architecture ?? "" }}</span>
           </div>
         </InstallerCard>
       </div>
 
       <InstallerCard class="policy-card">
         <div class="section-title">
-          <strong>管理员密码策略</strong><small>已保存到 system_configs</small>
+          <strong>管理员密码策略</strong>
+          <small>已保存到 system_configs</small>
         </div>
-        <span>最少 {{ summary.passwordPolicy?.minimumLength ?? 12 }} 位</span
-        ><span>{{ policyLabels }}</span>
+        <span>最少 {{ summary.passwordPolicy?.minimumLength ?? 12 }} 位</span>
+        <span>{{ policyLabels }}</span>
       </InstallerCard>
 
       <InstallerCard class="deployment-config">
         <div class="section-title">
-          <strong>本次部署参数</strong><small>与完整部署资料 JSON 一致</small>
+          <strong>本次部署参数</strong>
+          <small>与完整部署资料 JSON 一致</small>
         </div>
-        <div
-          v-for="item in configurationRows"
-          :key="item.label"
-          class="configuration-row"
-        >
-          <strong>{{ item.label }}</strong
-          ><code>{{ item.value }}</code>
+        <div v-for="item in configurationRows" :key="item.label" class="configuration-row">
+          <strong>{{ item.label }}</strong>
+          <code>{{ item.value }}</code>
         </div>
       </InstallerCard>
 
       <InstallerCard class="contract-summary">
         <div class="section-title">
-          <strong>本次链上部署与配置</strong
-          ><small
-            >{{
-              deployment.steps.filter((step) => step.status === "success")
-                .length
-            }}
-            步均已成功</small
-          >
+          <strong>本次链上部署与配置</strong>
+          <small>{{ deployment.steps.filter((step) => step.status === "success").length }} 步均已成功</small>
         </div>
-        <article
-          v-for="entry in contractEntries"
-          :key="entry.nodeId"
-          class="contract-row"
-        >
+        <article v-for="entry in contractEntries" :key="entry.nodeId" class="contract-row">
           <div>
-            <strong>{{ entry.contractName }}</strong
-            ><small>{{ entry.source ?? "链上部署" }}</small>
+            <strong>{{ entry.contractName }}</strong>
+            <small>{{ entry.source ?? "链上部署" }}</small>
           </div>
           <div class="contract-meta">
-            <code>地址 {{ entry.address }}</code
-            ><code v-if="entry.transactionHash"
-              >交易 {{ entry.transactionHash }}</code
-            ><span v-else>由 {{ entry.source }} 读取，无单独部署交易</span>
+            <code>地址 {{ entry.address }}</code>
+            <code v-if="entry.transactionHash">交易 {{ entry.transactionHash }}</code>
+            <span v-else>由 {{ entry.source }} 读取，无单独部署交易</span>
           </div>
         </article>
         <article v-for="step in actionSteps" :key="step.id" class="action-row">
           <span class="success-check"><q-icon name="check" /></span>
           <div>
-            <strong>{{ step.title }}</strong
-            ><code v-if="step.transactionHash">{{ step.transactionHash }}</code
-            ><span v-else>{{ step.result || "只读核验完成" }}</span>
+            <strong>{{ step.title }}</strong>
+            <code v-if="step.transactionHash">{{ step.transactionHash }}</code>
+            <span v-else>{{ step.result || "只读核验完成" }}</span>
           </div>
         </article>
       </InstallerCard>
@@ -156,41 +128,25 @@
       <q-banner class="message-banner info-message">
         <template #avatar><q-icon name="folder_open" /></template>
         <div>
-          <strong>部署资料输出位置</strong><br /><code>{{
-            deployment.outputPath
-          }}</code
-          ><br />同链支付 Token 列表：contracts/deploy/{{
-            deployment.chainId
-          }}/tokens.json
+          <strong>部署资料输出位置</strong>
+          <br />
+          <code>{{ deployment.outputPath }}</code>
+          <br />
+          同链支付 Token 列表：contracts/deploy/{{ deployment.chainId }}/tokens.json
         </div>
       </q-banner>
-      <q-banner
-        v-if="summary.settingsSaved"
-        class="message-banner success-message"
-      >
-        <template #avatar><q-icon name="save" /></template>数据库连接信息已写入
-        workspace 的 .env 文件。
+      <q-banner v-if="summary.settingsSaved" class="message-banner success-message">
+        <template #avatar><q-icon name="save" /></template>
+        数据库连接信息已写入 workspace 的 .env 文件。
       </q-banner>
       <q-banner v-else class="message-banner warning-message">
-        <template #avatar><q-icon name="info" /></template>数据库已初始化，但
-        .env 未能保存连接信息。请检查安装服务的文件写入权限。
+        <template #avatar><q-icon name="info" /></template>
+        数据库已初始化，但 .env 未能保存连接信息。请检查安装服务的文件写入权限。
       </q-banner>
       <div class="actions-row">
-        <q-btn
-          flat
-          color="dark"
-          icon="arrow_back"
-          label="返回部署摘要"
-          @click="router.push('/deploy')"
-        />
+        <q-btn flat color="dark" icon="arrow_back" label="返回部署摘要" @click="router.push('/deploy')" />
         <div class="complete-actions">
-          <q-btn
-            outline
-            color="dark"
-            icon="download"
-            label="导出部署 JSON"
-            @click="downloadDeployment"
-          />
+          <q-btn outline color="dark" icon="download" label="导出部署 JSON" @click="downloadDeployment" />
           <q-btn
             color="primary"
             unelevated
@@ -202,9 +158,9 @@
         </div>
       </div>
       <q-banner v-if="finished" class="message-banner success-message">
-        <template #avatar><q-icon name="task_alt" /></template
-        >安装摘要已确认，ChainId、部署 ID 和合约地址已写入
-        runtime_contract_binding。部署资料保存在上述 contracts/deploy 目录中。
+        <template #avatar><q-icon name="task_alt" /></template>
+        安装摘要已确认，ChainId、部署 ID 和合约地址已写入 runtime_contract_binding。部署资料保存在上述 contracts/deploy
+        目录中。
       </q-banner>
       <q-banner v-if="finishError" class="message-banner error-message">
         <template #avatar><q-icon name="error_outline" /></template>
@@ -217,15 +173,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import {
-  installerRequest,
-  type SavedDeployment,
-} from "../services/installer-api";
-import {
-  errorMessage,
-  installerFlow,
-  type InstallerEnvironment,
-} from "../services/installer-flow";
+import { installerRequest, type SavedDeployment } from "../services/installer-api";
+import { errorMessage, installerFlow, type InstallerEnvironment } from "../services/installer-flow";
 import InstallerCard from "../components/InstallerCard.vue";
 
 const route = useRoute();
@@ -245,9 +194,7 @@ const contractEntries = computed(() =>
   ),
 );
 const actionSteps = computed(() =>
-  (deployment.value?.steps ?? []).filter(
-    (step) => !deployment.value?.contracts?.[step.id],
-  ),
+  (deployment.value?.steps ?? []).filter((step) => !deployment.value?.contracts?.[step.id]),
 );
 const configurationRows = computed(() => {
   const configuration = deployment.value?.configuration ?? {};
@@ -284,9 +231,7 @@ const configurationRows = computed(() => {
     },
   ].map((item) => ({ label: item.label, value: String(item.value ?? "—") }));
 });
-const deploymentIdentity = computed(() =>
-  readObject(deployment.value?.configuration?.installation),
-);
+const deploymentIdentity = computed(() => readObject(deployment.value?.configuration?.installation));
 const policyLabels = computed(() => {
   const policy = summary.value.passwordPolicy;
   if (!policy) return "大写、小写、数字、特殊字符";
@@ -313,9 +258,7 @@ function formatDate(value?: string) {
 }
 
 function readObject(value: unknown) {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
 async function loadDeployment() {
@@ -323,19 +266,16 @@ async function loadDeployment() {
   loadError.value = "";
   try {
     const id = String(route.params.deploymentId ?? "");
-    if (flow.selectedDeployment?.deploymentId === id)
-      deployment.value = flow.selectedDeployment;
+    if (flow.selectedDeployment?.deploymentId === id) deployment.value = flow.selectedDeployment;
     else {
       const chainId = Number(route.query.chainId);
-      if (!Number.isSafeInteger(chainId) || chainId <= 0)
-        throw new Error("部署资料缺少 ChainId。");
+      if (!Number.isSafeInteger(chainId) || chainId <= 0) throw new Error("部署资料缺少 ChainId。");
       deployment.value = await installerRequest<SavedDeployment>(
         `/contracts/deployments/${chainId}/${encodeURIComponent(id)}`,
       );
       flow.selectedDeployment = deployment.value;
     }
-    environment.value ??=
-      await installerRequest<InstallerEnvironment>("/environment");
+    environment.value ??= await installerRequest<InstallerEnvironment>("/environment");
   } catch (error) {
     loadError.value = errorMessage(error);
   } finally {

@@ -76,6 +76,64 @@ export interface AdminSettings {
   passwordPolicy: AdminPasswordPolicy;
   installationChainId: number | null;
   themePalettes: ThemePalettes;
+  rpcConfiguration: {
+    chainId: number | null;
+    chainName: string;
+    nodes: string[];
+    activeUrl: string;
+    metrics: Record<
+      string,
+      {
+        status: "success" | "failed";
+        latencyMs: number | null;
+        testedAt: string;
+        blockNumber?: number;
+        message?: string;
+      }
+    >;
+    source: "database" | "environment" | "defaults" | "unavailable";
+  };
+}
+
+export interface ManagedCarouselItem {
+  id: string;
+  title: string;
+  desktopImageUrl: string;
+  mobileImageUrl: string;
+  actionType: "route" | "external" | "none";
+  actionTarget: string;
+  widthMode: "default" | "full";
+  desktopHeight: number;
+  mobileHeight: number;
+  sortOrder: number;
+  isVisible: boolean;
+}
+
+export interface ManagedAnnouncement {
+  id: string;
+  title: string;
+  summary: string;
+  contentType: "article" | "video";
+  body: string;
+  mediaUrl: string;
+  mediaMode: "upload" | "external";
+  isVisible: boolean;
+}
+
+export interface AnnouncementTickerSettings {
+  scrollDurationMs: number;
+  itemDelayMs: number;
+  fontSizePx: number;
+}
+
+export interface ContentManagementSettings {
+  carouselItems: ManagedCarouselItem[];
+  announcements: ManagedAnnouncement[];
+  tickerSettings: AnnouncementTickerSettings;
+}
+
+export interface UploadedContentAsset {
+  url: string;
 }
 
 export class AdminApiError extends Error {
@@ -100,7 +158,9 @@ export async function adminRequest<T>(
       credentials: "same-origin",
       headers: {
         accept: "application/json",
-        ...(init.body ? { "content-type": "application/json" } : {}),
+        ...(init.body && !(init.body instanceof FormData)
+          ? { "content-type": "application/json" }
+          : {}),
         ...init.headers,
       },
     });

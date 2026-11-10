@@ -75,11 +75,7 @@
       style="background-color: #151d2c"
     >
       <div class="q-pa-md flex items-center">
-        <q-img
-          src="brand/chainforge-logo-horizontal.svg"
-          alt="logo"
-          height="38"
-        />
+        <BrandLogo :height="38" />
       </div>
       <q-separator dark inset />
       <div class="q-pa-md">
@@ -122,6 +118,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { loadAdminInitializationStatus } from "@chainforge/shared-types";
+import { BrandLogo } from "@chainforge/brand-ui";
 import { useRoute, useRouter } from "vue-router";
 import AdminMenuBranch from "../components/AdminMenuBranch.vue";
 import AdminTabBar from "../components/AdminTabBar.vue";

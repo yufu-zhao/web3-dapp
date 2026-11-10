@@ -14,6 +14,13 @@ import {
   type AdminMenuType,
 } from "./admin.types.js";
 import { DatabaseService } from "./database.service.js";
+import {
+  normalizeRpcUrl,
+  probeRpcNode,
+  resolveRpcConfiguration,
+  type RpcConfiguration,
+  type RpcNodeMetric,
+} from "./chain-rpc.js";
 
 export interface PageQuery {
   page?: string;
@@ -107,6 +114,7 @@ interface AdminSettings {
   passwordPolicy: AdminPasswordPolicy;
   installationChainId: number | null;
   themePalettes: ThemePalettes;
+  rpcConfiguration: RpcConfiguration;
 }
 
 const DEFAULT_PASSWORD_POLICY: AdminPasswordPolicy = {
@@ -148,10 +156,13 @@ const ALLOWED_ROLE_PERMISSIONS = new Set([
   "roles:delete",
   "settings:read",
   "settings:update",
+  "content:read",
+  "content:update",
   "presale:read",
   "presale:terms",
   "presale:schedule",
   "presale:finalize",
+  "presale:records:read",
 ]);
 
 @Injectable()
@@ -736,6 +747,7 @@ export class AdminService {
       "tokenSymbol",
       "passwordPolicy",
       "themePalettes",
+      "rpcConfiguration",
     ]);
     for (const key of Object.keys(body)) {
       if (!allowed.has(key))
@@ -774,6 +786,16 @@ export class AdminService {
         "theme_palettes",
         JSON.stringify(palettes),
         "用户端与管理后台配色方案",
+      ]);
+    }
+    if (Object.hasOwn(body, "rpcConfiguration")) {
+      const configuration = await this.validateRpcConfigurationInput(
+        body.rpcConfiguration,
+      );
+      changes.push([
+        "rpc_nodes",
+        JSON.stringify(configuration),
+        "业务链 RPC 节点配置",
       ]);
     }
 
@@ -818,6 +840,104 @@ export class AdminService {
     return { settings: await this.readSettings() };
   }
 
+  async testRpcConfiguration(input: unknown) {
+    const body = this.record(input);
+    const settings = await this.readSettings();
+    if (!settings.installationChainId) {
+      throw new ConflictException("安装器尚未锁定目标链，无法测试 RPC。");
+    }
+    const timeoutMs = body.batch === true ? 4000 : 8000;
+    const result = await probeRpcNode(
+      body.url,
+      settings.installationChainId,
+      timeoutMs,
+    );
+    const metric: RpcNodeMetric = {
+      status: result.status,
+      latencyMs: result.latencyMs,
+      testedAt: new Date().toISOString(),
+      ...(result.blockNumber === undefined
+        ? {}
+        : { blockNumber: result.blockNumber }),
+      ...(result.message ? { message: result.message } : {}),
+    };
+    await this.storeRpcNodeMetric(
+      settings.installationChainId,
+      result.url,
+      metric,
+    );
+    return { ...result, testedAt: metric.testedAt };
+  }
+
+  private async storeRpcNodeMetric(
+    chainId: number,
+    url: string,
+    metric: RpcNodeMetric,
+  ) {
+    const client = await this.databaseService.getPool().connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock(4102, 6)");
+      const current = await client.query<{ config_value: string }>(
+        "SELECT config_value FROM system_configs WHERE config_key = 'rpc_node_metrics' FOR UPDATE",
+      );
+      let metrics: Record<string, RpcNodeMetric> = {};
+      if (current.rows[0]?.config_value) {
+        try {
+          const saved = JSON.parse(current.rows[0].config_value) as {
+            chainId?: unknown;
+            metrics?: Record<string, RpcNodeMetric>;
+          };
+          if (saved.chainId === chainId && saved.metrics) {
+            metrics = saved.metrics;
+          }
+        } catch {
+          metrics = {};
+        }
+      }
+      metrics[url] = metric;
+      await client.query(
+        `INSERT INTO system_configs (config_key, config_value, description)
+         VALUES ('rpc_node_metrics', $1, 'RPC 节点测速缓存')
+         ON CONFLICT (config_key) DO UPDATE
+           SET config_value = EXCLUDED.config_value,
+               description = EXCLUDED.description,
+               updated_at = NOW()`,
+        [JSON.stringify({ chainId, metrics })],
+      );
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw this.translateWriteError(error, "无法缓存 RPC 节点测速结果。");
+    } finally {
+      client.release();
+    }
+  }
+
+  private async validateRpcConfigurationInput(input: unknown) {
+    const body = this.record(input);
+    const current = await this.readSettings();
+    const chainId = current.installationChainId;
+    if (!chainId) {
+      throw new ConflictException("安装器尚未锁定目标链，无法配置 RPC。");
+    }
+    if (
+      body.chainId !== chainId ||
+      !Array.isArray(body.nodes) ||
+      body.nodes.length < 1 ||
+      body.nodes.length > 100 ||
+      typeof body.activeUrl !== "string"
+    ) {
+      throw new BadRequestException("RPC 配置内容无效或与安装链不匹配。");
+    }
+    const nodes = [...new Set(body.nodes.map((url) => normalizeRpcUrl(url)))];
+    const activeUrl = normalizeRpcUrl(body.activeUrl);
+    if (!nodes.includes(activeUrl)) {
+      throw new BadRequestException("当前 RPC 必须属于已配置的节点列表。");
+    }
+    return { chainId, nodes, activeUrl };
+  }
+
   private assertTokenIdentityChange(
     currentValue: string,
     nextValue: string,
@@ -843,6 +963,8 @@ export class AdminService {
           "token_symbol",
           "admin_password_policy",
           "theme_palettes",
+          "rpc_nodes",
+          "rpc_node_metrics",
         ],
       ],
     );
@@ -860,6 +982,11 @@ export class AdminService {
       passwordPolicy: policy,
       installationChainId,
       themePalettes: this.parseThemePalettes(values.get("theme_palettes")),
+      rpcConfiguration: await resolveRpcConfiguration(
+        installationChainId,
+        values.get("rpc_nodes"),
+        values.get("rpc_node_metrics"),
+      ),
     };
   }
 

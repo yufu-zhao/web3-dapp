@@ -1,0 +1,1316 @@
+{
+  "text_dfdc8c69a25b": {
+    "usage": ["components/WalletConnect.vue"],
+    "placeholders": [],
+    "notes": "使用场景：钱包连接与网络切换。"
+  },
+  "text_54dfe35e3c1d": {
+    "usage": ["components/WalletConnect.vue"],
+    "placeholders": [],
+    "notes": "使用场景：钱包连接与网络切换。"
+  },
+  "text_26ee90b0ba52": {
+    "usage": ["components/WalletConnect.vue"],
+    "placeholders": [],
+    "notes": "使用场景：钱包连接与网络切换。"
+  },
+  "text_e58e6fdcab54": {
+    "usage": ["components/WalletConnect.vue"],
+    "placeholders": [],
+    "notes": "使用场景：钱包连接与网络切换。"
+  },
+  "text_069c0ecbf898": {
+    "usage": ["components/AnnouncementTicker.vue", "pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：首页公告、用户端页面及导航。"
+  },
+  "text_6d9a7758610a": {
+    "usage": ["components/AnnouncementTicker.vue", "pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：首页公告、用户端页面及导航。"
+  },
+  "text_d29a8a2a1b33": {
+    "usage": ["components/AnnouncementTicker.vue"],
+    "placeholders": [],
+    "notes": "使用场景：首页公告。"
+  },
+  "text_eefb2470b9a8": {
+    "usage": [
+      "components/MobileServiceGrid.vue",
+      "components/DesktopServiceMenu.vue",
+      "pages/IndexPage.vue"
+    ],
+    "placeholders": [],
+    "notes": "使用场景：手机端我的服务导航、桌面端我的服务导航、用户端页面及导航。"
+  },
+  "text_e100b15bcdac": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_aebf00357b7b": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_99a0ecb2bfe0": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_e70ae709c5ce": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_3eb11ed33a29": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_3e2ac4e40080": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_c939e5f40f59": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_521e65ffc7d0": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_30d576474480": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_54cd6730d6f4": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_a7ed6176eb8b": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_2a41af87a3b0": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_d6f1a2bc053e": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_6eb6ad14265a": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_479a8d2dd797": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_802a407c7743": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_8b2fcf7a94c7": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_20214c2ee8c8": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_27681bf81853": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_4632c95071d5": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_9ec2865fb6cb": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_21b8af1750f1": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_ae206f36e7e1": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_97b31b5d63f5": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_1c871c22a867": {
+    "usage": ["components/PresaleAccount.vue", "pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程、用户端页面及导航。"
+  },
+  "text_e30ee2ef4a62": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_2cd0f3be8738": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_e284b32ff4d5": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_3ea276d52299": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_4aaeb48743e5": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_6c140b391347": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_5a0451b56e01": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_b5adee6cb38e": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_68496c86e24b": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_ec6ac20e4abe": {
+    "usage": ["components/PresaleAccount.vue", "pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程、用户端页面及导航。"
+  },
+  "text_3fd47edce45b": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_c2233955c3a8": {
+    "usage": ["components/TradeHistoryPanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：交易记录。"
+  },
+  "text_e42579208480": {
+    "usage": ["components/TradeHistoryPanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：交易记录。"
+  },
+  "text_5bddc23f5fa4": {
+    "usage": ["components/TradeHistoryPanel.vue", "pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：交易记录、用户端页面及导航。"
+  },
+  "text_39d34ebf25e0": {
+    "usage": ["components/CarouselHero.vue"],
+    "placeholders": [],
+    "notes": "使用场景：首页轮播。"
+  },
+  "text_4baa5412f2b3": {
+    "usage": ["components/CarouselHero.vue"],
+    "placeholders": [],
+    "notes": "使用场景：首页轮播。"
+  },
+  "text_47c9d350586d": {
+    "usage": ["components/CarouselHero.vue"],
+    "placeholders": [],
+    "notes": "使用场景：首页轮播。"
+  },
+  "text_ce515206a141": {
+    "usage": ["components/CarouselHero.vue"],
+    "placeholders": [],
+    "notes": "使用场景：首页轮播。"
+  },
+  "text_3081b2f39070": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_dc41c0013b97": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_fa6de2cda687": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_872428a7210d": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_b8784c8dd563": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_b85dacc64f51": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_1e54c3a69cb6": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_70808b3d695f": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_dcd7952315f4": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_c6bf9ae19b59": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_b3fbe6f192ec": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_7bdd5ce1e298": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_70269cd2c470": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_35a03c4289d4": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_b13fb9ff5d8c": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_0c150fed7278": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_7bc80bf154e7": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_a3be500185e6": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_50f5d65d5729": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_207c88639b92": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_cdb244ddeb95": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_638115ee8c03": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_8bf6994b5b44": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_52fa6050f77d": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_5b73b7ffa69e": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_e41101a14626": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_cb640f5564b8": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_1d192ce5b6f7": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_4fc041c2eaff": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_aae87a96aacd": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_7f759692747f": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_7dffaffa3e99": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_923735b2fc1b": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_cfd14282eb35": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_3bd33a9db6e1": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_0f4371a7a9cf": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_0b09e14b40e9": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_5e29d121dda0": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_ffcbda29a59a": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_82065a97e81d": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_6c2eb6ceec1d": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_bc9757b1b80e": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_6dd4fc575bcc": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_3b0fa708d39e": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_b668ee457f4d": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_56a7410e3ab2": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_1452f8ba28fa": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_41db199ee511": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_e3619cb000d3": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_e912fe6ce99c": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_19af25f736ba": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_d66f4359dae3": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_9bae68040509": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_ba5f23926f42": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_6bb29f763d65": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_203c08e0d44a": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_2f34ccddf398": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_919ddbbd91c0": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_7f1d9dd04cd1": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_5f45bb826b16": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_977d6ba7257d": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_0d6cf5efd037": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_bf1b26ecb643": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_d0a4006a26b6": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_84adf19f350e": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_31cc4b032944": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_c224b62005e6": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_40246300504d": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_c6309848f6bc": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_fe666457b149": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_b3c131feff36": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_f32299fed16a": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_0a4db761b71c": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_9c7ba175a7a8": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_cec00a67c851": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_8a3214ca0dfd": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_e887f1caa673": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_550eddc3c7fe": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_392aa71d937b": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_222b01b1379b": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_a6b32fded4c3": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_72055beeb82e": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_0168df8f4c4a": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_acdf17f4e9c4": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_ee8fe4a6b40a": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_f64191706f55": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_486aa923fc94": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_5ddcb16ab6fc": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_2e6bfec616ad": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_10939f548645": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_99909a699065": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_67a469708ec2": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_b24a303fae70": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_50dbb99d5980": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_ed8745d001b1": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_87556ba69658": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_68c38611229d": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_497a247bd0ee": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_1d1126356e3d": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_4b1f0feb4a9a": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_eef86f0ac9c3": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_988410986031": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_b0538ff56623": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_9440594b127a": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_3e75292e1392": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_873f5230315c": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_5de3f0f091f4": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_d0557b30cd3e": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_e62ffc155f98": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_af5aa78c275f": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_c3daa7ef5cd3": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_9ec729d9d2b4": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_48880f7a549d": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_c2590a79c3eb": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_fa29a60e22c1": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_73eefa939f84": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_9a8798488169": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": ["token"],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_d33dafb53452": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_60b8db6ee8cd": {
+    "usage": ["components/PresaleAccount.vue", "pages/IndexPage.vue"],
+    "placeholders": ["round"],
+    "notes": "使用场景：私募认购、钱包交易与领取流程、用户端页面及导航。"
+  },
+  "text_ed1b2beb057c": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": ["token"],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_5a382066a61e": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": ["progress"],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_03831f44f5de": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": ["amount", "token"],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_19003bc43c59": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": ["amount", "token"],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_4af4222eb987": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": ["feature"],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_7204737076bc": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": ["list"],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_a1557ec3b077": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_fb28ba14091d": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_af4f2ee25580": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_65cdbf4af6df": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_f5a1c7cd0895": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_505caac0c387": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_3334cc394625": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_384647771e16": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_2637f2222d6a": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_499321b2c1ed": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_fbf68d5893ce": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_0ad3cc6744bc": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_09548ab045b5": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_fb0f2cc8d979": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": ["error"],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_0c49af90e18f": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": ["status"],
+    "notes": "使用场景：用户端页面及导航。"
+  },
+  "text_374d13aec7f1": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_48e294edd68a": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_70b167117882": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": ["round", "status"],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_426e458a4124": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_3070e857fcba": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": ["amount", "symbol", "round", "price"],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_cff945cbaf57": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": ["kind"],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_40206076cfa7": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_c3041b501978": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_2ea8720ffaae": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_a8b0bd9c65f7": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_d0ed839a8655": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_a9683339e4de": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_2ba955df13ff": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_3879c39dc3f4": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_d65e19ca2331": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_f28461bb49c8": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_a3321f43b3b3": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_c8754e21ae7a": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_6cf2531ab111": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_b6cf7c6414ef": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_286d44ae2748": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_52f8b2fa8af6": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_b9002e23e532": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_8f19ba58c26d": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_e1880ab0704b": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_5715ca6bdc0f": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_5140ac1b49ca": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_876e0778e352": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_1cf040985c90": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_936052a10b26": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_ba7228a6c553": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_9e0c2d493024": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_e672d1e7ae44": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_62e1a10bbda7": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_340178b42a3a": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_81380efcbf27": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_bbe558300e5c": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_81b73db195ae": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_68c1eb2f473d": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_3127131cfa35": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_66ebf56899ed": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_b2c0fdb8a0fe": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_32960f85c70d": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_c65c7ec95ec4": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_d1e21548425a": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_0c7a52ca66b6": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_2828d2e06a69": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_fd02fb439e14": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_777d2ec619e7": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_1669a3295716": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_4591a7cae731": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_1bb523044bd1": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_49a60439db7d": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": [],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_8630d001179c": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": ["chainId"],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_7e3801316862": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": ["decimals"],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_08d76e56edd6": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": ["kind"],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_a3ae1ddbc0e4": {
+    "usage": ["components/PresaleAccount.vue"],
+    "placeholders": ["kind"],
+    "notes": "使用场景：私募认购、钱包交易与领取流程。"
+  },
+  "text_491b0f740980": {
+    "usage": ["components/WalletConnect.vue"],
+    "placeholders": [],
+    "notes": "使用场景：钱包连接与网络切换。"
+  },
+  "text_bfb486a3682f": {
+    "usage": ["components/WalletConnect.vue"],
+    "placeholders": [],
+    "notes": "使用场景：钱包连接与网络切换。"
+  },
+  "text_e2858e4b8ede": {
+    "usage": ["components/WalletConnect.vue"],
+    "placeholders": [],
+    "notes": "使用场景：钱包连接与网络切换。"
+  },
+  "text_6da33793a675": {
+    "usage": ["components/WalletConnect.vue"],
+    "placeholders": [],
+    "notes": "使用场景：钱包连接与网络切换。"
+  },
+  "text_bcc87d162a38": {
+    "usage": ["components/WalletConnect.vue"],
+    "placeholders": ["chainId"],
+    "notes": "使用场景：钱包连接与网络切换。"
+  },
+  "text_39b5a58423f2": {
+    "usage": ["components/WalletConnect.vue"],
+    "placeholders": ["chainId"],
+    "notes": "使用场景：钱包连接与网络切换。"
+  },
+  "text_f9db67cd4997": {
+    "usage": ["components/WalletConnect.vue"],
+    "placeholders": ["chainId"],
+    "notes": "使用场景：钱包连接与网络切换。"
+  },
+  "presale_scheduled": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端私募当前期的排期状态和倒计时。"
+  },
+  "presale_awaiting_finalization": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端私募当前期的排期状态和倒计时。"
+  },
+  "presale_starts_at": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端私募当前期的排期状态和倒计时。"
+  },
+  "presale_starts_in": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端私募当前期的排期状态和倒计时。"
+  },
+  "presale_ends_in": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端私募当前期的排期状态和倒计时。"
+  },
+  "presale_countdown": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": ["days", "hours", "minutes", "seconds"],
+    "notes": "使用场景：用户端私募当前期的排期状态和倒计时。"
+  },
+  "presale_finalization_notice": {
+    "usage": ["pages/IndexPage.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端私募当前期的排期状态和倒计时。"
+  }
+}

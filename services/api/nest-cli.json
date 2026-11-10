@@ -5,6 +5,14 @@
   "entryFile": "main",
   "compilerOptions": {
     "deleteOutDir": false,
-    "tsConfigPath": "tsconfig.build.json"
+    "tsConfigPath": "tsconfig.build.json",
+    "allowOutsidePaths": true,
+    "assets": [
+      {
+        "include": "rpcs.json",
+        "outDir": "../../dist/services/api"
+      }
+    ],
+    "watchAssets": true
   }
 }

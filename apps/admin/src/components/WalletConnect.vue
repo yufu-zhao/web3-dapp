@@ -1,12 +1,10 @@
 <template>
   <div class="admin-wallet-connect">
-    <appkit-button
+    <WalletConnectButton
       v-if="walletKitReady"
       label="连接钱包"
-      loadinglabel="正在连接钱包…"
-      namespace="eip155"
+      loading-label="正在连接钱包…"
       size="md"
-      balance="hide"
     />
     <q-banner v-else dense rounded class="wallet-config-error">
       钱包连接尚未配置，请检查 WALLETCONNECT_PROJECT_ID。
@@ -61,6 +59,7 @@
 <script setup lang="ts">
 import { toRef } from "vue";
 import {
+  WalletConnectButton,
   useWalletConnection,
   walletKitReady,
   type ConnectedWallet,

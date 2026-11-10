@@ -1,7 +1,7 @@
 import { defineConfig } from "#q-app";
 
 export default defineConfig(() => ({
-  boot: ["theme", "wallet-kit"],
+  boot: ["i18n", "theme", "wallet-kit"],
   css: ["app.scss"],
   extras: ["material-icons"],
   build: {
@@ -35,7 +35,7 @@ export default defineConfig(() => ({
         primary: "#FFC832",
       },
     },
-    plugins: [],
+    plugins: ["Notify"],
   },
   animations: [],
 }));

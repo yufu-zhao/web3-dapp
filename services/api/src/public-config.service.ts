@@ -1,5 +1,7 @@
 import { Injectable, ServiceUnavailableException } from "@nestjs/common";
 import type { Pool } from "pg";
+import { Contract, formatUnits } from "ethers";
+import { getBoundRpcProvider } from "./chain-rpc.js";
 import { DatabaseService } from "./database.service.js";
 
 interface PublicInstallationConfig {
@@ -109,6 +111,99 @@ export class PublicConfigService {
     }
   }
 
+  // 使用绑定链的区块时间判断当前期，避免浏览器时间和旧合约造成误判。
+  async getOpenPresale() {
+    const binding = await this.getRuntimeContracts();
+    if (binding.state !== "bound") return { state: "unbound" as const };
+    const provider = await getBoundRpcProvider(
+      binding.chainId,
+      [binding.contracts.FairSaleV2!, binding.contracts.ProjectToken!],
+      this.databaseService.getPool(),
+    );
+    try {
+      const sale = new Contract(
+        binding.contracts.FairSaleV2!,
+        [
+          "function activeModule() view returns(bool)",
+          "function token() view returns(address)",
+          "function cursor() view returns(uint8)",
+          "function roundStartTimes(uint256) view returns(uint256)",
+          "function rounds(uint256) view returns(uint256 endTime,uint256 offered,uint256 participants,uint256 allocated,uint256 share,uint256 extraWeiParticipants,uint256 acceptedPayment,bool finalized)",
+          "function price(uint8) view returns(uint256)",
+          "function paymentUnit() view returns(uint256)",
+          "function ticket() view returns(uint256)",
+        ],
+        provider,
+      );
+      const token = new Contract(
+        binding.contracts.ProjectToken!,
+        ["function sale() view returns(address)"],
+        provider,
+      );
+      const [active, saleToken, tokenSale, cursor, block] = await Promise.all([
+        sale.getFunction("activeModule")(),
+        sale.getFunction("token")(),
+        token.getFunction("sale")(),
+        sale.getFunction("cursor")(),
+        provider.getBlock("latest"),
+      ]);
+      if (
+        !active ||
+        String(saleToken).toLowerCase() !==
+          binding.contracts.ProjectToken!.toLowerCase() ||
+        String(tokenSale).toLowerCase() !==
+          binding.contracts.FairSaleV2!.toLowerCase()
+      )
+        throw new Error("私募模块未生效");
+      if (!block) throw new Error("无法读取区块时间");
+      const index = Number(cursor);
+      if (index >= 3) return { state: "empty" as const };
+      const [start, round, price, unit, ticket] = await Promise.all([
+        sale.getFunction("roundStartTimes")(index),
+        sale.getFunction("rounds")(index),
+        sale.getFunction("price")(index),
+        sale.getFunction("paymentUnit")(),
+        sale.getFunction("ticket")(),
+      ]);
+      if (round.finalized || !start || !round.endTime)
+        return { state: "empty" as const };
+      // 合约只允许当前期排期；已结束但未结算时仍展示该期。
+      const state =
+        BigInt(block.timestamp) < start
+          ? ("scheduled" as const)
+          : BigInt(block.timestamp) < round.endTime
+            ? ("open" as const)
+            : ("ended" as const);
+      const decimals =
+        unit === 1000000n ? 6 : unit === 1000000000000000000n ? 18 : null;
+      if (decimals === null) throw new Error("支付币精度不支持");
+      // 与合约结算一致：先向下取整单人可购数量，再乘以参与人数。
+      if (price === 0n) throw new Error("私募价格无效");
+      const requested = ((ticket * 10n ** 18n) / price) * round.participants;
+      const progressBasisPoints =
+        round.offered > 0n ? (requested * 10000n) / round.offered : null;
+      return {
+        state,
+        blockTimestamp: block.timestamp,
+        requested: formatUnits(requested, 18),
+        progressBasisPoints: progressBasisPoints?.toString() ?? null,
+        round: index + 1,
+        start: Number(start),
+        end: Number(round.endTime),
+        price: formatUnits(price, decimals),
+        ticket: formatUnits(ticket, decimals),
+        offered: formatUnits(round.offered, 18),
+        participants: round.participants.toString(),
+      };
+    } catch {
+      throw new ServiceUnavailableException(
+        "无法读取私募状态，请检查链上配置或稍后重试。",
+      );
+    } finally {
+      provider.destroy();
+    }
+  }
+
   getWalletConnectConfig() {
     const projectId = process.env.WALLETCONNECT_PROJECT_ID?.trim();
     return { projectId: projectId || null };
@@ -208,6 +303,11 @@ export class PublicConfigService {
       const adminSchema = await pool.query<{ ready: boolean }>(
         `SELECT to_regclass('public.admin_sessions') IS NOT NULL
                   AND to_regclass('public.admin_login_attempts') IS NOT NULL
+                  AND to_regclass('public.schema_migrations') IS NOT NULL
+                  AND EXISTS (
+                    SELECT 1 FROM schema_migrations
+                     WHERE version = '0010_user_languages'
+                  )
            AS ready`,
       );
       if (!adminSchema.rows[0]?.ready) {

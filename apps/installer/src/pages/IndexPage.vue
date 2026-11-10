@@ -5,17 +5,16 @@
         <div class="installer-frame">
           <aside class="sidebar">
             <div class="brand-row">
-              <img
-                class="brand-mark"
-                src="/brand/chainforge-mark-transparent.png"
-                alt=""
-                aria-hidden="true"
-              />
-              <div><strong>链构</strong><span>ChainForge 安装器</span></div>
+              <BrandLogo :height="40" />
+              <span>安装器</span>
             </div>
             <div class="sidebar-intro">
               <span class="release-label">INSTALLATION</span>
-              <h1>部署您的<br />Web3 DApp 系统</h1>
+              <h1>
+                部署您的
+                <br />
+                Web3 DApp 系统
+              </h1>
               <p>服务器检查、数据库初始化与合约部署。</p>
             </div>
             <nav class="step-navigation" aria-label="安装步骤">
@@ -32,39 +31,34 @@
                   <strong class="title">{{ item.title }}</strong>
                   <small>{{ item.subtitle }}</small>
                 </span>
-                <q-icon
-                  v-if="route.path.startsWith(item.path)"
-                  name="chevron_right"
-                  size="20px"
-                />
+                <q-icon v-if="route.path.startsWith(item.path)" name="chevron_right" size="20px" />
               </button>
             </nav>
             <div class="sidebar-footer">
-              <span class="secure-dot" /><span>安装数据由本机安装服务处理</span>
+              <span class="secure-dot" />
+              <span>安装数据由本机安装服务处理</span>
             </div>
           </aside>
 
           <main class="content-panel">
             <header class="topbar">
               <div>
-                <span class="topbar-label"
-                  >链构（CHAINFORGE） / INSTALLATION</span
-                >
-                <p>安装向导 <span>·</span> {{ currentStep }} / 4</p>
+                <span class="topbar-label">链构（CHAINFORGE） / INSTALLATION</span>
+                <p>
+                  安装向导
+                  <span>·</span>
+                  {{ currentStep }} / 4
+                </p>
               </div>
-              <q-badge
-                class="connection-badge"
-                :class="flow.bootstrapped ? 'is-online' : 'is-checking'"
-              >
-                <span class="badge-dot" />{{
-                  flow.bootstrapped ? "安装服务已连接" : "正在连接安装服务"
-                }}
+              <q-badge class="connection-badge" :class="flow.bootstrapped ? 'is-online' : 'is-checking'">
+                <span class="badge-dot" />
+                {{ flow.bootstrapped ? "安装服务已连接" : "正在连接安装服务" }}
               </q-badge>
             </header>
             <div class="content-scroll"><RouterView /></div>
             <footer class="content-footer">
-              <span>ChainForge Installation</span
-              ><span>安全安装 · 版本 0.1.0</span>
+              <span>ChainForge Installation</span>
+              <span>安全安装 · 版本 0.1.0</span>
             </footer>
           </main>
         </div>
@@ -75,11 +69,9 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from "vue";
+import { BrandLogo } from "@chainforge/brand-ui";
 import { useRoute, useRouter } from "vue-router";
-import {
-  bootstrapInstallerFlow,
-  installerFlow,
-} from "../services/installer-flow";
+import { bootstrapInstallerFlow, installerFlow } from "../services/installer-flow";
 
 const route = useRoute();
 const router = useRouter();
@@ -90,24 +82,16 @@ const steps = [
   { path: "/deploy", title: "部署合约", subtitle: "按计划逐步部署" },
   { path: "/complete", title: "完成", subtitle: "安装资料与输出位置" },
 ];
-const currentStep = computed(() =>
-  Math.max(1, steps.findIndex((item) => route.path.startsWith(item.path)) + 1),
-);
+const currentStep = computed(() => Math.max(1, steps.findIndex((item) => route.path.startsWith(item.path)) + 1));
 
 function canOpen(path: string) {
   if (path === "/environment") return true;
   if (path === "/database") return flow.environmentReady;
   if (path === "/deploy")
     return (
-      flow.environmentReady &&
-      flow.databaseReady &&
-      !flow.databaseReinitializing &&
-      Boolean(flow.summary.installation)
+      flow.environmentReady && flow.databaseReady && !flow.databaseReinitializing && Boolean(flow.summary.installation)
     );
-  return (
-    !flow.databaseReinitializing &&
-    (route.path.startsWith("/complete") || Boolean(flow.selectedDeployment))
-  );
+  return !flow.databaseReinitializing && (route.path.startsWith("/complete") || Boolean(flow.selectedDeployment));
 }
 
 function openStep(path: string) {
@@ -167,14 +151,6 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   // gap: 12px;
-}
-.brand-mark {
-  display: block;
-  width: 60px;
-  height: 60px;
-  flex: 0 0 auto;
-  border-radius: 13px;
-  object-fit: cover;
 }
 .brand-row strong,
 .brand-row span {

@@ -7,7 +7,7 @@ const routes: RouteRecordRaw[] = [
   { path: "/trade", component: () => import("../pages/IndexPage.vue") },
   { path: "/mine", component: () => import("../pages/IndexPage.vue") },
   {
-    path: "/mine/:feature(assets|staking|lock|referral|team|points|lottery)",
+    path: "/mine/:feature(assets|staking|lock|referral|team|points|lottery|announcements|trades)",
     component: () => import("../pages/IndexPage.vue"),
   },
   { path: "/:catchAll(.*)*", redirect: "/" },

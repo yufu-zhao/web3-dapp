@@ -45,6 +45,12 @@ input {
 button {
   cursor: pointer;
 }
+h1,
+h2,
+h3 {
+  margin: 0;
+  line-height: 1.2;
+}
 .app-shell {
   min-height: 100vh;
   background:
@@ -115,8 +121,27 @@ button {
   right: 0;
 }
 .wallet {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-left: auto;
+  flex-shrink: 0;
 }
+.language-menu {
+  min-width: 160px;
+  background: var(--user-surface);
+  color: var(--user-text);
+  border: 1px solid color-mix(in srgb, var(--user-text) 18%, transparent);
+  border-radius: 10px;
+}
+.language-menu .q-item__section--side {
+  color: var(--user-muted-text);
+}
+.language-menu .q-item:hover,
+.language-menu .q-item:focus-visible {
+  background: color-mix(in srgb, var(--user-accent) 14%, var(--user-surface));
+}
+
 .wallet .q-banner {
   max-width: 260px;
 }
@@ -425,10 +450,74 @@ p {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 370px;
   gap: 18px;
+  align-items: start;
+}
+.market-column {
+  min-width: 0;
 }
 .market,
 .trade-form {
   padding: 26px;
+}
+.section-spaced {
+  margin-top: 34px;
+}
+.compact-empty {
+  min-height: 180px;
+}
+.mine-layout {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+.mine-overview,
+.mine-detail {
+  min-width: 0;
+  padding: 24px;
+}
+.mine-overview h2,
+.mine-title {
+  margin: 0;
+  font-size: 20px;
+}
+.mine-overview p {
+  margin-top: 10px;
+  color: var(--user-muted-text);
+  font-size: 13px;
+}
+.mine-title {
+  margin-bottom: 22px;
+}
+.announcement-list {
+  display: grid;
+  gap: 16px;
+}
+.announcement-card {
+  padding: 22px;
+}
+.announcement-card h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.announcement-summary {
+  margin-top: 8px;
+  color: var(--user-muted-text);
+}
+.announcement-card img,
+.announcement-card video {
+  display: block;
+  width: 100%;
+  max-height: 440px;
+  margin-top: 16px;
+  border-radius: 12px;
+  object-fit: contain;
+  background: #080d16;
+}
+.announcement-body {
+  margin-top: 16px;
+  line-height: 1.8;
+  white-space: pre-wrap;
 }
 .panel-heading {
   display: flex;
@@ -680,6 +769,19 @@ p {
   .trade-grid {
     grid-template-columns: 1fr;
   }
+  .trade-form {
+    order: -1;
+  }
+  .mine-layout {
+    grid-template-columns: 1fr;
+  }
+  .mine-layout > .service-menu {
+    display: none;
+  }
+  .mine-overview,
+  .mine-detail {
+    padding: 20px;
+  }
   .market,
   .trade-form {
     padding: 20px;
@@ -720,4 +822,262 @@ p {
   .mobile-nav a.active {
     color: var(--user-accent);
   }
+}
+
+.presale-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  margin: 8px 0 26px;
+  gap: 20px;
+}
+.presale-heading h1 {
+  margin: 8px 0 0;
+  font-size: 32px;
+  font-weight: 750;
+}
+.presale-heading p,
+.presale-card-top p {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--user-muted-text);
+}
+.presale-heading-note {
+  color: var(--user-muted-text);
+  font-size: 12px;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  white-space: nowrap;
+}
+.presale-heading-note .q-icon {
+  color: var(--user-accent);
+  font-size: 17px;
+}
+.presale-card {
+  padding: 30px;
+  margin-bottom: 20px;
+  background:
+    radial-gradient(
+      circle at 92% 0%,
+      rgba(255, 200, 50, 0.12),
+      transparent 35%
+    ),
+    var(--user-surface);
+}
+.presale-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.presale-card-top h2 {
+  margin-top: 18px;
+  font-size: 26px;
+  font-weight: 750;
+}
+.presale-tags {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+.sale-live,
+.sale-round {
+  border-radius: 99px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.sale-live {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #75d5a7;
+  background: rgba(63, 192, 131, 0.12);
+}
+.sale-live span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #75d5a7;
+}
+.sale-round {
+  color: var(--user-accent);
+  background: rgba(255, 200, 50, 0.1);
+}
+.sale-mark {
+  display: grid;
+  place-items: center;
+  width: 70px;
+  height: 70px;
+  border-radius: 22px;
+  color: var(--user-accent);
+  background: rgba(255, 200, 50, 0.09);
+  font-size: 32px;
+}
+.sale-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin: 30px 0;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.12);
+}
+.sale-metrics span,
+.sale-metrics small,
+.sale-time span {
+  display: block;
+  font-size: 12px;
+  color: var(--user-muted-text);
+}
+.sale-metrics strong {
+  display: block;
+  margin: 9px 0 3px;
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+.sale-progress {
+  padding: 0 2px;
+}
+.progress-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+.progress-heading h3 {
+  font-size: 15px;
+  font-weight: 700;
+}
+.progress-heading p {
+  margin-top: 4px;
+  color: var(--user-muted-text);
+  font-size: 12px;
+}
+.progress-heading > strong {
+  color: var(--user-accent);
+  font-size: 25px;
+  white-space: nowrap;
+  text-align: right;
+}
+.progress-track {
+  height: 9px;
+  margin: 17px 0 10px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.09);
+}
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #d99c1b, var(--user-accent));
+}
+.progress-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--user-muted-text);
+  font-size: 12px;
+}
+.oversubscribed {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 200, 50, 0.08);
+  color: var(--user-accent);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.sale-time {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sale-time > .q-icon {
+  color: var(--user-accent);
+  font-size: 24px;
+}
+.sale-time strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+}
+.sale-time .sale-time-note {
+  margin-left: auto;
+}
+.presale-state {
+  margin-bottom: 20px;
+}
+.presale-retry {
+  margin-top: 18px;
+}
+@media (max-width: 760px) {
+  .presale-heading h1 {
+    font-size: 26px;
+  }
+  .presale-heading-note {
+    display: none;
+  }
+  .presale-card {
+    padding: 20px;
+  }
+  .presale-card-top h2 {
+    font-size: 21px;
+  }
+  .sale-mark {
+    width: 52px;
+    height: 52px;
+    font-size: 24px;
+    border-radius: 16px;
+  }
+  .sale-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    padding: 17px;
+    margin: 24px 0;
+  }
+  .sale-metrics strong {
+    font-size: 17px;
+  }
+  .progress-heading {
+    align-items: flex-start;
+  }
+  .progress-heading > strong {
+    font-size: 20px;
+  }
+  .progress-foot {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sale-time .sale-time-note {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar .brand > span {
+    display: none;
+  }
+}
+
+.sale-live.sale-not-open {
+  color: var(--user-accent);
+  background: rgba(255, 200, 50, 0.12);
+}
+.sale-live.sale-not-open span {
+  background: var(--user-accent);
+}
+.sale-countdown {
+  display: block;
+  margin-top: 6px;
+  color: var(--user-muted-text);
+  font-size: 12px;
+}
+.sale-countdown b {
+  color: var(--user-accent);
+  font-variant-numeric: tabular-nums;
 }

@@ -1,5 +1,20 @@
 <template>
   <section class="presale-page">
+    <div class="row items-center full-height">
+      <div>fdsf</div>
+      <q-spacer />
+      <q-btn flat icon="refresh" :loading="loading" :disable="busy" round @click="reload">
+        <q-tooltip>刷新数据</q-tooltip>
+      </q-btn>
+      <WalletConnect
+        v-if="selected"
+        :confirm-changes="true"
+        @connected="onWallet"
+        @changed="onWallet"
+        @disconnected="onDisconnect"
+        @change-pending="onPending"
+      />
+    </div>
     <q-banner v-if="error" rounded class="error-banner">{{ error }}</q-banner>
     <q-banner v-if="notice" rounded class="notice-banner">
       {{ notice }}
@@ -10,14 +25,7 @@
           <h2>私募管理</h2>
           <p>读取安装器绑定的私募合约，管理三期认购。</p>
         </div>
-        <q-btn
-          flat
-          icon="refresh"
-          label="刷新"
-          :loading="loading"
-          :disable="busy"
-          @click="reload"
-        />
+        <q-btn flat icon="refresh" label="刷新" :loading="loading" :disable="busy" @click="reload" />
       </q-card-section>
       <q-card-section class="controls">
         <WalletConnect
@@ -28,9 +36,7 @@
           @disconnected="onDisconnect"
           @change-pending="onPending"
         />
-        <p v-if="!selected && !loading">
-          安装器尚未提供生效部署绑定，私募数据及链上操作暂不可用。
-        </p>
+        <p v-if="!selected && !loading">安装器尚未提供生效部署绑定，私募数据及链上操作暂不可用。</p>
         <p v-else-if="!wallet">连接钱包后读取链上数据。</p>
         <p v-if="selected">合约 {{ selected.sale }} · 链 {{ chainId }}</p>
       </q-card-section>
@@ -48,62 +54,35 @@
             USDT。三期条款和每人认购金额可在首位用户认购前调整，首位用户认购后由合约锁定。
           </p>
           <div class="terms-grid">
-            <div
-              v-for="(_, index) in snapshot.rounds"
-              :key="index"
-              class="terms-item"
-            >
+            <div v-for="(_, index) in snapshot.rounds" :key="index" class="terms-item">
               <strong>第 {{ index + 1 }} 期</strong>
-              <q-input
-                v-model.trim="prices[index]"
-                outlined
-                dense
-                label="价格（USDT/FRC）"
-                :disable="!canTerms"
-              />
-              <q-input
-                v-model.trim="amounts[index]"
-                outlined
-                dense
-                label="基础额度（FRC）"
-                :disable="!canTerms"
-              />
+              <q-input v-model.trim="prices[index]" outlined dense label="价格（USDT/FRC）" :disable="!canTerms" />
+              <q-input v-model.trim="amounts[index]" outlined dense label="基础额度（FRC）" :disable="!canTerms" />
             </div>
           </div>
           <p>
             新部署默认每人认购金额为 100 USDT；当前链上值为
-            {{ formatPayment(snapshot.ticket) }} USDT。三期基础额度合计须为
-            3,000,000 FRC。
+            {{ formatPayment(snapshot.ticket) }} USDT。三期基础额度合计须为 3,000,000 FRC。
           </p>
-          <q-input
-            v-model.trim="ticketAmount"
-            outlined
-            dense
-            label="每人认购金额（USDT）"
-            :disable="!canTerms"
-          />
+          <q-input v-model.trim="ticketAmount" outlined dense label="每人认购金额（USDT）" :disable="!canTerms" />
           <q-btn
             v-if="canTerms"
             color="primary"
             unelevated
             label="保存三期条款"
             :loading="busy"
+            class="q-mt-sm"
             @click="runAction('terms')"
           />
           <p v-else>条款仅能在第一期且无认购、未开盘时由链上超管配置。</p>
         </q-card-section>
       </q-card>
       <div class="round-grid">
-        <q-card
-          v-for="(round, index) in snapshot.rounds"
-          :key="index"
-          flat
-          bordered
-          class="panel"
-        >
+        <q-card v-for="(round, index) in snapshot.rounds" :key="index" flat bordered class="panel">
           <q-card-section>
             <h2>
-              第 {{ index + 1 }} 期 <q-badge :label="roundStatus(index)" />
+              第 {{ index + 1 }} 期
+              <q-badge :label="roundStatus(index)" />
             </h2>
             <p>价格：{{ formatPayment(round.price) }} USDT/FRC</p>
             <p>基础额度：{{ formatToken(round.base) }} FRC</p>
@@ -122,20 +101,9 @@
                 label="开始时间"
                 stack-label
                 :disable="startLocked"
-              /><q-input
-                v-model="endTime"
-                outlined
-                dense
-                type="datetime-local"
-                label="结束时间"
-                stack-label
-              /><q-btn
-                color="primary"
-                unelevated
-                label="设置本期时间"
-                :loading="busy"
-                @click="runAction('schedule')"
               />
+              <q-input v-model="endTime" outlined dense type="datetime-local" label="结束时间" stack-label />
+              <q-btn color="primary" unelevated label="设置本期时间" :loading="busy" @click="runAction('schedule')" />
             </template>
             <q-btn
               v-if="index === snapshot.cursor && canFinalize"
@@ -152,24 +120,43 @@
     <div v-if="transactions.length" class="panel transaction-history">
       <strong>本次操作记录</strong>
       <p v-for="transaction in transactions" :key="transaction.hash">
-        {{ transaction.label }} · 链 {{ transaction.chainId }} ·
-        {{ transaction.status }}：
+        {{ transaction.label }} · 链 {{ transaction.chainId }} · {{ transaction.status }}：
         <code>{{ transaction.hash }}</code>
         （合约 {{ transaction.sale }}）
       </p>
     </div>
+
+    <!-- 钱包确认由用户本人完成；弹窗只覆盖钱包请求等待阶段。 -->
+    <q-dialog :model-value="walletConfirmation !== null" persistent>
+      <q-card class="wallet-confirmation-card">
+        <q-card-section class="row items-center no-wrap q-gutter-md">
+          <q-spinner-hourglass color="primary" size="32px" />
+          <div>
+            <div class="text-h6">{{ walletConfirmation?.title }}</div>
+            <div class="text-body2 text-grey-7">
+              {{ walletConfirmation?.message }}
+            </div>
+          </div>
+        </q-card-section>
+        <q-card-section v-if="walletConfirmation" class="confirmation-details">
+          <div>
+            账户：
+            <code>{{ walletConfirmation.address }}</code>
+          </div>
+          <div>网络：{{ walletConfirmation.chainId }}</div>
+          <div>
+            合约：
+            <code>{{ walletConfirmation.sale }}</code>
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
-import {
-  BrowserProvider,
-  Contract,
-  ZeroHash,
-  formatUnits,
-  parseUnits,
-} from "ethers";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { BrowserProvider, Contract, ZeroHash, formatUnits, parseUnits } from "ethers";
 import type { ConnectedWallet } from "@chainforge/wallet-connect";
 import WalletConnect from "../components/WalletConnect.vue";
 import { adminRequest } from "../services/admin-api";
@@ -238,6 +225,14 @@ const loading = ref(false);
 const busy = ref(false);
 const error = ref("");
 const notice = ref("");
+const walletConfirmation = ref<{
+  label: string;
+  title: string;
+  message: string;
+  address: string;
+  chainId: number;
+  sale: string;
+} | null>(null);
 type TransactionRecord = {
   hash: string;
   label: string;
@@ -284,17 +279,8 @@ const ticketAmount = ref("100");
 const startTime = ref("");
 const endTime = ref("");
 let contextVersion = 0;
-const selected = computed(() =>
-  deployments.value.find((item) => item.id === selectedId.value),
-);
-const ready = computed(() =>
-  Boolean(
-    snapshot.value?.active &&
-    wallet.value &&
-    !pendingChange.value &&
-    !busy.value,
-  ),
-);
+const selected = computed(() => deployments.value.find((item) => item.id === selectedId.value));
+const ready = computed(() => Boolean(snapshot.value?.active && wallet.value && !pendingChange.value && !busy.value));
 const canTerms = computed(() =>
   Boolean(
     ready.value &&
@@ -313,32 +299,24 @@ const canSchedule = computed(() =>
     snapshot.value &&
     snapshot.value.cursor < 3 &&
     (!snapshot.value.rounds[snapshot.value.cursor]?.end ||
-      Number(snapshot.value.rounds[snapshot.value.cursor]?.end) >
-        snapshot.value.timestamp),
+      Number(snapshot.value.rounds[snapshot.value.cursor]?.end) > snapshot.value.timestamp),
   ),
 );
 const canFinalize = computed(() =>
   Boolean(
     ready.value &&
     canAccess("presale:finalize") &&
-    (snapshot.value?.admin ||
-      snapshot.value?.operator ||
-      snapshot.value?.launch) &&
+    (snapshot.value?.admin || snapshot.value?.operator || snapshot.value?.launch) &&
     snapshot.value &&
     snapshot.value.cursor < 3 &&
     snapshot.value.rounds[snapshot.value.cursor]?.end &&
-    Number(snapshot.value.rounds[snapshot.value.cursor]?.end) <=
-      snapshot.value.timestamp,
+    Number(snapshot.value.rounds[snapshot.value.cursor]?.end) <= snapshot.value.timestamp,
   ),
 );
 const startLocked = computed(() => {
   const s = snapshot.value;
   const round = s?.rounds[s.cursor];
-  return Boolean(
-    round &&
-    (round.participants > 0n ||
-      (round.start > 0n && Number(round.start) <= s!.timestamp)),
-  );
+  return Boolean(round && (round.participants > 0n || (round.start > 0n && Number(round.start) <= s!.timestamp)));
 });
 function formatToken(value: bigint) {
   return formatUnits(value, 18);
@@ -347,9 +325,7 @@ function formatPayment(value: bigint) {
   return formatUnits(value, snapshot.value?.decimals ?? 18);
 }
 function formatTime(value: bigint) {
-  return value
-    ? new Date(Number(value) * 1000).toLocaleString("zh-CN")
-    : "未设置";
+  return value ? new Date(Number(value) * 1000).toLocaleString("zh-CN") : "未设置";
 }
 function localInput(value: bigint) {
   if (!value) return "";
@@ -394,10 +370,7 @@ async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
     return await Promise.race([
       promise,
       new Promise<never>((_, reject) => {
-        timer = setTimeout(
-          () => reject(new Error(`${label}超时，请检查钱包及网络。`)),
-          30000,
-        );
+        timer = setTimeout(() => reject(new Error(`${label}超时，请检查钱包及网络。`)), 30000);
       }),
     ]);
   } finally {
@@ -410,8 +383,7 @@ async function checkedContext() {
   const target = selected.value;
   const current = wallet.value;
   const expectedChain = chainId.value;
-  if (!target || !current || !expectedChain || pendingChange.value)
-    throw new Error("请先选择部署并连接钱包。");
+  if (!target || !current || !expectedChain || pendingChange.value) throw new Error("请先选择部署并连接钱包。");
   const provider = new BrowserProvider(current.provider as never);
   const [network, accounts, saleCode, tokenCode] = await Promise.all([
     provider.send("eth_chainId", []),
@@ -426,8 +398,7 @@ async function checkedContext() {
     String(accounts[0]).toLowerCase() !== current.address.toLowerCase()
   )
     throw new Error("钱包账户或网络已变化，请重新连接并刷新。");
-  if (saleCode === "0x" || tokenCode === "0x")
-    throw new Error("部署地址不存在合约代码。");
+  if (saleCode === "0x" || tokenCode === "0x") throw new Error("部署地址不存在合约代码。");
   const sale = new Contract(target.sale, saleAbi, provider);
   const token = new Contract(target.token, tokenAbi, provider);
   const [saleToken, tokenSale, active] = await Promise.all([
@@ -443,9 +414,7 @@ async function checkedContext() {
     token,
     current,
     target,
-    active: Boolean(
-      active && String(tokenSale).toLowerCase() === target.sale.toLowerCase(),
-    ),
+    active: Boolean(active && String(tokenSale).toLowerCase() === target.sale.toLowerCase()),
   };
 }
 async function refresh() {
@@ -455,16 +424,7 @@ async function refresh() {
   try {
     if (!selected.value || !wallet.value) return;
     const { provider, sale, token, current, active } = await checkedContext();
-    const [
-      cursor,
-      participants,
-      ticket,
-      unit,
-      launched,
-      operatorRole,
-      launchRole,
-      block,
-    ] = await Promise.all([
+    const [cursor, participants, ticket, unit, launched, operatorRole, launchRole, block] = await Promise.all([
       sale.getFunction("cursor")(),
       sale.getFunction("totalParticipants")(),
       sale.getFunction("ticket")(),
@@ -474,8 +434,7 @@ async function refresh() {
       token.getFunction("LAUNCH_ROLE")(),
       provider.getBlock("latest"),
     ]);
-    const decimals =
-      unit === 1000000n ? 6 : unit === 1000000000000000000n ? 18 : 0;
+    const decimals = unit === 1000000n ? 6 : unit === 1000000000000000000n ? 18 : 0;
     if (!decimals || !block) throw new Error("无法确认支付币精度或区块时间。");
     const [admin, operator, launch, rounds] = await Promise.all([
       token.getFunction("hasRole")(ZeroHash, current.address),
@@ -526,8 +485,7 @@ async function refresh() {
   } catch (reason) {
     if (version === contextVersion) {
       snapshot.value = null;
-      error.value =
-        reason instanceof Error ? reason.message : "无法读取链上私募状态。";
+      error.value = reason instanceof Error ? reason.message : "无法读取链上私募状态。";
     }
   } finally {
     if (version === contextVersion) loading.value = false;
@@ -535,38 +493,34 @@ async function refresh() {
 }
 async function runAction(action: "terms" | "schedule" | "finalize") {
   if (busy.value || !snapshot.value || !wallet.value || !selected.value) return;
-  const permitted =
-    action === "terms"
-      ? canTerms.value
-      : action === "schedule"
-        ? canSchedule.value
-        : canFinalize.value;
+  const permitted = action === "terms" ? canTerms.value : action === "schedule" ? canSchedule.value : canFinalize.value;
   if (!permitted) return;
   const previous = snapshot.value;
   const version = contextVersion;
   error.value = "";
   notice.value = "";
   busy.value = true;
+  walletConfirmation.value = {
+    label: action === "terms" ? "保存三期条款" : action === "schedule" ? "设置本期时间" : "结算本期",
+    title: "正在准备链上操作",
+    message: "正在检查操作权限、钱包账户和网络，请稍候。",
+    address: wallet.value.address,
+    chainId: wallet.value.chainId,
+    sale: selected.value.sale,
+  };
   let submittedHash = "";
   try {
-    await withTimeout(
-      adminRequest(`/presale/authorize/${action}`),
-      "后台权限检查",
-    );
-    const { provider, sale, current, active, target } = await withTimeout(
-      checkedContext(),
-      "钱包检查",
-    );
+    // 点击后先确保准备状态已绘制，再开始网络权限与钱包检查。
+    await nextTick();
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    await withTimeout(adminRequest(`/presale/authorize/${action}`), "后台权限检查");
+    const { provider, sale, current, active, target } = await withTimeout(checkedContext(), "钱包检查");
     if (!active) throw new Error("私募合约不是当前有效模块，不能提交交易。");
-    const signer = await withTimeout(
-      provider.getSigner(current.address),
-      "钱包账户检查",
-    );
+    const signer = await withTimeout(provider.getSigner(current.address), "钱包账户检查");
     if (
       version !== contextVersion ||
       pendingChange.value ||
-      (await signer.getAddress()).toLowerCase() !==
-        current.address.toLowerCase()
+      (await signer.getAddress()).toLowerCase() !== current.address.toLowerCase()
     )
       throw new Error("钱包账户或网络已变化，操作已停止。");
     let method: string;
@@ -576,15 +530,11 @@ async function runAction(action: "terms" | "schedule" | "finalize") {
       let nextAmounts: bigint[];
       let nextTicket: bigint;
       try {
-        nextPrices = prices.value.map((value) =>
-          parseUnits(value, previous.decimals),
-        );
+        nextPrices = prices.value.map((value) => parseUnits(value, previous.decimals));
         nextAmounts = amounts.value.map((value) => parseUnits(value, 18));
         nextTicket = parseUnits(ticketAmount.value, previous.decimals);
       } catch {
-        throw new Error(
-          `请输入有效的十进制数字；价格和认购金额最多 ${previous.decimals} 位小数，额度最多 18 位小数。`,
-        );
+        throw new Error(`请输入有效的十进制数字；价格和认购金额最多 ${previous.decimals} 位小数，额度最多 18 位小数。`);
       }
       if (
         nextPrices.some((value) => value <= 0n) ||
@@ -596,18 +546,12 @@ async function runAction(action: "terms" | "schedule" | "finalize") {
       const maxPrice = (1n << 128n) - 1n;
       if (
         nextTicket > maxPrice ||
-        nextPrices.some(
-          (price) =>
-            price > maxPrice || (nextTicket * 10n ** 18n) / price === 0n,
-        )
+        nextPrices.some((price) => price > maxPrice || (nextTicket * 10n ** 18n) / price === 0n)
       ) {
-        throw new Error(
-          "价格超出合约允许范围，或单次认购金额不足以购买最小单位。",
-        );
+        throw new Error("价格超出合约允许范围，或单次认购金额不足以购买最小单位。");
       }
       const expected = nextPrices.reduce(
-        (total, price, index) =>
-          total + (nextAmounts[index]! * price) / 10n ** 18n,
+        (total, price, index) => total + (nextAmounts[index]! * price) / 10n ** 18n,
         0n,
       );
       if (expected < 600000n * 10n ** BigInt(previous.decimals)) {
@@ -619,20 +563,14 @@ async function runAction(action: "terms" | "schedule" | "finalize") {
       // 已开始的轮次必须原样保留链上开始时间，包括秒数。
       const original = previous.rounds[previous.cursor];
       const start =
-        startLocked.value ||
-        startTime.value === localInput(original?.start ?? 0n)
+        startLocked.value || startTime.value === localInput(original?.start ?? 0n)
           ? Number(original?.start ?? 0n)
           : Math.floor(new Date(startTime.value).getTime() / 1000);
       const end =
         endTime.value === localInput(original?.end ?? 0n)
           ? Number(original?.end ?? 0n)
           : Math.floor(new Date(endTime.value).getTime() / 1000);
-      if (
-        !Number.isSafeInteger(start) ||
-        !Number.isSafeInteger(end) ||
-        start <= 0 ||
-        end <= start
-      )
+      if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start <= 0 || end <= start)
         throw new Error("请选择有效的开始和结束时间。");
       method = "setRoundTimes";
       args = [previous.cursor, start, end];
@@ -642,46 +580,41 @@ async function runAction(action: "terms" | "schedule" | "finalize") {
     }
     // 模拟调用由合约校验最新轮次、角色、时间与条款限制。
     const write = sale.connect(signer).getFunction(method);
+    walletConfirmation.value.title = "正在检查交易";
+    walletConfirmation.value.message = "正在模拟交易并检查合约规则，请稍候。";
     await withTimeout(write.staticCall(...args), "交易模拟");
-    await withTimeout(
-      adminRequest(`/presale/authorize/${action}`),
-      "后台权限检查",
-    );
-    if (!(await withTimeout(checkedContext(), "钱包检查")).active)
-      throw new Error("私募合约已不再是当前有效模块。");
-    if (version !== contextVersion || pendingChange.value)
-      throw new Error("钱包账户或网络已变化，操作已停止。");
+    await withTimeout(adminRequest(`/presale/authorize/${action}`), "后台权限检查");
+    if (!(await withTimeout(checkedContext(), "钱包检查")).active) throw new Error("私募合约已不再是当前有效模块。");
+    if (version !== contextVersion || pendingChange.value) throw new Error("钱包账户或网络已变化，操作已停止。");
+    // 先让等待弹窗完成渲染，再请求钱包签名，避免钱包弹窗期间页面无反馈。
+    walletConfirmation.value.title = "等待钱包确认";
+    walletConfirmation.value.message = `请在钱包弹出的窗口中核对并确认“${walletConfirmation.value.label}”。钱包响应前，此页面会保持等待。`;
+    // 让弹窗至少经过一次浏览器绘制，再调用可能打开钱包界面的 provider。
+    await nextTick();
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     const tx = await write(...args);
+    walletConfirmation.value = null;
     submittedHash = tx.hash;
     transactions.value.unshift({
       hash: tx.hash,
-      label:
-        action === "terms"
-          ? "设置条款"
-          : action === "schedule"
-            ? "设置时间"
-            : "结算",
+      label: action === "terms" ? "设置条款" : action === "schedule" ? "设置时间" : "结算",
       status: "等待确认",
       chainId: current.chainId,
       sale: target.sale,
     });
     notice.value = "交易已提交，正在等待链上确认。";
     const receipt = await tx.wait(1, 120000);
-    if (!receipt || receipt.status !== 1)
-      throw new Error("交易未确认或执行失败，请通过交易哈希核查。");
-    const confirmed = transactions.value.find(
-      (item) => item.hash === submittedHash,
-    );
+    if (!receipt || receipt.status !== 1) throw new Error("交易未确认或执行失败，请通过交易哈希核查。");
+    const confirmed = transactions.value.find((item) => item.hash === submittedHash);
     if (confirmed) confirmed.status = "已确认";
     notice.value = "交易已确认。";
     if (version === contextVersion) await refresh();
   } catch (reason) {
-    const submitted = transactions.value.find(
-      (item) => item.hash === submittedHash,
-    );
+    const submitted = transactions.value.find((item) => item.hash === submittedHash);
     if (submitted) submitted.status = "未确认或失败，请核查";
     error.value = reason instanceof Error ? reason.message : "链上操作失败。";
   } finally {
+    walletConfirmation.value = null;
     busy.value = false;
   }
 }
@@ -695,8 +628,7 @@ async function reload() {
     });
     if (!response.ok) throw new Error("无法读取生效合约绑定。");
     const runtime: unknown = await response.json();
-    if (!runtime || typeof runtime !== "object" || !("state" in runtime))
-      throw new Error("生效合约绑定数据无效。");
+    if (!runtime || typeof runtime !== "object" || !("state" in runtime)) throw new Error("生效合约绑定数据无效。");
     const binding = runtime as {
       state: string;
       chainId?: number;
@@ -709,12 +641,7 @@ async function reload() {
       selectedId.value = null;
       return;
     }
-    if (
-      !binding.chainId ||
-      !binding.deploymentId ||
-      !binding.contracts?.FairSaleV2 ||
-      !binding.contracts.ProjectToken
-    )
+    if (!binding.chainId || !binding.deploymentId || !binding.contracts?.FairSaleV2 || !binding.contracts.ProjectToken)
       throw new Error("生效合约绑定不完整。");
     chainId.value = binding.chainId;
     deployments.value = [
@@ -730,8 +657,7 @@ async function reload() {
     chainId.value = null;
     deployments.value = [];
     selectedId.value = null;
-    error.value =
-      reason instanceof Error ? reason.message : "无法读取生效合约绑定。";
+    error.value = reason instanceof Error ? reason.message : "无法读取生效合约绑定。";
   } finally {
     loading.value = false;
   }
@@ -797,6 +723,16 @@ p {
 }
 .transaction-history {
   padding: 16px;
+}
+.wallet-confirmation-card {
+  width: min(480px, calc(100vw - 32px));
+  border-radius: 16px;
+}
+.confirmation-details {
+  display: grid;
+  gap: 8px;
+  padding-top: 0;
+  color: var(--admin-muted-text, #738096);
 }
 code {
   overflow-wrap: anywhere;

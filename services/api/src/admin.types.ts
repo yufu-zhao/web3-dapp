@@ -17,10 +17,13 @@ export type AdminPermission =
   | "roles:delete"
   | "settings:read"
   | "settings:update"
+  | "content:read"
+  | "content:update"
   | "presale:read"
   | "presale:terms"
   | "presale:schedule"
-  | "presale:finalize";
+  | "presale:finalize"
+  | "presale:records:read";
 
 export type AdminMenuType = "directory" | "menu" | "button";
 

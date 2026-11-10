@@ -17,20 +17,6 @@
     </aside>
 
     <main class="settings-content">
-      <q-banner v-if="pageError" rounded class="error-banner">
-        <template #avatar><q-icon name="error_outline" /></template>
-        {{ pageError }}
-        <template #action>
-          <q-btn flat dense label="重试" @click="loadSettings" />
-        </template>
-      </q-banner>
-      <q-banner v-if="successMessage" rounded class="success-banner">
-        <template #avatar>
-          <q-icon name="check_circle" />
-        </template>
-        {{ successMessage }}
-      </q-banner>
-
       <div v-if="loading" class="settings-loading">
         <q-spinner-dots color="primary" size="34px" />
         <span>正在读取系统配置</span>
@@ -161,7 +147,7 @@
         </q-form>
 
         <q-form
-          v-else
+          v-else-if="activeCategory === 'theme'"
           class="settings-form"
           @submit.prevent="saveThemeSettings"
         >
@@ -310,6 +296,188 @@
             当前角色只有查看系统设置的权限。
           </q-banner>
         </q-form>
+
+        <UserLanguagesPanel v-else-if="activeCategory === 'language'" />
+
+        <AiModelSettingsPanel v-else-if="activeCategory === 'model'" />
+
+        <q-form
+          v-else-if="activeCategory === 'rpc'"
+          class="settings-form"
+          @submit.prevent="saveRpcSettings"
+        >
+          <section class="settings-card">
+            <header class="settings-heading">
+              <span class="settings-icon"><q-icon name="hub" /></span>
+              <div>
+                <h2>业务 RPC 节点</h2>
+                <p>
+                  当前安装链：{{ form.rpcConfiguration.chainName }}（Chain ID
+                  {{ form.rpcConfiguration.chainId ?? "未锁定" }}）
+                </p>
+              </div>
+              <div
+                v-if="canWrite && form.rpcConfiguration.chainId"
+                class="rpc-actions"
+              >
+                <q-btn
+                  flat
+                  round
+                  dense
+                  color="primary"
+                  icon="speed"
+                  aria-label="全部测速"
+                  :loading="testingAllRpc"
+                  :disable="
+                    !form.rpcConfiguration.nodes.length ||
+                    testingRpcUrls.length > 0
+                  "
+                  @click="testAllRpcNodes"
+                  ><q-tooltip>全部测速</q-tooltip></q-btn
+                >
+                <q-btn
+                  flat
+                  round
+                  dense
+                  color="primary"
+                  icon="add"
+                  aria-label="添加 RPC 节点"
+                  :disable="testingAllRpc"
+                  @click="addRpcNode"
+                  ><q-tooltip>添加 RPC 节点</q-tooltip></q-btn
+                >
+              </div>
+            </header>
+            <div v-if="testingAllRpc" class="rpc-test-progress q-pb-md">
+              <q-linear-progress
+                rounded
+                size="8px"
+                color="primary"
+                :value="
+                  rpcTestProgress.total
+                    ? rpcTestProgress.completed / rpcTestProgress.total
+                    : 0
+                "
+              />
+              <span
+                >已完成 {{ rpcTestProgress.completed }} /
+                {{ rpcTestProgress.total }} 个节点；正在测试
+                {{ rpcTestProgress.active }} 个。</span
+              >
+            </div>
+
+            <q-banner
+              v-if="form.rpcConfiguration.source !== 'database'"
+              rounded
+              class="readonly-banner rpc-source-banner"
+            >
+              <template #avatar><q-icon name="info" /></template>
+              {{ rpcSourceLabel }}。保存后将以数据库配置为准。
+            </q-banner>
+            <q-banner
+              v-if="!form.rpcConfiguration.chainId"
+              rounded
+              class="readonly-banner"
+            >
+              请先在安装器完成部署并锁定链，之后才能配置 RPC 节点。
+            </q-banner>
+            <div v-else class="rpc-node-list">
+              <div
+                v-for="(url, index) in form.rpcConfiguration.nodes"
+                :key="`${index}-${url}`"
+                class="rpc-node-row"
+              >
+                <q-radio
+                  v-model="selectedRpcIndex"
+                  :val="index"
+                  :disable="!canWrite || testingAllRpc"
+                  color="primary"
+                  aria-label="设为当前 RPC 节点"
+                />
+                <q-input
+                  v-model.trim="form.rpcConfiguration.nodes[index]"
+                  outlined
+                  dense
+                  label="RPC HTTPS 地址"
+                  class="rpc-node-input"
+                  :readonly="!canWrite || testingAllRpc"
+                />
+                <q-chip
+                  dense
+                  :color="rpcMetricColor(url)"
+                  :text-color="rpcMetricTextColor(url)"
+                  class="rpc-speed-chip"
+                >
+                  {{ rpcMetricLabel(url) }}
+                  <q-tooltip v-if="form.rpcConfiguration.metrics[url]">
+                    测速时间：{{
+                      new Date(
+                        form.rpcConfiguration.metrics[url]!.testedAt,
+                      ).toLocaleString()
+                    }}
+                    <template
+                      v-if="form.rpcConfiguration.metrics[url]?.message"
+                    >
+                      <span class="rpc-metric-message">
+                        {{ form.rpcConfiguration.metrics[url]?.message }}
+                      </span>
+                    </template>
+                  </q-tooltip>
+                </q-chip>
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="wifi_tethering"
+                  color="primary"
+                  :disable="
+                    !canWrite ||
+                    !url ||
+                    testingAllRpc ||
+                    testingRpcUrls.length > 0
+                  "
+                  :loading="testingRpcUrls.includes(url)"
+                  aria-label="测试 RPC 节点"
+                  @click="testRpcNode(url)"
+                >
+                  <q-tooltip>测试连接和链 ID</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  round
+                  dense
+                  icon="delete_outline"
+                  color="negative"
+                  :disable="!canRemoveRpcNode"
+                  aria-label="移除 RPC 节点"
+                  @click="removeRpcNode(index)"
+                />
+              </div>
+              <div v-if="!form.rpcConfiguration.nodes.length" class="rpc-empty">
+                暂无 RPC 节点，请添加一个节点。
+              </div>
+            </div>
+          </section>
+
+          <div
+            v-if="canWrite && form.rpcConfiguration.chainId"
+            class="settings-actions"
+          >
+            <q-btn
+              color="primary"
+              unelevated
+              icon="save"
+              label="保存 RPC 配置"
+              type="submit"
+              :loading="saving"
+              :disable="testingAllRpc"
+            />
+          </div>
+          <q-banner v-else-if="!canWrite" rounded class="readonly-banner">
+            <template #avatar><q-icon name="visibility" /></template>
+            当前角色只有查看系统设置的权限。
+          </q-banner>
+        </q-form>
       </template>
     </main>
   </section>
@@ -317,6 +485,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { Notify } from "quasar";
 import {
   applyThemePalette,
   DEFAULT_THEME_PALETTES,
@@ -326,16 +495,16 @@ import {
 } from "@chainforge/shared-types";
 import { adminRequest, type AdminSettings } from "../services/admin-api";
 import { canAccess } from "../services/admin-session";
+import UserLanguagesPanel from "../components/UserLanguagesPanel.vue";
+import AiModelSettingsPanel from "../components/AiModelSettingsPanel.vue";
 
 defineOptions({ name: "SettingsPage" });
 
 const canWrite = computed(() => canAccess("settings:update"));
 const loading = ref(true);
 const saving = ref(false);
-const pageError = ref("");
-const successMessage = ref("");
 const settings = ref<AdminSettings | null>(null);
-type SettingsCategory = "basic" | "theme";
+type SettingsCategory = "basic" | "theme" | "language" | "model" | "rpc";
 const activeCategory = ref<SettingsCategory>("basic");
 const categories: Array<{
   id: SettingsCategory;
@@ -344,6 +513,9 @@ const categories: Array<{
 }> = [
   { id: "basic", label: "基础设置", icon: "tune" },
   { id: "theme", label: "主题设置", icon: "palette" },
+  { id: "language", label: "用户端语言", icon: "language" },
+  { id: "model", label: "大模型服务", icon: "smart_toy" },
+  { id: "rpc", label: "RPC 节点", icon: "hub" },
 ];
 const userColorFields: Array<{
   key: keyof UserThemePalette;
@@ -382,6 +554,7 @@ interface SettingsForm {
   tokenSymbol: string;
   passwordPolicy: AdminSettings["passwordPolicy"];
   themePalettes: ThemePalettes;
+  rpcConfiguration: AdminSettings["rpcConfiguration"];
 }
 
 const form = ref<SettingsForm>({
@@ -396,6 +569,36 @@ const form = ref<SettingsForm>({
     requireSymbol: true,
   },
   themePalettes: structuredClone(DEFAULT_THEME_PALETTES),
+  rpcConfiguration: {
+    chainId: null,
+    chainName: "尚未锁定",
+    nodes: [],
+    activeUrl: "",
+    metrics: {},
+    source: "unavailable",
+  },
+});
+const testingRpcUrls = ref<string[]>([]);
+const testingAllRpc = ref(false);
+const rpcTestProgress = ref({ completed: 0, total: 0, active: 0 });
+const selectedRpcIndex = ref(-1);
+const canRemoveRpcNode = computed(
+  () =>
+    canWrite.value &&
+    !testingAllRpc.value &&
+    form.value.rpcConfiguration.nodes.length > 1,
+);
+const rpcSourceLabel = computed(() => {
+  switch (form.value.rpcConfiguration.source) {
+    case "database":
+      return "当前为数据库保存的 RPC 配置";
+    case "environment":
+      return "当前使用服务端 CHAIN_RPC_URL 覆盖值";
+    case "defaults":
+      return "当前使用服务端 rpcs.json 中该链的默认节点";
+    default:
+      return "当前没有可用的 RPC 配置";
+  }
 });
 function contrastText(color: string) {
   const channels =
@@ -421,7 +624,6 @@ const adminOnPrimary = computed(() =>
 
 async function loadSettings() {
   loading.value = true;
-  pageError.value = "";
   try {
     const response = await adminRequest<{ settings: AdminSettings }>(
       "/settings",
@@ -433,20 +635,196 @@ async function loadSettings() {
       tokenSymbol: response.settings.tokenSymbol,
       passwordPolicy: { ...response.settings.passwordPolicy },
       themePalettes: structuredClone(response.settings.themePalettes),
+      rpcConfiguration: structuredClone(response.settings.rpcConfiguration),
     };
+    selectedRpcIndex.value = form.value.rpcConfiguration.nodes.indexOf(
+      form.value.rpcConfiguration.activeUrl,
+    );
   } catch (error) {
-    pageError.value =
-      error instanceof Error ? error.message : "无法读取系统设置。";
+    Notify.create({
+      type: "negative",
+      message: error instanceof Error ? error.message : "无法读取系统设置。",
+      position: "top",
+      timeout: 0,
+      actions: [
+        { label: "重试", color: "white", handler: () => void loadSettings() },
+      ],
+    });
   } finally {
     loading.value = false;
+  }
+}
+
+function addRpcNode() {
+  form.value.rpcConfiguration.nodes.push("");
+  selectedRpcIndex.value = form.value.rpcConfiguration.nodes.length - 1;
+}
+
+function removeRpcNode(index: number) {
+  form.value.rpcConfiguration.nodes.splice(index, 1);
+  if (selectedRpcIndex.value === index)
+    selectedRpcIndex.value = form.value.rpcConfiguration.nodes.length ? 0 : -1;
+  else if (selectedRpcIndex.value > index) selectedRpcIndex.value -= 1;
+}
+
+async function testRpcNode(url: string, showNotification = true) {
+  if (!canWrite.value || !form.value.rpcConfiguration.chainId || !url.trim())
+    return;
+  testingRpcUrls.value.push(url);
+  try {
+    const result = await adminRequest<{
+      url: string;
+      chainId: number;
+      blockNumber?: number;
+      status: "success" | "failed";
+      latencyMs: number | null;
+      testedAt: string;
+      message?: string;
+    }>("/settings/rpc/test", {
+      method: "POST",
+      body: JSON.stringify({ url, batch: testingAllRpc.value }),
+    });
+    const nodeIndex = form.value.rpcConfiguration.nodes.indexOf(url);
+    if (nodeIndex !== -1) {
+      form.value.rpcConfiguration.nodes[nodeIndex] = result.url;
+    }
+    form.value.rpcConfiguration.metrics[result.url] = {
+      status: result.status,
+      latencyMs: result.latencyMs,
+      testedAt: result.testedAt,
+      ...(result.blockNumber === undefined
+        ? {}
+        : { blockNumber: result.blockNumber }),
+      ...(result.message ? { message: result.message } : {}),
+    };
+    if (showNotification) {
+      Notify.create({
+        type: result.status === "success" ? "positive" : "negative",
+        message:
+          result.status === "success"
+            ? `RPC 连接成功，耗时 ${result.latencyMs} ms，Chain ID ${result.chainId}。`
+            : (result.message ?? "RPC 节点测试失败。"),
+        position: "top",
+      });
+    }
+    return result.status;
+  } catch (error) {
+    if (showNotification) {
+      Notify.create({
+        type: "negative",
+        message: error instanceof Error ? error.message : "RPC 测试失败。",
+        position: "top",
+      });
+    }
+    return "error";
+  } finally {
+    const index = testingRpcUrls.value.indexOf(url);
+    if (index !== -1) testingRpcUrls.value.splice(index, 1);
+  }
+}
+
+async function testAllRpcNodes() {
+  if (!canWrite.value || testingAllRpc.value || testingRpcUrls.value.length)
+    return;
+  const nodes = [...form.value.rpcConfiguration.nodes];
+  testingAllRpc.value = true;
+  rpcTestProgress.value = { completed: 0, total: nodes.length, active: 0 };
+  let passed = 0;
+  let failed = 0;
+  let errors = 0;
+  let next = 0;
+  // 限制并发，避免节点过多时挤占 API 与数据库连接。
+  async function worker() {
+    while (next < nodes.length) {
+      const url = nodes[next++]!;
+      rpcTestProgress.value.active++;
+      try {
+        const result = url.trim() ? await testRpcNode(url, false) : "error";
+        if (result === "success") passed++;
+        else if (result === "failed") failed++;
+        else errors++;
+      } finally {
+        rpcTestProgress.value.active--;
+        rpcTestProgress.value.completed++;
+      }
+    }
+  }
+  try {
+    await Promise.all(
+      Array.from({ length: Math.min(4, nodes.length) }, () => worker()),
+    );
+    Notify.create({
+      type: failed || errors ? "warning" : "positive",
+      message: `测速完成：${passed}/${nodes.length} 个节点可用，${failed} 个连接失败，${errors} 个请求未完成缓存。`,
+      position: "top",
+    });
+  } finally {
+    testingAllRpc.value = false;
+  }
+}
+
+function rpcMetricLabel(url: string) {
+  const metric = form.value.rpcConfiguration.metrics[url];
+  if (!metric) return "尚未测速";
+  if (metric.status === "failed") return "连接失败";
+  return metric.latencyMs === null ? "测速完成" : `${metric.latencyMs} ms`;
+}
+
+function rpcMetricColor(url: string) {
+  const metric = form.value.rpcConfiguration.metrics[url];
+  if (!metric) return "grey-2";
+  return metric.status === "success" ? "green-1" : "red-1";
+}
+
+function rpcMetricTextColor(url: string) {
+  const metric = form.value.rpcConfiguration.metrics[url];
+  if (!metric) return "grey-8";
+  return metric.status === "success" ? "green-9" : "negative";
+}
+
+async function saveRpcSettings() {
+  if (!canWrite.value || !form.value.rpcConfiguration.chainId) return;
+  saving.value = true;
+  try {
+    const rpcConfiguration = {
+      ...form.value.rpcConfiguration,
+      nodes: form.value.rpcConfiguration.nodes.map((url) => url.trim()),
+      activeUrl:
+        form.value.rpcConfiguration.nodes[selectedRpcIndex.value]?.trim() ?? "",
+    };
+    const response = await adminRequest<{ settings: AdminSettings }>(
+      "/settings",
+      {
+        method: "PATCH",
+        body: JSON.stringify({ rpcConfiguration }),
+      },
+    );
+    settings.value = response.settings;
+    form.value.rpcConfiguration = structuredClone(
+      response.settings.rpcConfiguration,
+    );
+    selectedRpcIndex.value = form.value.rpcConfiguration.nodes.indexOf(
+      form.value.rpcConfiguration.activeUrl,
+    );
+    Notify.create({
+      type: "positive",
+      message: "RPC 配置已保存并应用。",
+      position: "top",
+    });
+  } catch (error) {
+    Notify.create({
+      type: "negative",
+      message: error instanceof Error ? error.message : "保存 RPC 配置失败。",
+      position: "top",
+    });
+  } finally {
+    saving.value = false;
   }
 }
 
 async function saveThemeSettings() {
   if (!canWrite.value) return;
   saving.value = true;
-  pageError.value = "";
-  successMessage.value = "";
   try {
     const response = await adminRequest<{ settings: AdminSettings }>(
       "/settings",
@@ -458,10 +836,17 @@ async function saveThemeSettings() {
     settings.value = response.settings;
     form.value.themePalettes = structuredClone(response.settings.themePalettes);
     applyThemePalette("admin", response.settings.themePalettes);
-    successMessage.value = "主题配色已保存并应用到管理后台。";
+    Notify.create({
+      type: "positive",
+      message: "主题配色已保存并应用到管理后台。",
+      position: "top",
+    });
   } catch (error) {
-    pageError.value =
-      error instanceof Error ? error.message : "保存主题设置失败。";
+    Notify.create({
+      type: "negative",
+      message: error instanceof Error ? error.message : "保存主题设置失败。",
+      position: "top",
+    });
   } finally {
     saving.value = false;
   }
@@ -470,8 +855,6 @@ async function saveThemeSettings() {
 async function saveSettings() {
   if (!canWrite.value) return;
   saving.value = true;
-  pageError.value = "";
-  successMessage.value = "";
   try {
     const response = await adminRequest<{ settings: AdminSettings }>(
       "/settings",
@@ -486,10 +869,17 @@ async function saveSettings() {
       },
     );
     settings.value = response.settings;
-    successMessage.value = "系统设置已保存。";
+    Notify.create({
+      type: "positive",
+      message: "系统设置已保存。",
+      position: "top",
+    });
   } catch (error) {
-    pageError.value =
-      error instanceof Error ? error.message : "保存系统设置失败。";
+    Notify.create({
+      type: "negative",
+      message: error instanceof Error ? error.message : "保存系统设置失败。",
+      position: "top",
+    });
   } finally {
     saving.value = false;
   }
@@ -571,6 +961,62 @@ onMounted(() => void loadSettings());
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.rpc-node-list {
+  display: grid;
+  gap: 12px;
+}
+
+.rpc-node-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.rpc-node-input {
+  min-width: 0;
+}
+
+.rpc-speed-chip {
+  justify-self: start;
+  white-space: nowrap;
+}
+
+.rpc-metric-message {
+  display: block;
+  margin-top: 4px;
+}
+
+.rpc-actions {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.rpc-test-progress {
+  display: grid;
+  gap: 8px;
+  color: var(--admin-muted-text);
+  font-size: 12px;
+}
+
+.rpc-add-button {
+  justify-self: start;
+}
+
+.rpc-empty {
+  padding: 16px;
+  color: var(--admin-muted-text);
+  text-align: center;
+}
+
+.rpc-source-banner {
+  margin-bottom: 16px;
 }
 
 .settings-card {
@@ -751,16 +1197,6 @@ onMounted(() => void loadSettings());
   justify-content: flex-end;
 }
 
-.error-banner {
-  background: #fff0f1;
-  color: #a92a3c;
-}
-
-.success-banner {
-  background: #e9fbf3;
-  color: #13734b;
-}
-
 .readonly-banner {
   background: #eef3f8;
   color: #526177;
@@ -812,6 +1248,7 @@ onMounted(() => void loadSettings());
   }
 
   .settings-grid,
+  .rpc-node-row,
   .theme-color-grid {
     grid-template-columns: minmax(0, 1fr);
   }

@@ -9,6 +9,7 @@
     "typecheck": "quasar prepare && vue-tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@chainforge/brand-ui": "workspace:*",
     "@chainforge/wallet-connect": "workspace:*",
     "@quasar/extras": "^1.16.15",
     "ethers": "^6.15.0",

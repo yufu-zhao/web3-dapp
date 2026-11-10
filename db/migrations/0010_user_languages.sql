@@ -1,0 +1,54 @@
+-- 用户端语言目录和翻译词条，默认简体中文词条从应用基准语言初始化。
+CREATE TABLE IF NOT EXISTS user_languages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  locale VARCHAR(32) NOT NULL UNIQUE,
+  name VARCHAR(64) NOT NULL,
+  is_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  is_default BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT user_languages_locale_format CHECK (locale ~ '^[a-z]{2,3}(-[A-Z]{2,4})?$')
+);
+
+COMMENT ON TABLE user_languages IS '用户端可用语言目录';
+COMMENT ON COLUMN user_languages.id IS '语言目录主键';
+COMMENT ON COLUMN user_languages.locale IS '语言区域代码，例如 zh-CN 或 en-US';
+COMMENT ON COLUMN user_languages.name IS '后台和用户端显示的语言名称';
+COMMENT ON COLUMN user_languages.is_enabled IS '是否向用户端提供该语言';
+COMMENT ON COLUMN user_languages.is_default IS '是否作为用户端默认语言';
+COMMENT ON COLUMN user_languages.sort_order IS '用户端语言切换菜单中的排序值';
+COMMENT ON COLUMN user_languages.created_at IS '语言目录创建时间';
+COMMENT ON COLUMN user_languages.updated_at IS '语言目录最近更新时间';
+
+CREATE UNIQUE INDEX IF NOT EXISTS user_languages_single_default_idx
+  ON user_languages (is_default) WHERE is_default = TRUE;
+
+CREATE TABLE IF NOT EXISTS user_language_translations (
+  language_id UUID NOT NULL REFERENCES user_languages(id) ON DELETE CASCADE,
+  translation_key VARCHAR(128) NOT NULL,
+  translation_value TEXT NOT NULL DEFAULT '',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (language_id, translation_key)
+);
+
+COMMENT ON TABLE user_language_translations IS '用户端语言翻译词条';
+COMMENT ON COLUMN user_language_translations.language_id IS '所属语言目录主键';
+COMMENT ON COLUMN user_language_translations.translation_key IS '前端国际化词条键';
+COMMENT ON COLUMN user_language_translations.translation_value IS '该语言对应的显示文本';
+COMMENT ON COLUMN user_language_translations.updated_at IS '词条最近更新时间';
+
+INSERT INTO user_languages (locale, name, is_enabled, is_default, sort_order)
+VALUES ('zh-CN', '简体中文', TRUE, TRUE, 0)
+ON CONFLICT (locale) DO NOTHING;
+
+INSERT INTO user_language_translations (language_id, translation_key, translation_value)
+SELECT language.id, entry.key, entry.value
+  FROM user_languages AS language
+ CROSS JOIN LATERAL jsonb_each_text($seed${"text_dfdc8c69a25b":"钱包连接尚未配置，请在根目录 .env 设置 WALLETCONNECT_PROJECT_ID。","text_54dfe35e3c1d":"切换网络","text_26ee90b0ba52":"连接钱包","text_e58e6fdcab54":"正在连接钱包…","text_069c0ecbf898":"公告","text_6d9a7758610a":"暂无公告","text_d29a8a2a1b33":"平台公告","text_eefb2470b9a8":"我的服务","text_e100b15bcdac":"我的认购","text_aebf00357b7b":"已认购","text_99a0ecb2bfe0":"尚未认购","text_e70ae709c5ce":"查看你的认购、分配及领取状态","text_3eb11ed33a29":"连接钱包后查看认购状态和可领取资产。","text_3e2ac4e40080":"正在读取链上账户状态…","text_c939e5f40f59":"支付币余额","text_521e65ffc7d0":"已授权","text_30d576474480":"分配代币","text_54cd6730d6f4":"可领取","text_a7ed6176eb8b":"可退金额","text_2a41af87a3b0":"领取测试币","text_d6f1a2bc053e":"确认认购","text_6eb6ad14265a":"领取退款","text_479a8d2dd797":"领取代币","text_802a407c7743":"刷新状态","text_8b2fcf7a94c7":"。请先核查回执，避免重复提交。","text_20214c2ee8c8":"核查交易","text_27681bf81853":"重试同步认购记录","text_4632c95071d5":"最近交易：","text_9ec2865fb6cb":"领取 MockUSDT 测试币","text_21b8af1750f1":"测试币没有真实价值。将向当前钱包铸造测试支付币，并由钱包确认交易和网络费用。","text_ae206f36e7e1":"接收钱包","text_97b31b5d63f5":"网络","text_1c871c22a867":"支付币","text_e30ee2ef4a62":"领取数量","text_2cd0f3be8738":"取消","text_e284b32ff4d5":"确认私募认购","text_3ea276d52299":"请核对认购信息，按钱包提示依次完成交易。","text_4aaeb48743e5":"认购期数","text_6c140b391347":"认购金额","text_5a0451b56e01":"代币单价","text_b5adee6cb38e":"钱包地址","text_68496c86e24b":"授权支付币","text_ec6ac20e4abe":"请输入数量","text_3fd47edce45b":"关闭","text_c2233955c3a8":"最近交易","text_e42579208480":"全部记录","text_5bddc23f5fa4":"暂无交易记录","text_39d34ebf25e0":"探索数字资产","text_4baa5412f2b3":"更多可能","text_47c9d350586d":"轮播内容配置后将在这里展示。","text_ce515206a141":"首屏轮播","text_3081b2f39070":"数字资产平台","text_dc41c0013b97":"系统名称","text_fa6de2cda687":"项目代币","text_872428a7210d":"网络状态","text_b8784c8dd563":"重试","text_b85dacc64f51":"探索更多","text_1e54c3a69cb6":"一站式管理你的链上资产","text_70808b3d695f":"链上数据实时读取","text_dcd7952315f4":"正在读取私募状态","text_c6bf9ae19b59":"请稍候，正在同步链上数据。","text_b3fbe6f192ec":"私募状态读取失败","text_7bdd5ce1e298":"重新加载","text_70269cd2c470":"认购中","text_35a03c4289d4":"参与本期认购，共享项目成长机会","text_b13fb9ff5d8c":"认购单价","text_0c150fed7278":"单次认购","text_7bc80bf154e7":"本期额度","text_a3be500185e6":"参与人数","text_50f5d65d5729":"人","text_207c88639b92":"认购进度","text_cdb244ddeb95":"按当前参与人数及认购条件估算，最终分配以链上结算为准","text_638115ee8c03":"已超额认购，最终按合约规则分配，多余支付金额可在结算后申请退款。","text_8bf6994b5b44":"本期结束时间","text_52fa6050f77d":"以链上区块时间为准","text_5b73b7ffa69e":"当前暂无开放期数","text_e41101a14626":"开放的私募将在这里展示，请稍后再来。","text_cb640f5564b8":"行情待接入","text_1d192ce5b6f7":"24H 涨跌","text_4fc041c2eaff":"24H 最高","text_aae87a96aacd":"24H 最低","text_7f759692747f":"24H 成交量","text_7dffaffa3e99":"行情数据暂不可用","text_923735b2fc1b":"接入行情后将在这里展示价格走势","text_cfd14282eb35":"交易下单","text_3bd33a9db6e1":"功能待接入","text_0f4371a7a9cf":"价格","text_0b09e14b40e9":"以市场价格交易","text_5e29d121dda0":"数量","text_ffcbda29a59a":"可用余额","text_82065a97e81d":"交易功能尚未接入，当前不会提交订单或发起链上交易。","text_6c2eb6ceec1d":"我的账户","text_bc9757b1b80e":"连接钱包后，未来可查看你的链上资产与权益","text_6dd4fc575bcc":"业务功能待接入","text_3b0fa708d39e":"选择左侧服务查看个人公告、资产及交易记录。","text_b668ee457f4d":"返回我的","text_56a7410e3ab2":"正在读取公告","text_1452f8ba28fa":"公告暂时无法读取","text_41db199ee511":"平台公告将在这里展示。","text_e3619cb000d3":"连接账户并接入交易记录后，可查看全部记录。","text_e912fe6ce99c":"数据待接入","text_19af25f736ba":"相关数据接入后将在这里展示。","text_d66f4359dae3":"返回首页","text_9bae68040509":"主导航","text_ba5f23926f42":"请输入价格","text_6bb29f763d65":"手机主导航","text_203c08e0d44a":"首页","text_2f34ccddf398":"私募","text_919ddbbd91c0":"交易","text_7f1d9dd04cd1":"我的","text_5f45bb826b16":"资产","text_977d6ba7257d":"查看和管理你的数字资产","text_0d6cf5efd037":"资产总览","text_bf1b26ecb643":"资产余额与估值待接入","text_d0a4006a26b6":"查看资产","text_84adf19f350e":"资产记录","text_31cc4b032944":"质押","text_c224b62005e6":"查看质押资产与奖励","text_40246300504d":"质押总额","text_c6309848f6bc":"质押数据与奖励待接入","text_fe666457b149":"参与质押","text_b3c131feff36":"质押记录","text_f32299fed16a":"锁仓","text_0a4db761b71c":"管理锁仓资产与到期记录","text_9c7ba175a7a8":"锁仓总额","text_cec00a67c851":"锁仓数据待接入","text_8a3214ca0dfd":"创建锁仓","text_e887f1caa673":"锁仓记录","text_550eddc3c7fe":"推广","text_392aa71d937b":"邀请好友，查看推广信息","text_222b01b1379b":"推广概览","text_a6b32fded4c3":"邀请信息与推广数据待接入","text_72055beeb82e":"邀请好友","text_0168df8f4c4a":"推广记录","text_acdf17f4e9c4":"团队","text_ee8fe4a6b40a":"查看你的团队与成员","text_f64191706f55":"团队人数","text_486aa923fc94":"团队数据待接入","text_5ddcb16ab6fc":"查看成员","text_2e6bfec616ad":"团队成员","text_10939f548645":"积分","text_99909a699065":"查看积分余额与明细","text_67a469708ec2":"可用积分","text_b24a303fae70":"积分余额与明细待接入","text_50dbb99d5980":"查看积分","text_ed8745d001b1":"积分记录","text_87556ba69658":"积分抽奖","text_68c38611229d":"使用积分探索更多惊喜","text_497a247bd0ee":"抽奖活动与积分数据待接入","text_1d1126356e3d":"参与抽奖","text_4b1f0feb4a9a":"抽奖记录","text_eef86f0ac9c3":"查看平台公告","text_988410986031":"平台公告待接入","text_b0538ff56623":"查看公告","text_9440594b127a":"公告列表","text_3e75292e1392":"交易记录","text_873f5230315c":"查看全部交易记录","text_5de3f0f091f4":"交易记录待接入","text_d0557b30cd3e":"查看记录","text_e62ffc155f98":"探索私募","text_af5aa78c275f":"了解当前开放的私募","text_c3daa7ef5cd3":"快捷交易","text_9ec729d9d2b4":"行情与交易一目了然","text_48880f7a549d":"我的资产","text_c2590a79c3eb":"管理你的资产与权益","text_fa29a60e22c1":"钱包连接暂不可用","text_73eefa939f84":"钱包连接暂不可用，请检查配置后重试。","text_9a8798488169":"{token} 私募认购","text_d33dafb53452":"把握当前开放机会，参与项目成长","text_60b8db6ee8cd":"第 {round} 期","text_ed1b2beb057c":"支付币 / {token}","text_5a382066a61e":"认购进度 {progress}","text_03831f44f5de":"预计认购 {amount} {token}","text_19003bc43c59":"本期额度 {amount} {token}","text_4af4222eb987":"{feature}功能尚未接入，暂无法操作。","text_7204737076bc":"{list}暂不可用","text_a1557ec3b077":"买入","text_fb28ba14091d":"卖出","text_af4f2ee25580":"市价","text_65cdbf4af6df":"限价","text_f5a1c7cd0895":"链构","text_505caac0c387":"正在读取安装状态","text_3334cc394625":"安装已完成","text_384647771e16":"等待合约部署","text_2637f2222d6a":"系统尚未初始化","text_499321b2c1ed":"尚未绑定私募合约","text_fbf68d5893ce":"无法读取私募状态","text_0ad3cc6744bc":"无法读取安装身份配置。","text_09548ab045b5":"无法读取首页内容。","text_fb0f2cc8d979":"安装状态读取失败：{error}","text_0c49af90e18f":"请求失败（HTTP {status}）","text_374d13aec7f1":"已结算","text_48e294edd68a":"等待结算","text_70b167117882":"已参与第 {round} 期 · {status}","text_426e458a4124":"已领取","text_3070e857fcba":"认购金额：{amount} {symbol} · 第 {round} 期 · 单价 {price} {symbol}","text_cff945cbaf57":"待确认交易（{kind}）：","text_40206076cfa7":"等待钱包或交易确认…","text_c3041b501978":"确认领取","text_2ea8720ffaae":"开始认购","text_a8b0bd9c65f7":"待确认","text_d0ed839a8655":"等待授权完成","text_a9683339e4de":"授权额度充足，无需重复授权","text_2ba955df13ff":"需要钱包确认授权","text_3879c39dc3f4":"等待确认认购","text_d65e19ca2331":"已提交，等待链上确认","text_f28461bb49c8":"已完成","text_a3321f43b3b3":"请在钱包中确认授权","text_c8754e21ae7a":"请在钱包中确认认购","text_6cf2531ab111":"授权","text_b6cf7c6414ef":"认购","text_286d44ae2748":"无法读取测试币配置。","text_52f8b2fa8af6":"无法读取生效合约绑定。","text_b9002e23e532":"尚未绑定私募合约。","text_8f19ba58c26d":"私募合约未生效或与绑定不一致。","text_e1880ab0704b":"无法读取链上时间。","text_5715ca6bdc0f":"等待回执超时，请稍后核查交易。","text_5140ac1b49ca":"交易尚未确认，请稍后重试。","text_876e0778e352":"交易已失败，未继续后续操作。","text_1cf040985c90":"认购条件或账户状态已变化，请刷新后重新确认。","text_936052a10b26":"钱包账户或网络已变化，已停止后续认购。","text_ba7228a6c553":"授权额度不足，已停止认购。","text_9e0c2d493024":"认购条件已变化，请刷新后重新确认。","text_e672d1e7ae44":"测试币领取已关闭。","text_62e1a10bbda7":"BSC 主网不支持领取测试币。","text_340178b42a3a":"无法确认测试币精度。","text_81380efcbf27":"请输入合约可接受的大于零的数量。","text_bbe558300e5c":"钱包账户或网络已变化，请重新确认。","text_81b73db195ae":"请切回提交交易的钱包账户和网络后核查。","text_68c1eb2f473d":"交易已确认。","text_3127131cfa35":"认购已确认，记录同步尚未完成，请稍后重试。","text_66ebf56899ed":"认购已确认，记录同步失败，请稍后重试。","text_b2c0fdb8a0fe":"钱包账户或网络已变化，请关闭窗口后重新确认。","text_32960f85c70d":"请输入大于零的有效数量。","text_c65c7ec95ec4":"已取消钱包操作。","text_d1e21548425a":"钱包余额不足，无法支付交易费用。","text_0c7a52ca66b6":"等待交易确认超时，请核查交易状态。","text_2828d2e06a69":"交易尚未确认，请关闭窗口后核查交易。","text_fd02fb439e14":"交易状态尚未确认，请核查交易。","text_777d2ec619e7":"读取私募账户失败。","text_1669a3295716":"核查交易失败。","text_4591a7cae731":"认购未完成，可核对状态后重试。","text_1bb523044bd1":"领取未完成，请检查数量及钱包后重试。","text_49a60439db7d":"交易未完成，请检查钱包后重试。","text_8630d001179c":"请将钱包切换到安装网络 Chain ID {chainId} 并确认账户。","text_7e3801316862":"数量最多支持 {decimals} 位小数。","text_08d76e56edd6":"{kind}交易失败，已停止。","text_a3ae1ddbc0e4":"{kind}已确认。","text_491b0f740980":"钱包未切换到目标网络。","text_bfb486a3682f":"系统尚未完成部署，无法确定钱包目标网络。","text_e2858e4b8ede":"无法读取安装网络，请稍后刷新页面重试。","text_6da33793a675":"请在钱包中确认切换网络。","text_bcc87d162a38":"钱包网络不匹配，请切换到 Chain ID {chainId}。","text_39b5a58423f2":"钱包尚未添加 Chain ID {chainId}，请在钱包中添加该网络后重试。","text_f9db67cd4997":"网络切换未完成，请在钱包中切换到 Chain ID {chainId} 后重试。"}$seed$::jsonb) AS entry(key, value)
+ WHERE language.locale = 'zh-CN'
+ON CONFLICT (language_id, translation_key) DO NOTHING;
+
+INSERT INTO schema_migrations (version)
+VALUES ('0010_user_languages')
+ON CONFLICT (version) DO NOTHING;

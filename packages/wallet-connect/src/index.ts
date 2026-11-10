@@ -1,4 +1,5 @@
 export type { ConnectedWallet, Eip1193Provider } from "./wallet-types.js";
+export { default as WalletConnectButton } from "./WalletConnectButton.vue";
 export type {
   WalletConnectionEvents,
   WalletConnectionOptions,

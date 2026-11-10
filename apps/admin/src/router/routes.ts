@@ -117,6 +117,65 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: "/carousel",
+    component: () => import("../layouts/AdminLayout.vue"),
+    meta: { requiresAuth: true, permission: "content:read", title: "轮播管理" },
+    children: [
+      {
+        path: "",
+        component: () => import("../pages/ContentManagementPage.vue"),
+        meta: {
+          permission: "content:read",
+          title: "轮播管理",
+          icon: "view_carousel",
+          keepAliveName: "ContentManagementPage",
+        },
+      },
+    ],
+  },
+  {
+    path: "/announcements",
+    component: () => import("../layouts/AdminLayout.vue"),
+    meta: { requiresAuth: true, permission: "content:read", title: "公告管理" },
+    children: [
+      {
+        path: "",
+        component: () => import("../pages/ContentManagementPage.vue"),
+        meta: {
+          permission: "content:read",
+          title: "公告管理",
+          icon: "campaign",
+          keepAliveName: "ContentManagementPage",
+        },
+      },
+    ],
+  },
+  {
+    path: "/presale-records",
+    component: () => import("../layouts/AdminLayout.vue"),
+    meta: {
+      requiresAuth: true,
+      permission: "presale:records:read",
+      title: "私募记录",
+    },
+    children: [
+      {
+        path: "",
+        component: () => import("../pages/PresaleRecordsPage.vue"),
+        meta: {
+          permission: "presale:records:read",
+          title: "私募记录",
+          icon: "receipt_long",
+          keepAliveName: "PresaleRecordsPage",
+        },
+      },
+    ],
+  },
+  {
+    path: "/content-management",
+    redirect: "/carousel",
+  },
+  {
     path: "/forbidden",
     component: () => import("../pages/ForbiddenPage.vue"),
     meta: { requiresAuth: true, title: "无权访问" },

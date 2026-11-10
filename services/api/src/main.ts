@@ -3,6 +3,7 @@ import { access } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { NestFactory } from "@nestjs/core";
+import multipart from "@fastify/multipart";
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -45,6 +46,9 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter({ logger: true }),
   );
+  await app.register(multipart, {
+    limits: { fileSize: 100 * 1024 * 1024, files: 1 },
+  });
   // 服务专用变量适配根目录配置，同时保留 PORT 和 HOST 的单服务回退方式。
   const port = Number(process.env.API_PORT ?? process.env.PORT ?? 3610);
   const host = process.env.API_HOST ?? process.env.HOST ?? "127.0.0.1";

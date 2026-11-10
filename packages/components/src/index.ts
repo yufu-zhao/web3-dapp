@@ -1,0 +1,1 @@
+export { default as FormatNumber } from "./FormatNumber.vue";

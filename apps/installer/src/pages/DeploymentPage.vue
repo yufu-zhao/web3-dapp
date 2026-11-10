@@ -5,9 +5,7 @@
       :installation="flow.summary.installation"
       @completed="onCompleted"
     />
-    <q-banner v-else class="message-banner warning-message">
-      请先在数据库配置页确认并保存系统名称和代币信息。
-    </q-banner>
+    <q-banner v-else class="message-banner warning-message">请先在数据库配置页确认并保存系统名称和代币信息。</q-banner>
   </section>
 </template>
 
