@@ -9,6 +9,7 @@
 - `operatorWallet` 映射到新版 `operator`。`launch`、`batchRegistrar`、`pauser` 和 `recoveryWallet` 是不同配置项，必须分别填写。
 - `sources/test/MockUSDT.sol` 是公开 mint 的测试支付币。只有 97 配置中的已有支付币地址没有代码，且部署者明确选择时，才可单独部署 MockUSDT 并在本次部署记录中使用新地址。主网禁止此回退。
 - 测试夹具、接口合约和 MockUSDT 不属于主部署计划；部署应用不得只扫描 Solidity 文件就决定部署哪些合约。
+- `TokenLimitOrders` 使用 EIP-712 签名订单、固定 30 分钟有效期、同方向最多 20 单批量原子成交；安装器仍以原节点部署此合约。当前本地测试通过不代表真实项目代币、Pancake V2 Router、外部钱包或生产安全审计已经通过。
 
 56 和 97 的网络文件仅保存表单预填候选值；部署前仍需项目方确认支付币、钱包角色、外部合约地址，并在目标链实时核验运行时代码。56 的支付币默认值是 Binance-Peg BSC-USD；请勿仅凭 `USDT` 符号将其理解为 Tether 原生发行的 USD₮。
 

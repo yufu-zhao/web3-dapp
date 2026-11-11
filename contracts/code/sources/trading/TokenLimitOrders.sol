@@ -3,108 +3,127 @@ pragma solidity 0.8.28;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
-interface ILimitToken is IERC20 {
-    function paymentToken() external view returns(address);
-    function dexFactory() external view returns(address);
-    function primaryPair() external view returns(address);
-    function tradingOpen() external view returns(bool);
-    function hasRole(bytes32 role,address account) external view returns(bool);
+interface IBatchToken is IERC20 {
+    function paymentToken() external view returns (address);
+    function dexFactory() external view returns (address);
+    function primaryPair() external view returns (address);
+    function tradingOpen() external view returns (bool);
+    function hasRole(bytes32 role, address account) external view returns (bool);
 }
-interface ILimitFactory {function getPair(address,address) external view returns(address);}
-interface ILimitRouter {
-    function factory() external view returns(address);
-    function swapExactTokensForTokensSupportingFeeOnTransferTokens(uint256,uint256,address[] calldata,address,uint256) external;
+interface IBatchFactory { function getPair(address, address) external view returns (address); }
+interface IBatchRouter {
+    function factory() external view returns (address);
+    function swapExactTokensForTokensSupportingFeeOnTransferTokens(uint256, uint256, address[] calldata, address, uint256) external;
 }
 
-/// @notice Fixed-input, all-or-nothing limit orders for one project-token/payment-token V2 pool.
-/// @dev Output is measured at the owner wallet AFTER token taxes. No keeper fee,
-/// arbitrary call, admin withdrawal, mutable router or principal rescue is exposed.
-contract TokenLimitOrders is ReentrancyGuard, Pausable {
+/// @notice 固定输入、全部成交的 EIP-712 限价单；同方向订单可批量结算。
+/// @dev 新签名订单版本：当前未完成真实代币税费、外部路由器和独立安全审计验证。
+contract TokenLimitOrders is EIP712, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
-    bytes32 private constant DEFAULT_ADMIN_ROLE = bytes32(0);
+    uint256 public constant ORDER_DURATION = 30 minutes;
+    uint256 public constant MAX_BATCH = 20;
+    bytes32 public constant ORDER_TYPEHASH = keccak256("Order(address owner,bool buy,uint256 amountIn,uint256 minOut,uint64 issuedAt,uint64 expiry,uint256 salt)");
     bytes32 private constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-    enum Status { Open, Executed, Cancelled }
-    struct Order {address owner;bool buy;Status status;uint64 expiry;uint256 amountIn;uint256 minOut;}
-    ILimitToken public immutable token;
+    struct Order { address owner; bool buy; uint256 amountIn; uint256 minOut; uint64 issuedAt; uint64 expiry; uint256 salt; }
+    IBatchToken public immutable token;
     IERC20 public immutable paymentToken;
-    ILimitRouter public immutable router;
+    IBatchRouter public immutable router;
     address public immutable factory;
-    uint256 public nextOrderId;
-    mapping(uint256=>Order) public orders;
-    mapping(address=>uint256[]) private ownerOrders;
-    mapping(address=>uint256) public escrowed;
+    mapping(bytes32 => bool) public consumed;
+    event OrderCancelled(bytes32 indexed orderHash, address indexed owner);
+    event OrderExecuted(bytes32 indexed orderHash, address indexed owner, bool buy, uint256 amountIn, uint256 amountOut);
+    error InvalidConfiguration(); error InvalidOrder(); error InvalidSignature(); error OrderUnavailable();
+    error TradingNotReady(); error UnsupportedTransfer(); error InsufficientOutput(); error Unauthorized();
 
-    error InvalidConfiguration();error InvalidOrder();error NotOrderOwner();
-    error Unauthorized();
-    error OrderNotOpen();error OrderExpired();error NotExpired();error TradingNotReady();
-    error UnsupportedTransfer();error InsufficientOutput();
-    event OrderCreated(uint256 indexed id,address indexed owner,bool buy,uint256 amountIn,uint256 minOut,uint64 expiry);
-    event OrderExecuted(uint256 indexed id,address indexed owner,address indexed executor,uint256 amountOut);
-    event OrderCancelled(uint256 indexed id,address indexed owner,address indexed caller,uint256 refunded);
-
-    constructor(address token_,address router_) {
-        if(token_.code.length==0||router_.code.length==0)revert InvalidConfiguration();
-        token=ILimitToken(token_);router=ILimitRouter(router_);
-        address pay=token.paymentToken();address f=token.dexFactory();
-        if(pay==token_||pay.code.length==0||f.code.length==0||router.factory()!=f)revert InvalidConfiguration();
-        paymentToken=IERC20(pay);factory=f;
+    constructor(address token_, address router_) EIP712("ChainForge Signed Limit Orders", "1") {
+        if (token_.code.length == 0 || router_.code.length == 0) revert InvalidConfiguration();
+        token = IBatchToken(token_); router = IBatchRouter(router_);
+        address payment = IBatchToken(token_).paymentToken();
+        address dexFactory = IBatchToken(token_).dexFactory();
+        if (payment == token_ || payment.code.length == 0 || dexFactory.code.length == 0 || IBatchRouter(router_).factory() != dexFactory) revert InvalidConfiguration();
+        paymentToken = IERC20(payment); factory = dexFactory;
     }
-    function pause()external { _checkPauser(); _pause(); }
-    function unpause()external { _checkPauser(); _unpause(); }
-    /// @dev 暂停权限由主合约角色统一管理，超管始终可以执行紧急操作。
-    function _checkPauser() internal view {
-        if (!token.hasRole(DEFAULT_ADMIN_ROLE, msg.sender) && !token.hasRole(PAUSER_ROLE, msg.sender)) revert Unauthorized();
+    function orderHash(Order calldata order) public view returns (bytes32) {
+        return _hashTypedDataV4(keccak256(abi.encode(ORDER_TYPEHASH, order.owner, order.buy, order.amountIn, order.minOut, order.issuedAt, order.expiry, order.salt)));
     }
-    function orderCount(address account)external view returns(uint256){return ownerOrders[account].length;}
-    function orderIdAt(address account,uint256 index)external view returns(uint256){return ownerOrders[account][index];}
-    function _ready()internal view {
-        address pair=token.primaryPair();
-        if(!token.tradingOpen()||pair==address(0)||pair!=ILimitFactory(factory).getPair(address(token),address(paymentToken)))revert TradingNotReady();
+    /// @notice 任何时候允许所有者取消订单，包括暂停期间。
+    function cancelOrder(Order calldata order) external {
+        if (msg.sender != order.owner) revert Unauthorized();
+        bytes32 hash = orderHash(order);
+        if (consumed[hash]) revert OrderUnavailable();
+        consumed[hash] = true; emit OrderCancelled(hash, order.owner);
     }
-    function createOrder(bool buy,uint256 amountIn,uint256 minOut,uint64 expiry)
-        external nonReentrant whenNotPaused returns(uint256 id){
-        if(amountIn==0||minOut==0||expiry<=block.timestamp||msg.sender==address(this))revert InvalidOrder();
-        _ready();IERC20 input=buy?paymentToken:IERC20(address(token));
-        uint256 beforeBalance=input.balanceOf(address(this));
-        input.safeTransferFrom(msg.sender,address(this),amountIn);
-        if(input.balanceOf(address(this))-beforeBalance!=amountIn)revert UnsupportedTransfer();
-        id=nextOrderId++;orders[id]=Order(msg.sender,buy,Status.Open,expiry,amountIn,minOut);
-        ownerOrders[msg.sender].push(id);escrowed[address(input)]+=amountIn;
-        emit OrderCreated(id,msg.sender,buy,amountIn,minOut,expiry);
+    function pause() external { _checkPauser(); _pause(); }
+    function unpause() external { _checkPauser(); _unpause(); }
+    function _checkPauser() private view {
+        if (!token.hasRole(bytes32(0), msg.sender) && !token.hasRole(PAUSER_ROLE, msg.sender)) revert Unauthorized();
     }
-    function executeOrder(uint256 id)external nonReentrant whenNotPaused returns(uint256 amountOut){
-        Order storage o=orders[id];_open(o);
-        if(block.timestamp>=o.expiry)revert OrderExpired();_ready();
-        IERC20 input=o.buy?paymentToken:IERC20(address(token));
-        IERC20 output=o.buy?IERC20(address(token)):paymentToken;
-        // Effects precede external calls; every state change rolls back on failure.
-        o.status=Status.Executed;escrowed[address(input)]-=o.amountIn;
-        uint256 inputBefore=input.balanceOf(address(this));uint256 outputBefore=output.balanceOf(o.owner);
-        input.forceApprove(address(router),o.amountIn);
-        address[] memory path=new address[](2);path[0]=address(input);path[1]=address(output);
-        router.swapExactTokensForTokensSupportingFeeOnTransferTokens(o.amountIn,o.minOut,path,o.owner,o.expiry);
-        input.forceApprove(address(router),0);
-        if(input.balanceOf(address(this))!=inputBefore-o.amountIn)revert UnsupportedTransfer();
-        amountOut=output.balanceOf(o.owner)-outputBefore;
-        if(amountOut<o.minOut)revert InsufficientOutput();
-        emit OrderExecuted(id,o.owner,msg.sender,amountOut);
+    // 支持普通钱包及 ERC-1271 合约钱包；合约签名每次执行均重新核验。
+    function _validSignature(address owner, bytes32 hash, bytes calldata signature) private view returns (bool) {
+        if (owner.code.length == 0) {
+            (address recovered, ECDSA.RecoverError error,) = ECDSA.tryRecover(hash, signature);
+            return error == ECDSA.RecoverError.NoError && recovered == owner;
+        }
+        (bool success, bytes memory result) = owner.staticcall(abi.encodeCall(IERC1271.isValidSignature, (hash, signature)));
+        return success && result.length >= 32 && abi.decode(result, (bytes4)) == IERC1271.isValidSignature.selector;
     }
-    function cancelOrder(uint256 id)external nonReentrant {
-        Order storage o=orders[id];_open(o);if(msg.sender!=o.owner)revert NotOrderOwner();_refund(id,o);
+    /// @notice 所有订单在一笔 AMM 兑换中共同结算，失败时整批回滚。
+    function executeBatch(Order[] calldata orders, bytes[] calldata signatures) external nonReentrant whenNotPaused {
+        uint256 count = orders.length;
+        if (count == 0 || count > MAX_BATCH || count != signatures.length) revert InvalidOrder();
+        address pair = token.primaryPair();
+        if (!token.tradingOpen() || pair == address(0) || pair != IBatchFactory(factory).getPair(address(token), address(paymentToken))) revert TradingNotReady();
+        bool buy = orders[0].buy;
+        IERC20 input = buy ? paymentToken : IERC20(address(token));
+        IERC20 output = buy ? IERC20(address(token)) : paymentToken;
+        (uint256 totalInput, uint256 minimumOutput) = _collect(orders, signatures, input, buy);
+        uint256 received = _swap(input, output, totalInput, minimumOutput);
+        _distribute(orders, output, totalInput, received - minimumOutput, buy);
     }
-    /// @notice Anyone can refund expired orders, ONLY to their recorded owner.
-    function refundExpired(uint256 id)external nonReentrant {
-        Order storage o=orders[id];_open(o);if(block.timestamp<o.expiry)revert NotExpired();_refund(id,o);
+    function _collect(Order[] calldata orders, bytes[] calldata signatures, IERC20 input, bool buy) private returns (uint256 totalInput, uint256 minimumOutput) {
+        for (uint256 i; i < orders.length; ++i) {
+            Order calldata order = orders[i];
+            if (order.owner == address(0) || order.owner == address(this) || order.buy != buy || order.amountIn == 0 || order.minOut == 0 || order.issuedAt > block.timestamp || order.expiry <= block.timestamp || uint256(order.expiry) != uint256(order.issuedAt) + ORDER_DURATION) revert InvalidOrder();
+            bytes32 hash = orderHash(order);
+            if (consumed[hash]) revert OrderUnavailable();
+            if (!_validSignature(order.owner, hash, signatures[i])) revert InvalidSignature();
+            consumed[hash] = true;
+            uint256 beforeInput = input.balanceOf(address(this));
+            input.safeTransferFrom(order.owner, address(this), order.amountIn);
+            if (input.balanceOf(address(this)) - beforeInput != order.amountIn) revert UnsupportedTransfer();
+            totalInput += order.amountIn; minimumOutput += order.minOut;
+        }
     }
-    function _open(Order storage o)internal view {
-        if(o.owner==address(0))revert InvalidOrder();if(o.status!=Status.Open)revert OrderNotOpen();
+    function _swap(IERC20 input, IERC20 output, uint256 totalInput, uint256 minimumOutput) private returns (uint256 received) {
+        uint256 beforeOutput = output.balanceOf(address(this));
+        uint256 beforeInput = input.balanceOf(address(this));
+        input.forceApprove(address(router), totalInput);
+        address[] memory path = new address[](2); path[0] = address(input); path[1] = address(output);
+        router.swapExactTokensForTokensSupportingFeeOnTransferTokens(totalInput, minimumOutput, path, address(this), block.timestamp);
+        input.forceApprove(address(router), 0);
+        if (beforeInput < totalInput || input.balanceOf(address(this)) != beforeInput - totalInput) revert UnsupportedTransfer();
+        received = output.balanceOf(address(this)) - beforeOutput;
+        if (received < minimumOutput) revert InsufficientOutput();
     }
-    function _refund(uint256 id,Order storage o)internal {
-        o.status=Status.Cancelled;IERC20 input=o.buy?paymentToken:IERC20(address(token));
-        escrowed[address(input)]-=o.amountIn;input.safeTransfer(o.owner,o.amountIn);
-        emit OrderCancelled(id,o.owner,msg.sender,o.amountIn);
+    function _distribute(Order[] calldata orders, IERC20 output, uint256 totalInput, uint256 surplus, bool buy) private {
+        uint256 distributed;
+        for (uint256 i; i < orders.length; ++i) {
+            Order calldata order = orders[i];
+            // 按输入量分配超出最低到账额的部分，最后一笔获得除法余数。
+            uint256 extra = i + 1 == orders.length ? surplus - distributed : Math.mulDiv(surplus, order.amountIn, totalInput);
+            distributed += extra;
+            uint256 beforeRecipient = output.balanceOf(order.owner);
+            output.safeTransfer(order.owner, order.minOut + extra);
+            uint256 actual = output.balanceOf(order.owner) - beforeRecipient;
+            if (actual < order.minOut) revert InsufficientOutput();
+            emit OrderExecuted(orderHash(order), order.owner, buy, order.amountIn, actual);
+        }
     }
 }

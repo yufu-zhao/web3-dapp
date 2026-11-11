@@ -35,7 +35,7 @@
               </button>
             </nav>
             <div class="sidebar-footer">
-              <span class="secure-dot" />
+              <span class="secure-dot"></span>
               <span>安装数据由本机安装服务处理</span>
             </div>
           </aside>
@@ -51,7 +51,7 @@
                 </p>
               </div>
               <q-badge class="connection-badge" :class="flow.bootstrapped ? 'is-online' : 'is-checking'">
-                <span class="badge-dot" />
+                <span class="badge-dot"></span>
                 {{ flow.bootstrapped ? "安装服务已连接" : "正在连接安装服务" }}
               </q-badge>
             </header>

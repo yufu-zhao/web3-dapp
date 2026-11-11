@@ -13,14 +13,13 @@ import { ContentManagementService } from "./content-management.service.js";
 import { PresaleRecordsService } from "./presale-records.service.js";
 import { UserLanguagesService } from "./user-languages.service.js";
 import { AiModelConfigurationService } from "./ai-model-configuration.service.js";
+import { LimitOrdersController } from "./limit-orders.controller.js";
+import { LimitOrdersService } from "./limit-orders.service.js";
+import { LimitOrderExecutorService } from "./limit-order-executor.service.js";
+import { MarketIndexerService } from "./market-indexer.service.js";
 
 @Module({
-  controllers: [
-    HealthController,
-    PublicConfigController,
-    AdminAuthController,
-    AdminController,
-  ],
+  controllers: [HealthController, PublicConfigController, AdminAuthController, AdminController, LimitOrdersController],
   providers: [
     DatabaseService,
     PublicConfigService,
@@ -28,6 +27,9 @@ import { AiModelConfigurationService } from "./ai-model-configuration.service.js
     PresaleRecordsService,
     UserLanguagesService,
     AiModelConfigurationService,
+    LimitOrdersService,
+    LimitOrderExecutorService,
+    MarketIndexerService,
     AdminAuthService,
     AdminService,
     AdminSessionGuard,

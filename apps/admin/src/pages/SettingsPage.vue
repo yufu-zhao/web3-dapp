@@ -23,11 +23,7 @@
       </div>
 
       <template v-else-if="settings">
-        <q-form
-          v-if="activeCategory === 'basic'"
-          class="settings-form"
-          @submit.prevent="saveSettings"
-        >
+        <q-form v-if="activeCategory === 'basic'" class="settings-form" @submit.prevent="saveSettings">
           <section class="settings-card">
             <header class="settings-heading">
               <span class="settings-icon"><q-icon name="badge" /></span>
@@ -63,9 +59,7 @@
                 maxlength="16"
                 :readonly="!canWrite"
                 :rules="[
-                  (value) =>
-                    /^[\p{L}\p{N}._-]{1,16}$/u.test(value) ||
-                    '使用 1 至 16 位字母、数字、点、下划线或连字符',
+                  (value) => /^[\p{L}\p{N}._-]{1,16}$/u.test(value) || '使用 1 至 16 位字母、数字、点、下划线或连字符',
                 ]"
               />
               <q-input
@@ -98,34 +92,16 @@
                 max="128"
                 :readonly="!canWrite"
                 :rules="[
-                  (value) =>
-                    (Number.isInteger(value) && value >= 8 && value <= 128) ||
-                    '长度须为 8 到 128 位整数',
+                  (value) => (Number.isInteger(value) && value >= 8 && value <= 128) || '长度须为 8 到 128 位整数',
                 ]"
               />
               <span>字符</span>
             </div>
             <div class="policy-options">
-              <q-checkbox
-                v-model="form.passwordPolicy.requireUppercase"
-                label="包含大写字母"
-                :disable="!canWrite"
-              />
-              <q-checkbox
-                v-model="form.passwordPolicy.requireLowercase"
-                label="包含小写字母"
-                :disable="!canWrite"
-              />
-              <q-checkbox
-                v-model="form.passwordPolicy.requireNumber"
-                label="包含数字"
-                :disable="!canWrite"
-              />
-              <q-checkbox
-                v-model="form.passwordPolicy.requireSymbol"
-                label="包含特殊字符"
-                :disable="!canWrite"
-              />
+              <q-checkbox v-model="form.passwordPolicy.requireUppercase" label="包含大写字母" :disable="!canWrite" />
+              <q-checkbox v-model="form.passwordPolicy.requireLowercase" label="包含小写字母" :disable="!canWrite" />
+              <q-checkbox v-model="form.passwordPolicy.requireNumber" label="包含数字" :disable="!canWrite" />
+              <q-checkbox v-model="form.passwordPolicy.requireSymbol" label="包含特殊字符" :disable="!canWrite" />
             </div>
           </section>
 
@@ -146,11 +122,7 @@
           </q-banner>
         </q-form>
 
-        <q-form
-          v-else-if="activeCategory === 'theme'"
-          class="settings-form"
-          @submit.prevent="saveThemeSettings"
-        >
+        <q-form v-else-if="activeCategory === 'theme'" class="settings-form" @submit.prevent="saveThemeSettings">
           <section class="settings-card">
             <header class="settings-heading">
               <span class="settings-icon"><q-icon name="palette" /></span>
@@ -197,9 +169,7 @@
                   }"
                 >
                   <strong>品牌标题</strong>
-                  <span :style="{ color: form.themePalettes.user.mutedText }">
-                    辅助说明文字
-                  </span>
+                  <span :style="{ color: form.themePalettes.user.mutedText }">辅助说明文字</span>
                   <button
                     type="button"
                     class="preview-primary"
@@ -263,9 +233,7 @@
                   }"
                 >
                   <strong>工作区卡片</strong>
-                  <span :style="{ color: form.themePalettes.admin.mutedText }">
-                    表格和表单辅助文字
-                  </span>
+                  <span :style="{ color: form.themePalettes.admin.mutedText }">表格和表单辅助文字</span>
                   <button
                     type="button"
                     class="preview-primary"
@@ -282,14 +250,7 @@
           </section>
 
           <div v-if="canWrite" class="settings-actions">
-            <q-btn
-              color="primary"
-              unelevated
-              icon="save"
-              label="保存主题设置"
-              type="submit"
-              :loading="saving"
-            />
+            <q-btn color="primary" unelevated icon="save" label="保存主题设置" type="submit" :loading="saving" />
           </div>
           <q-banner v-else rounded class="readonly-banner">
             <template #avatar><q-icon name="visibility" /></template>
@@ -301,11 +262,9 @@
 
         <AiModelSettingsPanel v-else-if="activeCategory === 'model'" />
 
-        <q-form
-          v-else-if="activeCategory === 'rpc'"
-          class="settings-form"
-          @submit.prevent="saveRpcSettings"
-        >
+        <LimitOrderSettingsPanel v-else-if="activeCategory === 'trading'" />
+
+        <q-form v-else-if="activeCategory === 'rpc'" class="settings-form" @submit.prevent="saveRpcSettings">
           <section class="settings-card">
             <header class="settings-heading">
               <span class="settings-icon"><q-icon name="hub" /></span>
@@ -316,10 +275,7 @@
                   {{ form.rpcConfiguration.chainId ?? "未锁定" }}）
                 </p>
               </div>
-              <div
-                v-if="canWrite && form.rpcConfiguration.chainId"
-                class="rpc-actions"
-              >
+              <div v-if="canWrite && form.rpcConfiguration.chainId" class="rpc-actions">
                 <q-btn
                   flat
                   round
@@ -328,13 +284,11 @@
                   icon="speed"
                   aria-label="全部测速"
                   :loading="testingAllRpc"
-                  :disable="
-                    !form.rpcConfiguration.nodes.length ||
-                    testingRpcUrls.length > 0
-                  "
+                  :disable="!form.rpcConfiguration.nodes.length || testingRpcUrls.length > 0"
                   @click="testAllRpcNodes"
-                  ><q-tooltip>全部测速</q-tooltip></q-btn
                 >
+                  <q-tooltip>全部测速</q-tooltip>
+                </q-btn>
                 <q-btn
                   flat
                   round
@@ -344,8 +298,9 @@
                   aria-label="添加 RPC 节点"
                   :disable="testingAllRpc"
                   @click="addRpcNode"
-                  ><q-tooltip>添加 RPC 节点</q-tooltip></q-btn
                 >
+                  <q-tooltip>添加 RPC 节点</q-tooltip>
+                </q-btn>
               </div>
             </header>
             <div v-if="testingAllRpc" class="rpc-test-progress q-pb-md">
@@ -353,17 +308,12 @@
                 rounded
                 size="8px"
                 color="primary"
-                :value="
-                  rpcTestProgress.total
-                    ? rpcTestProgress.completed / rpcTestProgress.total
-                    : 0
-                "
+                :value="rpcTestProgress.total ? rpcTestProgress.completed / rpcTestProgress.total : 0"
               />
-              <span
-                >已完成 {{ rpcTestProgress.completed }} /
-                {{ rpcTestProgress.total }} 个节点；正在测试
-                {{ rpcTestProgress.active }} 个。</span
-              >
+              <span>
+                已完成 {{ rpcTestProgress.completed }} / {{ rpcTestProgress.total }} 个节点；正在测试
+                {{ rpcTestProgress.active }} 个。
+              </span>
             </div>
 
             <q-banner
@@ -374,19 +324,11 @@
               <template #avatar><q-icon name="info" /></template>
               {{ rpcSourceLabel }}。保存后将以数据库配置为准。
             </q-banner>
-            <q-banner
-              v-if="!form.rpcConfiguration.chainId"
-              rounded
-              class="readonly-banner"
-            >
+            <q-banner v-if="!form.rpcConfiguration.chainId" rounded class="readonly-banner">
               请先在安装器完成部署并锁定链，之后才能配置 RPC 节点。
             </q-banner>
             <div v-else class="rpc-node-list">
-              <div
-                v-for="(url, index) in form.rpcConfiguration.nodes"
-                :key="`${index}-${url}`"
-                class="rpc-node-row"
-              >
+              <div v-for="(url, index) in form.rpcConfiguration.nodes" :key="`${index}-${url}`" class="rpc-node-row">
                 <q-radio
                   v-model="selectedRpcIndex"
                   :val="index"
@@ -402,22 +344,11 @@
                   class="rpc-node-input"
                   :readonly="!canWrite || testingAllRpc"
                 />
-                <q-chip
-                  dense
-                  :color="rpcMetricColor(url)"
-                  :text-color="rpcMetricTextColor(url)"
-                  class="rpc-speed-chip"
-                >
+                <q-chip dense :color="rpcMetricColor(url)" :text-color="rpcMetricTextColor(url)" class="rpc-speed-chip">
                   {{ rpcMetricLabel(url) }}
                   <q-tooltip v-if="form.rpcConfiguration.metrics[url]">
-                    测速时间：{{
-                      new Date(
-                        form.rpcConfiguration.metrics[url]!.testedAt,
-                      ).toLocaleString()
-                    }}
-                    <template
-                      v-if="form.rpcConfiguration.metrics[url]?.message"
-                    >
+                    测速时间：{{ new Date(form.rpcConfiguration.metrics[url]!.testedAt).toLocaleString() }}
+                    <template v-if="form.rpcConfiguration.metrics[url]?.message">
                       <span class="rpc-metric-message">
                         {{ form.rpcConfiguration.metrics[url]?.message }}
                       </span>
@@ -430,12 +361,7 @@
                   dense
                   icon="wifi_tethering"
                   color="primary"
-                  :disable="
-                    !canWrite ||
-                    !url ||
-                    testingAllRpc ||
-                    testingRpcUrls.length > 0
-                  "
+                  :disable="!canWrite || !url || testingAllRpc || testingRpcUrls.length > 0"
                   :loading="testingRpcUrls.includes(url)"
                   aria-label="测试 RPC 节点"
                   @click="testRpcNode(url)"
@@ -453,16 +379,11 @@
                   @click="removeRpcNode(index)"
                 />
               </div>
-              <div v-if="!form.rpcConfiguration.nodes.length" class="rpc-empty">
-                暂无 RPC 节点，请添加一个节点。
-              </div>
+              <div v-if="!form.rpcConfiguration.nodes.length" class="rpc-empty">暂无 RPC 节点，请添加一个节点。</div>
             </div>
           </section>
 
-          <div
-            v-if="canWrite && form.rpcConfiguration.chainId"
-            class="settings-actions"
-          >
+          <div v-if="canWrite && form.rpcConfiguration.chainId" class="settings-actions">
             <q-btn
               color="primary"
               unelevated
@@ -497,6 +418,7 @@ import { adminRequest, type AdminSettings } from "../services/admin-api";
 import { canAccess } from "../services/admin-session";
 import UserLanguagesPanel from "../components/UserLanguagesPanel.vue";
 import AiModelSettingsPanel from "../components/AiModelSettingsPanel.vue";
+import LimitOrderSettingsPanel from "../components/LimitOrderSettingsPanel.vue";
 
 defineOptions({ name: "SettingsPage" });
 
@@ -504,7 +426,7 @@ const canWrite = computed(() => canAccess("settings:update"));
 const loading = ref(true);
 const saving = ref(false);
 const settings = ref<AdminSettings | null>(null);
-type SettingsCategory = "basic" | "theme" | "language" | "model" | "rpc";
+type SettingsCategory = "basic" | "theme" | "language" | "model" | "rpc" | "trading";
 const activeCategory = ref<SettingsCategory>("basic");
 const categories: Array<{
   id: SettingsCategory;
@@ -516,6 +438,7 @@ const categories: Array<{
   { id: "language", label: "用户端语言", icon: "language" },
   { id: "model", label: "大模型服务", icon: "smart_toy" },
   { id: "rpc", label: "RPC 节点", icon: "hub" },
+  { id: "trading", label: "限价单", icon: "swap_horiz" },
 ];
 const userColorFields: Array<{
   key: keyof UserThemePalette;
@@ -583,10 +506,7 @@ const testingAllRpc = ref(false);
 const rpcTestProgress = ref({ completed: 0, total: 0, active: 0 });
 const selectedRpcIndex = ref(-1);
 const canRemoveRpcNode = computed(
-  () =>
-    canWrite.value &&
-    !testingAllRpc.value &&
-    form.value.rpcConfiguration.nodes.length > 1,
+  () => canWrite.value && !testingAllRpc.value && form.value.rpcConfiguration.nodes.length > 1,
 );
 const rpcSourceLabel = computed(() => {
   switch (form.value.rpcConfiguration.source) {
@@ -606,28 +526,17 @@ function contrastText(color: string) {
       .slice(1)
       .match(/.{2}/g)
       ?.map((part) => parseInt(part, 16) / 255) ?? [];
-  const linear = channels.map((channel) =>
-    channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
-  );
-  const luminance =
-    (linear[0] ?? 0) * 0.2126 +
-    (linear[1] ?? 0) * 0.7152 +
-    (linear[2] ?? 0) * 0.0722;
+  const linear = channels.map((channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
+  const luminance = (linear[0] ?? 0) * 0.2126 + (linear[1] ?? 0) * 0.7152 + (linear[2] ?? 0) * 0.0722;
   return luminance > 0.45 ? "#17243b" : "#ffffff";
 }
-const userOnPrimary = computed(() =>
-  contrastText(form.value.themePalettes.user.accent),
-);
-const adminOnPrimary = computed(() =>
-  contrastText(form.value.themePalettes.admin.primary),
-);
+const userOnPrimary = computed(() => contrastText(form.value.themePalettes.user.accent));
+const adminOnPrimary = computed(() => contrastText(form.value.themePalettes.admin.primary));
 
 async function loadSettings() {
   loading.value = true;
   try {
-    const response = await adminRequest<{ settings: AdminSettings }>(
-      "/settings",
-    );
+    const response = await adminRequest<{ settings: AdminSettings }>("/settings");
     settings.value = response.settings;
     form.value = {
       systemName: response.settings.systemName,
@@ -637,18 +546,14 @@ async function loadSettings() {
       themePalettes: structuredClone(response.settings.themePalettes),
       rpcConfiguration: structuredClone(response.settings.rpcConfiguration),
     };
-    selectedRpcIndex.value = form.value.rpcConfiguration.nodes.indexOf(
-      form.value.rpcConfiguration.activeUrl,
-    );
+    selectedRpcIndex.value = form.value.rpcConfiguration.nodes.indexOf(form.value.rpcConfiguration.activeUrl);
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "无法读取系统设置。",
       position: "top",
       timeout: 0,
-      actions: [
-        { label: "重试", color: "white", handler: () => void loadSettings() },
-      ],
+      actions: [{ label: "重试", color: "white", handler: () => void loadSettings() }],
     });
   } finally {
     loading.value = false;
@@ -662,14 +567,12 @@ function addRpcNode() {
 
 function removeRpcNode(index: number) {
   form.value.rpcConfiguration.nodes.splice(index, 1);
-  if (selectedRpcIndex.value === index)
-    selectedRpcIndex.value = form.value.rpcConfiguration.nodes.length ? 0 : -1;
+  if (selectedRpcIndex.value === index) selectedRpcIndex.value = form.value.rpcConfiguration.nodes.length ? 0 : -1;
   else if (selectedRpcIndex.value > index) selectedRpcIndex.value -= 1;
 }
 
 async function testRpcNode(url: string, showNotification = true) {
-  if (!canWrite.value || !form.value.rpcConfiguration.chainId || !url.trim())
-    return;
+  if (!canWrite.value || !form.value.rpcConfiguration.chainId || !url.trim()) return;
   testingRpcUrls.value.push(url);
   try {
     const result = await adminRequest<{
@@ -692,9 +595,7 @@ async function testRpcNode(url: string, showNotification = true) {
       status: result.status,
       latencyMs: result.latencyMs,
       testedAt: result.testedAt,
-      ...(result.blockNumber === undefined
-        ? {}
-        : { blockNumber: result.blockNumber }),
+      ...(result.blockNumber === undefined ? {} : { blockNumber: result.blockNumber }),
       ...(result.message ? { message: result.message } : {}),
     };
     if (showNotification) {
@@ -724,8 +625,7 @@ async function testRpcNode(url: string, showNotification = true) {
 }
 
 async function testAllRpcNodes() {
-  if (!canWrite.value || testingAllRpc.value || testingRpcUrls.value.length)
-    return;
+  if (!canWrite.value || testingAllRpc.value || testingRpcUrls.value.length) return;
   const nodes = [...form.value.rpcConfiguration.nodes];
   testingAllRpc.value = true;
   rpcTestProgress.value = { completed: 0, total: nodes.length, active: 0 };
@@ -750,9 +650,7 @@ async function testAllRpcNodes() {
     }
   }
   try {
-    await Promise.all(
-      Array.from({ length: Math.min(4, nodes.length) }, () => worker()),
-    );
+    await Promise.all(Array.from({ length: Math.min(4, nodes.length) }, () => worker()));
     Notify.create({
       type: failed || errors ? "warning" : "positive",
       message: `测速完成：${passed}/${nodes.length} 个节点可用，${failed} 个连接失败，${errors} 个请求未完成缓存。`,
@@ -789,23 +687,15 @@ async function saveRpcSettings() {
     const rpcConfiguration = {
       ...form.value.rpcConfiguration,
       nodes: form.value.rpcConfiguration.nodes.map((url) => url.trim()),
-      activeUrl:
-        form.value.rpcConfiguration.nodes[selectedRpcIndex.value]?.trim() ?? "",
+      activeUrl: form.value.rpcConfiguration.nodes[selectedRpcIndex.value]?.trim() ?? "",
     };
-    const response = await adminRequest<{ settings: AdminSettings }>(
-      "/settings",
-      {
-        method: "PATCH",
-        body: JSON.stringify({ rpcConfiguration }),
-      },
-    );
+    const response = await adminRequest<{ settings: AdminSettings }>("/settings", {
+      method: "PATCH",
+      body: JSON.stringify({ rpcConfiguration }),
+    });
     settings.value = response.settings;
-    form.value.rpcConfiguration = structuredClone(
-      response.settings.rpcConfiguration,
-    );
-    selectedRpcIndex.value = form.value.rpcConfiguration.nodes.indexOf(
-      form.value.rpcConfiguration.activeUrl,
-    );
+    form.value.rpcConfiguration = structuredClone(response.settings.rpcConfiguration);
+    selectedRpcIndex.value = form.value.rpcConfiguration.nodes.indexOf(form.value.rpcConfiguration.activeUrl);
     Notify.create({
       type: "positive",
       message: "RPC 配置已保存并应用。",
@@ -826,13 +716,10 @@ async function saveThemeSettings() {
   if (!canWrite.value) return;
   saving.value = true;
   try {
-    const response = await adminRequest<{ settings: AdminSettings }>(
-      "/settings",
-      {
-        method: "PATCH",
-        body: JSON.stringify({ themePalettes: form.value.themePalettes }),
-      },
-    );
+    const response = await adminRequest<{ settings: AdminSettings }>("/settings", {
+      method: "PATCH",
+      body: JSON.stringify({ themePalettes: form.value.themePalettes }),
+    });
     settings.value = response.settings;
     form.value.themePalettes = structuredClone(response.settings.themePalettes);
     applyThemePalette("admin", response.settings.themePalettes);
@@ -856,18 +743,15 @@ async function saveSettings() {
   if (!canWrite.value) return;
   saving.value = true;
   try {
-    const response = await adminRequest<{ settings: AdminSettings }>(
-      "/settings",
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          systemName: form.value.systemName,
-          tokenName: form.value.tokenName,
-          tokenSymbol: form.value.tokenSymbol,
-          passwordPolicy: form.value.passwordPolicy,
-        }),
-      },
-    );
+    const response = await adminRequest<{ settings: AdminSettings }>("/settings", {
+      method: "PATCH",
+      body: JSON.stringify({
+        systemName: form.value.systemName,
+        tokenName: form.value.tokenName,
+        tokenSymbol: form.value.tokenSymbol,
+        passwordPolicy: form.value.passwordPolicy,
+      }),
+    });
     settings.value = response.settings;
     Notify.create({
       type: "positive",
@@ -1040,11 +924,7 @@ onMounted(() => void loadSettings());
   height: 42px;
   flex: 0 0 auto;
   border-radius: 12px;
-  background: color-mix(
-    in srgb,
-    var(--admin-primary) 22%,
-    var(--admin-surface)
-  );
+  background: color-mix(in srgb, var(--admin-primary) 22%, var(--admin-surface));
   color: var(--admin-primary);
   font-size: 21px;
   place-items: center;

@@ -240,118 +240,7 @@
       </template>
 
       <template v-else-if="route.path === '/trade'">
-        <div class="trade-grid">
-          <div class="market-column">
-            <section class="panel market">
-              <div class="panel-heading">
-                <div>
-                  <span class="eyebrow">MARKET</span>
-                  <h2>
-                    {{ tokenSymbol }}
-                    <span class="muted">/ USDT</span>
-                  </h2>
-                </div>
-                <span class="pill">{{ t("text_cb640f5564b8") }}</span>
-              </div>
-              <div class="market-price">
-                --
-                <small>USDT</small>
-              </div>
-              <div class="market-meta">
-                <span>
-                  {{ t("text_1d192ce5b6f7") }}
-                  <b>--</b>
-                </span>
-                <span>
-                  {{ t("text_4fc041c2eaff") }}
-                  <b>--</b>
-                </span>
-                <span>
-                  {{ t("text_aae87a96aacd") }}
-                  <b>--</b>
-                </span>
-                <span>
-                  {{ t("text_7f759692747f") }}
-                  <b>--</b>
-                </span>
-              </div>
-              <div class="chart-empty">
-                <q-icon name="show_chart" />
-                <strong>{{ t("text_7dffaffa3e99") }}</strong>
-                <span>{{ t("text_923735b2fc1b") }}</span>
-              </div>
-            </section>
-            <TradeHistoryPanel :items="recentTradeItems" />
-          </div>
-          <section class="panel trade-form">
-            <div class="panel-heading">
-              <div>
-                <span class="eyebrow">ORDER</span>
-                <h2>{{ t("text_cfd14282eb35") }}</h2>
-              </div>
-              <span class="pill">{{ t("text_3bd33a9db6e1") }}</span>
-            </div>
-            <div class="segmented">
-              <button
-                v-for="side in tradeSides"
-                :key="side.value"
-                :class="{ selected: tradeSide === side.value }"
-                @click="tradeSide = side.value"
-              >
-                {{ t(side.label) }}
-              </button>
-            </div>
-            <div class="order-tabs">
-              <button
-                v-for="type in orderTypes"
-                :key="type.value"
-                :class="{ selected: orderType === type.value }"
-                @click="orderType = type.value"
-              >
-                {{ t(type.label) }}
-              </button>
-            </div>
-            <label class="field-label" for="price">
-              {{ t("text_0f4371a7a9cf") }}
-              <span>USDT</span>
-            </label>
-            <input
-              v-if="orderType === 'limit'"
-              id="price"
-              v-model="price"
-              class="field"
-              type="number"
-              min="0"
-              :placeholder="t('text_ba5f23926f42')"
-            />
-            <div v-else id="price" class="field field-placeholder">
-              {{ t("text_0b09e14b40e9") }}
-            </div>
-            <label class="field-label" for="amount">
-              {{ t("text_5e29d121dda0") }}
-              <span>{{ tokenSymbol }}</span>
-            </label>
-            <input
-              id="amount"
-              v-model="amount"
-              class="field"
-              type="number"
-              min="0"
-              :placeholder="t('text_ec6ac20e4abe')"
-            />
-            <div class="balance-line">
-              {{ t("text_ffcbda29a59a") }}
-              <span>--</span>
-            </div>
-            <button class="button primary full" @click="tradeNotice = true">
-              {{ t(tradeSides.find((side) => side.value === tradeSide)!.label) }}
-              {{ tokenSymbol }}
-            </button>
-            <p v-if="tradeNotice" class="notice" role="status">
-              {{ t("text_82065a97e81d") }}
-            </p>
-          </section>
-        </div>
+        <TradePanel :token-symbol="tokenSymbol" />
       </template>
 
       <template v-else-if="route.path === '/mine'">
@@ -494,7 +383,7 @@ import AnnouncementTicker, { type AnnouncementSummary } from "../components/Anno
 import CarouselHero, { type CarouselItem } from "../components/CarouselHero.vue";
 import DesktopServiceMenu from "../components/DesktopServiceMenu.vue";
 import MobileServiceGrid from "../components/MobileServiceGrid.vue";
-import TradeHistoryPanel, { type TradeHistoryItem } from "../components/TradeHistoryPanel.vue";
+import TradePanel from "../components/TradePanel.vue";
 import WalletConnect from "../components/WalletConnect.vue";
 import PresaleAccount from "../components/PresaleAccount.vue";
 import PanelHeading from "@/components/PanelHeading.vue";
@@ -664,7 +553,6 @@ const tickerSettings = ref({
 });
 const announcementLoading = ref(false);
 const announcementError = ref("");
-const recentTradeItems = ref<TradeHistoryItem[]>([]);
 const isMobile = ref(false);
 const identity = ref<PublicInstallationConfig | null>(null);
 const configError = ref("");
@@ -686,26 +574,12 @@ const statusMessage = computed(() =>
           ? t("text_384647771e16")
           : t("text_2637f2222d6a"),
 );
-const tradeSides = [
-  { value: "buy", label: "text_a1557ec3b077" },
-  { value: "sell", label: "text_fb28ba14091d" },
-];
-const tradeSide = ref("buy");
-const orderTypes = [
-  { value: "market", label: "text_af4f2ee25580" },
-  { value: "limit", label: "text_65cdbf4af6df" },
-];
-const orderType = ref("market");
-const price = ref("");
-const amount = ref("");
-const tradeNotice = ref(false);
 const detailNotice = ref(false);
 // 路由切换后不保留上一功能的操作提示。
 watch(
   () => route.path,
   () => {
     detailNotice.value = false;
-    tradeNotice.value = false;
   },
 );
 const presaleLoading = ref(false);

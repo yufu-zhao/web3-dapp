@@ -352,34 +352,33 @@ Generated from the ABIs in this release package.
 ## TokenLimitOrders
 
 - `constructor(address token_, address router_)`
+- `constant ORDER_DURATION = 1800`（签名下单固定有效 30 分钟）
+- `constant MAX_BATCH = 20`（单笔撮合最多 20 个同方向订单）
+- `Order = (address owner,bool buy,uint256 amountIn,uint256 minOut,uint64 issuedAt,uint64 expiry,uint256 salt)`
+- 批次订单必须同方向；订单执行成功或失败均不会分拆单个订单，失败整笔回滚。
 - `error EnforcedPause()`
 - `error ExpectedPause()`
 - `error InsufficientOutput()`
 - `error InvalidConfiguration()`
 - `error InvalidOrder()`
-- `error NotExpired()`
-- `error NotOrderOwner()`
-- `error OrderExpired()`
-- `error OrderNotOpen()`
+- `error InvalidSignature()`
+- `error OrderUnavailable()`
 - `error ReentrancyGuardReentrantCall()`
 - `error SafeERC20FailedOperation(address token)`
 - `error TradingNotReady()`
 - `error Unauthorized()`
 - `error UnsupportedTransfer()`
-- `event OrderCancelled(uint256 indexed id, address indexed owner, address indexed caller, uint256 refunded)`
-- `event OrderCreated(uint256 indexed id, address indexed owner, bool buy, uint256 amountIn, uint256 minOut, uint64 expiry)`
-- `event OrderExecuted(uint256 indexed id, address indexed owner, address indexed executor, uint256 amountOut)`
+- `event OrderCancelled(bytes32 indexed orderHash, address indexed owner)`
+- `event OrderExecuted(bytes32 indexed orderHash, address indexed owner, bool buy, uint256 amountIn, uint256 amountOut)`
 - `event Paused(address account)`
 - `event Unpaused(address account)`
-- `function cancelOrder(uint256 id)`
-- `function createOrder(bool buy, uint256 amountIn, uint256 minOut, uint64 expiry) returns (uint256 id)`
-- `function escrowed(address) view returns (uint256)`
-- `function executeOrder(uint256 id) returns (uint256 amountOut)`
+- `function cancelOrder(Order order)`
+- `function executeBatch(Order[] orders, bytes[] signatures)`
 - `function factory() view returns (address)`
-- `function nextOrderId() view returns (uint256)`
-- `function orderCount(address account) view returns (uint256)`
-- `function orderIdAt(address account, uint256 index) view returns (uint256)`
-- `function orders(uint256) view returns (address owner, bool buy, uint8 status, uint64 expiry, uint256 amountIn, uint256 minOut)`
+- `function orderHash(Order order) view returns (bytes32)`
+- `function consumed(bytes32 orderHash) view returns (bool)`
+- `function ORDER_DURATION() view returns (uint256)`
+- `function MAX_BATCH() view returns (uint256)`
 - `function pause()`
 - `function paused() view returns (bool)`
 - `function paymentToken() view returns (address)`

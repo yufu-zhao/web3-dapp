@@ -35,11 +35,7 @@
     "notes": "使用场景：首页公告。"
   },
   "text_eefb2470b9a8": {
-    "usage": [
-      "components/MobileServiceGrid.vue",
-      "components/DesktopServiceMenu.vue",
-      "pages/IndexPage.vue"
-    ],
+    "usage": ["components/MobileServiceGrid.vue", "components/DesktopServiceMenu.vue", "pages/IndexPage.vue"],
     "placeholders": [],
     "notes": "使用场景：手机端我的服务导航、桌面端我的服务导航、用户端页面及导航。"
   },
@@ -1312,5 +1308,270 @@
     "usage": ["pages/IndexPage.vue"],
     "placeholders": [],
     "notes": "使用场景：用户端私募当前期的排期状态和倒计时。"
+  },
+  "trading_market_title": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_refresh": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_market_live": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_loading": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_market_empty": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_24h_high": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_24h_low": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_24h_volume": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_candles": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_no_candles": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_no_candles_hint": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_candle_chart": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_market_error": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_chart_error": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_recent": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_no_trades": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_trades_error": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_order_title": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_chain": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": ["chainId"],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_limit_price": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_market_price": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_amount": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_available": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_estimated_receive": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_validity": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_minutes": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_connect_wallet": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_limit_note": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_market_note": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_my_orders": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_cancel": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_no_orders": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_orders_error": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_min_receive": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_status_pending": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_status_executed": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_status_cancelled": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_status_expired": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_status_failed": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_api_error": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_unbound": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_approve": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_wait_wallet": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_sign_order": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_save_order": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_market_confirmed": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": ["hash"],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_order_submitted": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": ["hash"],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_cancel_wait": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_cancelled": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_cancel_error": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_price_required": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_wallet_changed": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_market_not_open": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端交易页在代币尚未开放交易时的市场状态提示。"
   }
 }

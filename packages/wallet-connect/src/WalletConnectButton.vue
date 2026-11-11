@@ -8,7 +8,7 @@
     @click="openWalletView"
   >
     <img v-if="connected && walletInfo?.icon" class="wallet-connect-button__icon" :src="walletInfo.icon" alt="" />
-    <span v-if="connecting" class="wallet-connect-button__spinner" aria-hidden="true" />
+    <span v-if="connecting" class="wallet-connect-button__spinner" aria-hidden="true"></span>
     <span>{{ buttonLabel }}</span>
   </button>
 </template>

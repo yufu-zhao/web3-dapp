@@ -6,12 +6,8 @@
         <div class="flex items-center q-gutter-x-md">
           <h2>{{ t("text_e100b15bcdac") }}</h2>
           <template v-if="snapshot">
-            <q-badge v-if="snapshot.entered" color="positive">{{
-              t("text_aebf00357b7b")
-            }}</q-badge>
-            <q-badge v-else color="grey-8">{{
-              t("text_99a0ecb2bfe0")
-            }}</q-badge>
+            <q-badge v-if="snapshot.entered" color="positive">{{ t("text_aebf00357b7b") }}</q-badge>
+            <q-badge v-else color="grey-8">{{ t("text_99a0ecb2bfe0") }}</q-badge>
           </template>
         </div>
         <!-- <p>{{ t('text_e70ae709c5ce') }}</p> -->
@@ -26,9 +22,7 @@
         {{
           t("text_70b167117882", {
             round: snapshot.round,
-            status: snapshot.finalized
-              ? t("text_374d13aec7f1")
-              : t("text_48e294edd68a"),
+            status: snapshot.finalized ? t("text_374d13aec7f1") : t("text_48e294edd68a"),
           })
         }}
       </p>
@@ -75,14 +69,8 @@
             <div>
               <dt>{{ t("text_a7ed6176eb8b") }}</dt>
               <dd>
-                {{
-                  snapshot.refundClaimed
-                    ? t("text_426e458a4124")
-                    : displayAmount(snapshot.refund)
-                }}
-                <span v-if="!snapshot.refundClaimed">{{
-                  snapshot.paymentSymbol
-                }}</span>
+                {{ snapshot.refundClaimed ? t("text_426e458a4124") : displayAmount(snapshot.refund) }}
+                <span v-if="!snapshot.refundClaimed">{{ snapshot.paymentSymbol }}</span>
               </dd>
             </div>
           </dl>
@@ -117,12 +105,7 @@
           {{ t("text_d6f1a2bc053e") }}
         </button>
         <button
-          v-if="
-            snapshot.entered &&
-            snapshot.finalized &&
-            !snapshot.refundClaimed &&
-            snapshot.hasRefund
-          "
+          v-if="snapshot.entered && snapshot.finalized && !snapshot.refundClaimed && snapshot.hasRefund"
           class="button secondary"
           :disabled="busy || Boolean(pending)"
           @click="write('claimRefund')"
@@ -143,36 +126,24 @@
       </div>
     </template>
     <p v-if="pending">
-      {{ t("text_cff945cbaf57", { kind: translateKind(pending.kind) })
-      }}<TransactionLink :hash="pending.hash" :chain-id="pending.chainId" />{{
-        t("text_8b2fcf7a94c7")
-      }}
+      {{ t("text_cff945cbaf57", { kind: translateKind(pending.kind) }) }}
+      <TransactionLink :hash="pending.hash" :chain-id="pending.chainId" />
+      {{ t("text_8b2fcf7a94c7") }}
     </p>
-    <button
-      v-if="pending && !busy"
-      class="button secondary"
-      @click="checkPending"
-    >
+    <button v-if="pending && !busy" class="button secondary" @click="checkPending">
       {{ t("text_20214c2ee8c8") }}
     </button>
-    <button
-      v-if="syncHash && !busy"
-      class="button secondary"
-      @click="report(syncHash)"
-    >
+    <button v-if="syncHash && !busy" class="button secondary" @click="report(syncHash)">
       {{ t("text_27681bf81853") }}
     </button>
     <p v-if="message" role="status">{{ message }}</p>
     <p v-if="lastTransaction">
-      {{ t("text_4632c95071d5")
-      }}<TransactionLink
-        :hash="lastTransaction.hash"
-        :chain-id="lastTransaction.chainId"
-      />
+      {{ t("text_4632c95071d5") }}
+      <TransactionLink :hash="lastTransaction.hash" :chain-id="lastTransaction.chainId" />
     </p>
-    <q-dialog v-model="mockDialog" :persistent="busy"
-      ><q-card class="confirm-card"
-        ><div class="confirm-heading">
+    <q-dialog v-model="mockDialog" :persistent="busy">
+      <q-card class="confirm-card">
+        <div class="confirm-heading">
           <h2>{{ t("text_9ec2865fb6cb") }}</h2>
         </div>
         <p class="confirm-intro">
@@ -192,10 +163,8 @@
             <dd>{{ snapshot?.paymentSymbol }}</dd>
           </div>
         </dl>
-        <label class="mock-label" for="mock-amount">{{
-          t("text_e30ee2ef4a62")
-        }}</label
-        ><input
+        <label class="mock-label" for="mock-amount">{{ t("text_e30ee2ef4a62") }}</label>
+        <input
           id="mock-amount"
           v-model.trim="mockAmount"
           class="mock-input"
@@ -205,22 +174,15 @@
         />
         <p v-if="mockError" class="notice" role="alert">{{ mockError }}</p>
         <div class="confirm-actions">
-          <button
-            class="button secondary"
-            :disabled="busy"
-            @click="mockDialog = false"
-          >
-            {{ t("text_2cd0f3be8738") }}</button
-          ><button
-            class="button primary"
-            :disabled="busy || Boolean(pending)"
-            @click="mintMock"
-          >
+          <button class="button secondary" :disabled="busy" @click="mockDialog = false">
+            {{ t("text_2cd0f3be8738") }}
+          </button>
+          <button class="button primary" :disabled="busy || Boolean(pending)" @click="mintMock">
             {{ busy ? t("text_40206076cfa7") : t("text_c3041b501978") }}
           </button>
-        </div></q-card
-      ></q-dialog
-    >
+        </div>
+      </q-card>
+    </q-dialog>
     <q-dialog v-model="confirmationOpen" :persistent="busy">
       <q-card class="confirm-card">
         <div class="confirm-heading">
@@ -252,9 +214,7 @@
           </div>
           <div>
             <dt>{{ t("text_6c140b391347") }}</dt>
-            <dd>
-              {{ reviewedSnapshot.ticket }} {{ reviewedSnapshot.paymentSymbol }}
-            </dd>
+            <dd>{{ reviewedSnapshot.ticket }} {{ reviewedSnapshot.paymentSymbol }}</dd>
           </div>
           <div>
             <dt>{{ t("text_5a0451b56e01") }}</dt>
@@ -276,41 +236,26 @@
           <div class="confirm-step">
             <span class="step-number">1</span>
             <div>
-              <strong>{{ t("text_68496c86e24b") }}</strong
-              ><small>{{ translateStatus(approvalStatus) }}</small
-              ><TransactionLink
-                v-if="approvalTx"
-                :hash="approvalTx.hash"
-                :chain-id="approvalTx.chainId"
-              />
+              <strong>{{ t("text_68496c86e24b") }}</strong>
+              <small>{{ translateStatus(approvalStatus) }}</small>
+              <TransactionLink v-if="approvalTx" :hash="approvalTx.hash" :chain-id="approvalTx.chainId" />
             </div>
           </div>
           <div class="confirm-step">
             <span class="step-number">2</span>
             <div>
-              <strong>{{ t("text_d6f1a2bc053e") }}</strong
-              ><small>{{ translateStatus(commitStatus) }}</small
-              ><TransactionLink
-                v-if="commitTx"
-                :hash="commitTx.hash"
-                :chain-id="commitTx.chainId"
-              />
+              <strong>{{ t("text_d6f1a2bc053e") }}</strong>
+              <small>{{ translateStatus(commitStatus) }}</small>
+              <TransactionLink v-if="commitTx" :hash="commitTx.hash" :chain-id="commitTx.chainId" />
             </div>
           </div>
         </div>
         <p v-if="dialogError" class="notice" role="status">{{ dialogError }}</p>
         <div class="confirm-actions">
+          <button class="button secondary" :disabled="busy" @click="confirmationOpen = false">
+            {{ commitStatus === "已完成" ? t("text_3fd47edce45b") : t("text_2cd0f3be8738") }}
+          </button>
           <button
-            class="button secondary"
-            :disabled="busy"
-            @click="confirmationOpen = false"
-          >
-            {{
-              commitStatus === "已完成"
-                ? t("text_3fd47edce45b")
-                : t("text_2cd0f3be8738")
-            }}</button
-          ><button
             v-if="commitStatus !== '已完成'"
             class="button primary"
             :disabled="busy || Boolean(pending)"
@@ -328,10 +273,7 @@
 import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 import { BrowserProvider, Contract, formatUnits, parseUnits } from "ethers";
-import {
-  useWalletConnection,
-  type ConnectedWallet,
-} from "@chainforge/wallet-connect";
+import { useWalletConnection, type ConnectedWallet } from "@chainforge/wallet-connect";
 import { onMounted, ref, watch } from "vue";
 import { Notify } from "quasar";
 import TransactionLink from "./TransactionLink.vue";
@@ -450,13 +392,8 @@ function openConfirmation() {
   reviewedSnapshot.value = { ...snapshot.value };
   reviewedAddress.value = wallet.value.address;
   approvalStatus.value =
-    snapshot.value.allowanceRaw >= snapshot.value.ticketRaw
-      ? "授权额度充足，无需重复授权"
-      : "需要钱包确认授权";
-  commitStatus.value =
-    snapshot.value.allowanceRaw >= snapshot.value.ticketRaw
-      ? "等待确认认购"
-      : "等待授权完成";
+    snapshot.value.allowanceRaw >= snapshot.value.ticketRaw ? "授权额度充足，无需重复授权" : "需要钱包确认授权";
+  commitStatus.value = snapshot.value.allowanceRaw >= snapshot.value.ticketRaw ? "等待确认认购" : "等待授权完成";
   approvalTx.value = null;
   commitTx.value = null;
   dialogError.value = "";
@@ -476,12 +413,7 @@ try {
 // 保留一位小数时截断，避免将余额或可领取数量显示得高于实际值。
 function displayAmount(value: string) {
   const [integer = "0", fraction = ""] = value.split(".");
-  if (
-    BigInt(integer) === 0n &&
-    fraction.slice(0, 1) === "0" &&
-    /[1-9]/.test(fraction.slice(1))
-  )
-    return "<0.1";
+  if (BigInt(integer) === 0n && fraction.slice(0, 1) === "0" && /[1-9]/.test(fraction.slice(1))) return "<0.1";
   return `${integer}.${fraction.padEnd(1, "0").slice(0, 1)}`;
 }
 // 钱包错误可能包含完整 RPC 请求，仅识别稳定错误码及本地提示，不直接展示底层异常。
@@ -496,8 +428,7 @@ function notifyTransactionError(reason: unknown, fallback: string) {
       : null;
   const code = item?.code ?? item?.info?.error?.code;
   let text = fallback;
-  if (code === "ACTION_REJECTED" || code === 4001 || code === "4001")
-    text = t("text_c65c7ec95ec4");
+  if (code === "ACTION_REJECTED" || code === 4001 || code === "4001") text = t("text_c65c7ec95ec4");
   else if (code === "INSUFFICIENT_FUNDS") text = t("text_d1e21548425a");
   else if (code === "TIMEOUT") text = t("text_0c7a52ca66b6");
   else if (
@@ -524,11 +455,7 @@ async function binding(): Promise<Binding> {
   });
   if (!response.ok) throw new Error(t("text_52f8b2fa8af6"));
   const data = await response.json();
-  if (
-    data.state !== "bound" ||
-    !data.contracts?.FairSaleV2 ||
-    !data.contracts?.ProjectToken
-  )
+  if (data.state !== "bound" || !data.contracts?.FairSaleV2 || !data.contracts?.ProjectToken)
     throw new Error(t("text_b9002e23e532"));
   return {
     chainId: data.chainId,
@@ -540,10 +467,7 @@ async function binding(): Promise<Binding> {
 async function context(expected: ConnectedWallet) {
   const target = await binding();
   const provider = new BrowserProvider(expected.provider as never);
-  const [chain, accounts] = await Promise.all([
-    provider.send("eth_chainId", []),
-    provider.send("eth_accounts", []),
-  ]);
+  const [chain, accounts] = await Promise.all([provider.send("eth_chainId", []), provider.send("eth_accounts", [])]);
   if (
     Number(chain) !== target.chainId ||
     !Array.isArray(accounts) ||
@@ -553,11 +477,7 @@ async function context(expected: ConnectedWallet) {
   )
     throw new Error(t("text_8630d001179c", { chainId: target.chainId }));
   const sale = new Contract(target.sale, saleAbi, provider);
-  const token = new Contract(
-    target.token,
-    ["function sale() view returns(address)"],
-    provider,
-  );
+  const token = new Contract(target.token, ["function sale() view returns(address)"], provider);
   const [saleToken, tokenSale, active] = await Promise.all([
     sale.getFunction("token")(),
     token.getFunction("sale")(),
@@ -580,15 +500,7 @@ async function refresh() {
   loading.value = true;
   try {
     const { provider, sale, target } = await context(current);
-    const [
-      paymentAddress,
-      entry,
-      allocation,
-      claimable,
-      cursor,
-      ticket,
-      block,
-    ] = await Promise.all([
+    const [paymentAddress, entry, allocation, claimable, cursor, ticket, block] = await Promise.all([
       sale.getFunction("paymentToken")(),
       sale.getFunction("entries")(current.address),
       sale.getFunction("allocationOf")(current.address),
@@ -645,8 +557,7 @@ async function refresh() {
       allowanceRaw: allowance,
     };
   } catch (e) {
-    if (version === revision)
-      error.value = e instanceof Error ? e.message : t("text_777d2ec619e7");
+    if (version === revision) error.value = e instanceof Error ? e.message : t("text_777d2ec619e7");
   } finally {
     if (version === revision) loading.value = false;
   }
@@ -666,10 +577,7 @@ async function checkPending() {
   const p = pending.value;
   const current = wallet.value;
   if (!p || !current) return;
-  if (
-    current.address.toLowerCase() !== p.address.toLowerCase() ||
-    current.chainId !== p.chainId
-  ) {
+  if (current.address.toLowerCase() !== p.address.toLowerCase() || current.chainId !== p.chainId) {
     error.value = t("text_81b73db195ae");
     return;
   }
@@ -748,10 +656,7 @@ async function commit() {
   const current = wallet.value;
   const reviewed = reviewedSnapshot.value;
   if (!current || !reviewed || busy.value || pending.value) return;
-  if (
-    current.address.toLowerCase() !== reviewedAddress.value.toLowerCase() ||
-    current.chainId !== reviewed.chainId
-  ) {
+  if (current.address.toLowerCase() !== reviewedAddress.value.toLowerCase() || current.chainId !== reviewed.chainId) {
     dialogError.value = t("text_b2c0fdb8a0fe");
     return;
   }
@@ -771,39 +676,22 @@ async function commit() {
       ctx.sale.getFunction("entries")(current.address),
       payment.getFunction("allowance")(current.address, ctx.target.sale),
     ]);
-    if (
-      terms !== reviewed.terms ||
-      ticket !== reviewed.ticketRaw ||
-      Number(entry.roundPlusOne) !== 0
-    )
+    if (terms !== reviewed.terms || ticket !== reviewed.ticketRaw || Number(entry.roundPlusOne) !== 0)
       throw new Error(t("text_1cf040985c90"));
     if (allowance < ticket) {
       approvalStatus.value = "请在钱包中确认授权";
-      await submit(
-        current,
-        "授权",
-        () => payment.getFunction("approve")(ctx.target.sale, ticket),
-        ctx.provider,
-      );
+      await submit(current, "授权", () => payment.getFunction("approve")(ctx.target.sale, ticket), ctx.provider);
       approvalStatus.value = "已完成";
       if (walletEpoch !== initialEpoch) throw new Error(t("text_936052a10b26"));
       ctx = await context(current);
       signer = await ctx.provider.getSigner(current.address);
       payment = new Contract(paymentAddress, ercAbi, signer);
-      if (
-        (await payment.getFunction("allowance")(
-          current.address,
-          ctx.target.sale,
-        )) < ticket
-      )
+      if ((await payment.getFunction("allowance")(current.address, ctx.target.sale)) < ticket)
         throw new Error(t("text_ba7228a6c553"));
     }
-    if (allowance >= ticket)
-      approvalStatus.value = "授权额度充足，无需重复授权";
+    if (allowance >= ticket) approvalStatus.value = "授权额度充足，无需重复授权";
     commitStatus.value = "请在钱包中确认认购";
-    const freshTerms = await ctx.sale.getFunction("termsHash")(
-      reviewed.currentRound,
-    );
+    const freshTerms = await ctx.sale.getFunction("termsHash")(reviewed.currentRound);
     if (freshTerms !== reviewed.terms) throw new Error(t("text_9e0c2d493024"));
     if (walletEpoch !== initialEpoch) throw new Error(t("text_936052a10b26"));
     await context(current);
@@ -811,11 +699,7 @@ async function commit() {
     const hash = await submit(
       current,
       "认购",
-      () =>
-        connected.getFunction("commitWithTerms")(
-          reviewed.currentRound,
-          reviewed.terms,
-        ),
+      () => connected.getFunction("commitWithTerms")(reviewed.currentRound, reviewed.terms),
       ctx.provider,
     );
     commitStatus.value = "已完成";
@@ -823,9 +707,7 @@ async function commit() {
     await refresh();
     emit("updated");
   } catch (e) {
-    dialogError.value = pending.value
-      ? t("text_2828d2e06a69")
-      : t("text_4591a7cae731");
+    dialogError.value = pending.value ? t("text_2828d2e06a69") : t("text_4591a7cae731");
     notifyTransactionError(e, dialogError.value);
     // 授权成功后即使认购取消，也要重新读取已授权额度。
     await refresh();
@@ -849,39 +731,26 @@ async function mintMock() {
     const ctx = await context(current);
     if (ctx.target.chainId === 56) throw new Error(t("text_62e1a10bbda7"));
     const paymentAddress = await ctx.sale.getFunction("paymentToken")();
-    const payment = new Contract(
-      paymentAddress,
-      [...ercAbi, "function mint(address,uint256)"],
-      ctx.provider,
-    );
+    const payment = new Contract(paymentAddress, [...ercAbi, "function mint(address,uint256)"], ctx.provider);
     const decimals = Number(await payment.getFunction("decimals")());
-    if (!Number.isInteger(decimals) || decimals < 0 || decimals > 36)
-      throw new Error(t("text_340178b42a3a"));
+    if (!Number.isInteger(decimals) || decimals < 0 || decimals > 36) throw new Error(t("text_340178b42a3a"));
     let amount: bigint;
     try {
       amount = parseUnits(mockAmount.value, decimals);
     } catch {
       throw new Error(t("text_7e3801316862", { decimals }));
     }
-    if (amount <= 0n || amount >= 2n ** 256n)
-      throw new Error(t("text_81380efcbf27"));
+    if (amount <= 0n || amount >= 2n ** 256n) throw new Error(t("text_81380efcbf27"));
     const signer = await ctx.provider.getSigner(current.address);
     if (walletEpoch !== initialEpoch) throw new Error(t("text_bbe558300e5c"));
     await context(current);
     const writable = payment.connect(signer) as Contract;
-    await submit(
-      current,
-      "领取测试币",
-      () => writable.getFunction("mint")(current.address, amount),
-      ctx.provider,
-    );
+    await submit(current, "领取测试币", () => writable.getFunction("mint")(current.address, amount), ctx.provider);
     mockDialog.value = false;
     mockAmount.value = "";
     await refresh();
   } catch (e) {
-    mockError.value = pending.value
-      ? t("text_2828d2e06a69")
-      : t("text_1bb523044bd1");
+    mockError.value = pending.value ? t("text_2828d2e06a69") : t("text_1bb523044bd1");
     notifyTransactionError(e, mockError.value);
   } finally {
     busy.value = false;
@@ -904,10 +773,7 @@ async function write(method: "claim" | "claimRefund") {
     );
     await refresh();
   } catch (e) {
-    notifyTransactionError(
-      e,
-      pending.value ? t("text_fd02fb439e14") : t("text_49a60439db7d"),
-    );
+    notifyTransactionError(e, pending.value ? t("text_fd02fb439e14") : t("text_49a60439db7d"));
   } finally {
     busy.value = false;
   }
