@@ -2,7 +2,7 @@
   <section class="presale-page">
     <div class="row items-center full-height">
       <div>fdsf</div>
-      <q-spacer />
+      <q-space />
       <q-btn flat icon="refresh" :loading="loading" :disable="busy" round @click="reload">
         <q-tooltip>刷新数据</q-tooltip>
       </q-btn>
