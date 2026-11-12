@@ -1,10 +1,10 @@
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
-import { defineConfig } from '#q-app';
+import { defineConfig } from "#q-app";
 
-process.loadEnvFile("../../.env")
-export default defineConfig((ctx) => {
+process.loadEnvFile("../../.env");
+export default defineConfig(ctx => {
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
     // preFetch: true,
@@ -12,13 +12,10 @@ export default defineConfig((ctx) => {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot: [
-    ],
+    boot: ["wallet-kit"],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
-    css: [
-      'app.scss'
-    ],
+    css: ["app.scss"],
 
     // https://github.com/quasarframework/quasar/tree/dev/extras
     extras: [
@@ -29,8 +26,8 @@ export default defineConfig((ctx) => {
       // 'themify',
       // 'line-awesome',
 
-      'roboto-font', // optional, you are not bound to it
-      'material-icons', // optional, you are not bound to it
+      "roboto-font", // optional, you are not bound to it
+      "material-icons" // optional, you are not bound to it
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#build
@@ -49,7 +46,7 @@ export default defineConfig((ctx) => {
       // https://v2.quasar.dev/quasar-cli-vite/page-routing-with-vue-router#filename-based-routing
       // filenameBasedRouting: true,
 
-      vueRouterMode: 'hash', // available values: 'hash', 'history'
+      vueRouterMode: "hash", // available values: 'hash', 'history'
       // vueRouterBase,
 
       // publicPath: '/',
@@ -58,7 +55,7 @@ export default defineConfig((ctx) => {
       // ignorePublicFolder: true,
       // minify: false,
       allowOutsideProjectDistDir: true,
-      distDir: ctx.appPaths.resolve.app('../../dist/apps/admin'),
+      distDir: ctx.appPaths.resolve.app("../../dist/apps/admin")
 
       // extendViteConf (viteConf) {},
       // viteVuePluginOptions: {},
@@ -82,9 +79,9 @@ export default defineConfig((ctx) => {
         "/installer": {
           target: `http://127.0.0.1:${process.env.INSTALLER_SERVICE_PORT ?? 3611}`,
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/installer/, "installer"),
-        },
-      },
+          rewrite: path => path.replace(/^\/installer/, "installer")
+        }
+      }
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
@@ -130,8 +127,8 @@ export default defineConfig((ctx) => {
        */
       prodPort: 3000,
       middlewares: [
-        'render' // keep this as last one
-      ],
+        "render" // keep this as last one
+      ]
 
       // clientSideRenderingRoutes: [],
       // noPreloadTagRoutes: [],
@@ -162,15 +159,12 @@ export default defineConfig((ctx) => {
       // clientSideRenderingHtmlFilename: 'csr.html',
       // clientSideRenderingRoutes: [],
       // noPreloadTagRoutes: []
-
       // extendSSGRendererConf (rolldownConf) {},
       // extendSSGManifestJson (json) {},
-
       // manualStoreSerialization: true,
       // manualStoreSsrContextInjection: true,
       // manualStoreHydration: true,
       // manualPostHydrationTrigger: true,
-
       // pwa: true,
       // pwaOfflineHtmlFilename: 'offline.html',
       // extendSSGGenerateSWOptions (cfg) {},
@@ -179,7 +173,7 @@ export default defineConfig((ctx) => {
 
     // https://v2.quasar.dev/quasar-cli-vite/developing-pwa/configuring-pwa
     pwa: {
-      workboxMode: 'GenerateSW' // 'GenerateSW' or 'InjectManifest'
+      workboxMode: "GenerateSW" // 'GenerateSW' or 'InjectManifest'
       // swFilename: 'sw.js',
       // manifestFilename: 'manifest.json',
       // extendPWAManifestJson (json) {},
@@ -206,22 +200,20 @@ export default defineConfig((ctx) => {
       // extendElectronPackageJson (pkgJson) {},
 
       // Electron preload scripts (if any) from /src-electron, WITHOUT file extension
-      preloadScripts: [ 'electron-preload' ],
+      preloadScripts: ["electron-preload"],
 
       // specify the debugging port to use for the Electron app when running in development mode
       inspectPort: 5858,
 
-      bundler: 'packager', // 'packager' or 'builder'
+      bundler: "packager", // 'packager' or 'builder'
 
       packager: {
         // https://github.com/electron-userland/electron-packager/blob/master/docs/api.md#options
-
         // OS X / Mac App Store
         // appBundleId: '',
         // appCategoryType: '',
         // osxSign: '',
         // protocol: 'myapp://path',
-
         // Windows only
         // win32metadata: { ... }
       },
@@ -229,7 +221,7 @@ export default defineConfig((ctx) => {
       builder: {
         // https://www.electron.build/configuration
 
-        appId: 'apps-installer'
+        appId: "apps-installer"
       }
     },
 
@@ -248,5 +240,5 @@ export default defineConfig((ctx) => {
        */
       extraScripts: []
     }
-  }
+  };
 });

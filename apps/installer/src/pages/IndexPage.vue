@@ -31,7 +31,11 @@
                   <strong class="title">{{ item.title }}</strong>
                   <small>{{ item.subtitle }}</small>
                 </span>
-                <q-icon v-if="route.path.startsWith(item.path)" name="chevron_right" size="20px" />
+                <q-icon
+                  v-if="route.path.startsWith(item.path)"
+                  name="chevron_right"
+                  size="20px"
+                />
               </button>
             </nav>
             <div class="sidebar-footer">
@@ -43,14 +47,19 @@
           <main class="content-panel">
             <header class="topbar">
               <div>
-                <span class="topbar-label">链构（CHAINFORGE） / INSTALLATION</span>
+                <span class="topbar-label"
+                  >链构（CHAINFORGE） / INSTALLATION</span
+                >
                 <p>
                   安装向导
                   <span>·</span>
                   {{ currentStep }} / 4
                 </p>
               </div>
-              <q-badge class="connection-badge" :class="flow.bootstrapped ? 'is-online' : 'is-checking'">
+              <q-badge
+                class="connection-badge"
+                :class="flow.bootstrapped ? 'is-online' : 'is-checking'"
+              >
                 <span class="badge-dot"></span>
                 {{ flow.bootstrapped ? "安装服务已连接" : "正在连接安装服务" }}
               </q-badge>
@@ -71,7 +80,10 @@
 import { computed, onMounted } from "vue";
 import { BrandLogo } from "@chainforge/brand-ui";
 import { useRoute, useRouter } from "vue-router";
-import { bootstrapInstallerFlow, installerFlow } from "../services/installer-flow";
+import {
+  bootstrapInstallerFlow,
+  installerFlow
+} from "../services/installer-flow";
 
 const route = useRoute();
 const router = useRouter();
@@ -80,25 +92,33 @@ const steps = [
   { path: "/environment", title: "环境检查", subtitle: "运行环境与服务" },
   { path: "/database", title: "数据库连接", subtitle: "初始化核心数据" },
   { path: "/deploy", title: "部署合约", subtitle: "按计划逐步部署" },
-  { path: "/complete", title: "完成", subtitle: "安装资料与输出位置" },
+  { path: "/complete", title: "完成", subtitle: "安装资料与输出位置" }
 ];
-const currentStep = computed(() => Math.max(1, steps.findIndex((item) => route.path.startsWith(item.path)) + 1));
+const currentStep = computed(() =>
+  Math.max(1, steps.findIndex(item => route.path.startsWith(item.path)) + 1)
+);
 
 function canOpen(path: string) {
   if (path === "/environment") return true;
   if (path === "/database") return flow.environmentReady;
   if (path === "/deploy")
     return (
-      flow.environmentReady && flow.databaseReady && !flow.databaseReinitializing && Boolean(flow.summary.installation)
+      flow.environmentReady &&
+      flow.databaseReady &&
+      !flow.databaseReinitializing &&
+      Boolean(flow.summary.installation)
     );
-  return !flow.databaseReinitializing && (route.path.startsWith("/complete") || Boolean(flow.selectedDeployment));
+  return (
+    !flow.databaseReinitializing &&
+    (route.path.startsWith("/complete") || Boolean(flow.selectedDeployment))
+  );
 }
 
 function openStep(path: string) {
   if (path === "/complete" && flow.selectedDeployment) {
     void router.push({
       path: `/complete/${flow.selectedDeployment.deploymentId}`,
-      query: { chainId: String(flow.selectedDeployment.chainId) },
+      query: { chainId: String(flow.selectedDeployment.chainId) }
     });
     return;
   }

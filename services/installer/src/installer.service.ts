@@ -1,7 +1,7 @@
 import {
   ConflictException,
   Injectable,
-  ServiceUnavailableException,
+  ServiceUnavailableException
 } from "@nestjs/common";
 import { randomBytes, scryptSync } from "node:crypto";
 import {
@@ -11,7 +11,7 @@ import {
   readdir,
   rename,
   rm,
-  writeFile,
+  writeFile
 } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
@@ -113,7 +113,7 @@ export class InstallerService {
       architecture: process.arch,
       availableMemoryBytes: process.availableMemory?.() ?? null,
       requiredNode: ">=22.22.0 <23",
-      walletConnectConfigured: Boolean(this.walletConnectProjectId()),
+      walletConnectConfigured: Boolean(this.walletConnectProjectId())
     };
   }
 
@@ -135,19 +135,19 @@ export class InstallerService {
     try {
       await client.query("BEGIN");
       const schema = await client.query<{ exists: boolean }>(
-        "SELECT to_regclass('public.system_configs') IS NOT NULL AS exists",
+        "SELECT to_regclass('public.system_configs') IS NOT NULL AS exists"
       );
       if (!schema.rows[0]?.exists) {
         throw new ConflictException(
-          "当前数据库尚未完成首次安装，不能执行后续迁移。",
+          "当前数据库尚未完成首次安装，不能执行后续迁移。"
         );
       }
       const installed = await client.query(
-        "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'",
+        "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'"
       );
       if (!installed.rowCount) {
         throw new ConflictException(
-          "当前数据库尚未完成首次安装，不能执行后续迁移。",
+          "当前数据库尚未完成首次安装，不能执行后续迁移。"
         );
       }
       const applied = await this.applyPendingMigrations(client);
@@ -173,20 +173,20 @@ export class InstallerService {
       const existing = await this.recognizeInstallation(pool);
       if (!existing) {
         throw new ConflictException(
-          "目标数据库非空，但未识别到完整的链构安装，请更换数据库。",
+          "目标数据库非空，但未识别到完整的链构安装，请更换数据库。"
         );
       }
       if (settings) {
         this.databaseSettingsSaveAttempted = true;
         this.databaseSettingsSaved = await this.persistDatabaseUrl(
-          settings,
+          settings
         ).catch(() => false);
         this.replaceRuntimePool(pool);
         this.databaseSummary = {
           host: settings.host.trim(),
           port: settings.port,
           database: settings.database.trim(),
-          username: settings.username.trim(),
+          username: settings.username.trim()
         };
       }
       return await this.installationSummary();
@@ -209,24 +209,24 @@ export class InstallerService {
             "admin_users",
             "roles",
             "menus",
-            "system_configs",
-          ],
-        ],
+            "system_configs"
+          ]
+        ]
       );
       if (Number(tables.rows[0]?.total) !== 5) return undefined;
       const [migration, admin, configs] = await Promise.all([
         pool.query(
-          "SELECT 1 FROM public.schema_migrations WHERE version = '0001_installer_core'",
+          "SELECT 1 FROM public.schema_migrations WHERE version = '0001_installer_core'"
         ),
         pool.query<{ username: string }>(
-          "SELECT username FROM public.admin_users ORDER BY id LIMIT 1",
+          "SELECT username FROM public.admin_users ORDER BY id LIMIT 1"
         ),
         pool.query<{ config_key: string; config_value: string }>(
-          "SELECT config_key, config_value FROM public.system_configs WHERE config_key IN ('installed_at', 'system_name', 'token_name', 'token_symbol')",
-        ),
+          "SELECT config_key, config_value FROM public.system_configs WHERE config_key IN ('installed_at', 'system_name', 'token_name', 'token_symbol')"
+        )
       ]);
       const values = new Map(
-        configs.rows.map((row) => [row.config_key, row.config_value]),
+        configs.rows.map(row => [row.config_key, row.config_value])
       );
       const installation = this.parseInstallationIdentity(values);
       if (
@@ -247,11 +247,11 @@ export class InstallerService {
 
   private async readRuntimeBinding(pool: Pool) {
     const table = await pool.query<{ exists: boolean }>(
-      "SELECT to_regclass('public.runtime_contract_binding') IS NOT NULL AS exists",
+      "SELECT to_regclass('public.runtime_contract_binding') IS NOT NULL AS exists"
     );
     const result = table.rows[0]?.exists
       ? await pool.query<{ chain_id: string; deployment_id: string }>(
-          "SELECT chain_id::text, deployment_id FROM runtime_contract_binding WHERE singleton = TRUE",
+          "SELECT chain_id::text, deployment_id FROM runtime_contract_binding WHERE singleton = TRUE"
         )
       : { rows: [] as Array<{ chain_id: string; deployment_id: string }> };
     const row = result.rows[0];
@@ -271,10 +271,10 @@ export class InstallerService {
       config_key: string;
       config_value: string;
     }>(
-      "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('installation_chain_id', 'deployment_id')",
+      "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('installation_chain_id', 'deployment_id')"
     );
     const values = new Map(
-      legacy.rows.map((item) => [item.config_key, item.config_value]),
+      legacy.rows.map(item => [item.config_key, item.config_value])
     );
     const chainId = Number(values.get("installation_chain_id"));
     if (!Number.isSafeInteger(chainId) || chainId <= 0) return null;
@@ -289,12 +289,12 @@ export class InstallerService {
     this.validateInitializeInput(input);
     this.validateAdminPassword(
       input.administrator.password,
-      this.normalizePasswordPolicy(input.passwordPolicy),
+      this.normalizePasswordPolicy(input.passwordPolicy)
     );
     const databaseState = await this.inspectDatabase(input.database);
     if (databaseState.exists && !databaseState.empty) {
       throw new ConflictException(
-        "目标数据库非空，不能初始化。链构已有安装请确认后跳过，否则请更换数据库。",
+        "目标数据库非空，不能初始化。链构已有安装请确认后跳过，否则请更换数据库。"
       );
     }
     if (!databaseState.exists) await this.createDatabase(input.database);
@@ -310,15 +310,15 @@ export class InstallerService {
 
     try {
       const adminTable = await client.query<{ exists: boolean }>(
-        "SELECT to_regclass('public.admin_users') IS NOT NULL AS exists",
+        "SELECT to_regclass('public.admin_users') IS NOT NULL AS exists"
       );
       if (adminTable.rows[0]?.exists) {
         const admins = await client.query<{ total: string }>(
-          "SELECT COUNT(*)::text AS total FROM admin_users",
+          "SELECT COUNT(*)::text AS total FROM admin_users"
         );
         if (Number(admins.rows[0]?.total ?? 0) > 0) {
           throw new ConflictException(
-            "数据库中已存在管理员；为避免覆盖，请使用现有安装或选择新数据库。",
+            "数据库中已存在管理员；为避免覆盖，请使用现有安装或选择新数据库。"
           );
         }
       }
@@ -327,28 +327,28 @@ export class InstallerService {
       // 与迁移共用锁，并再次检查空库，防止检查后被另一安装请求抢先初始化。
       await client.query("SELECT pg_advisory_xact_lock(4102, 3)");
       const occupied = await client.query(
-        "SELECT 1 FROM pg_tables WHERE schemaname NOT IN ('pg_catalog', 'information_schema') LIMIT 1",
+        "SELECT 1 FROM pg_tables WHERE schemaname NOT IN ('pg_catalog', 'information_schema') LIMIT 1"
       );
       if (occupied.rowCount) {
         throw new ConflictException(
-          "目标数据库已非空，请重新检查后选择跳过或更换数据库。",
+          "目标数据库已非空，请重新检查后选择跳过或更换数据库。"
         );
       }
       await this.applyPendingMigrations(client);
 
       const current = await client.query<{ total: string }>(
-        "SELECT COUNT(*)::text AS total FROM admin_users",
+        "SELECT COUNT(*)::text AS total FROM admin_users"
       );
       if (Number(current.rows[0]?.total ?? 0) > 0) {
         throw new ConflictException(
-          "数据库中已存在管理员，不能重复创建首位管理员。",
+          "数据库中已存在管理员，不能重复创建首位管理员。"
         );
       }
 
       const storedPasswordPolicy = await client.query<{
         config_value: string;
       }>(
-        "SELECT config_value FROM system_configs WHERE config_key = 'admin_password_policy'",
+        "SELECT config_value FROM system_configs WHERE config_key = 'admin_password_policy'"
       );
       const passwordPolicy = storedPasswordPolicy.rows[0]?.config_value
         ? this.parsePasswordPolicy(storedPasswordPolicy.rows[0].config_value)
@@ -357,7 +357,7 @@ export class InstallerService {
 
       const installation = await this.persistInstallationIdentity(
         client,
-        input.installation,
+        input.installation
       );
 
       // 管理端 MVP 以系统管理菜单为主入口，保留概览记录但不在侧栏显示。
@@ -367,19 +367,19 @@ export class InstallerService {
            ('overview', '概览', '/', 'dashboard', 10, FALSE),
            ('administrators', '管理员', '/administrators', 'admin_panel_settings', 20, TRUE),
            ('system-settings', '系统设置', '/settings', 'settings', 30, TRUE)
-         ON CONFLICT (code) DO NOTHING`,
+         ON CONFLICT (code) DO NOTHING`
       );
       await client.query(
         `INSERT INTO roles (code, name, description, permissions)
          VALUES ('super_admin', '超级管理员', '安装时创建的首位管理员角色', '["*"]'::jsonb)
-         ON CONFLICT (code) DO NOTHING`,
+         ON CONFLICT (code) DO NOTHING`
       );
       const roleResult = await client.query<{ id: string; is_active: boolean }>(
-        "SELECT id::text, is_active FROM roles WHERE code = 'super_admin'",
+        "SELECT id::text, is_active FROM roles WHERE code = 'super_admin'"
       );
       if (!roleResult.rows[0]?.is_active) {
         throw new ConflictException(
-          "已有超级管理员角色处于停用状态；为避免更改既有数据，请先由数据库管理员处理。",
+          "已有超级管理员角色处于停用状态；为避免更改既有数据，请先由数据库管理员处理。"
         );
       }
       const passwordHash = this.hashPassword(input.administrator.password);
@@ -389,20 +389,20 @@ export class InstallerService {
         [
           input.administrator.username.trim(),
           passwordHash,
-          roleResult.rows[0]?.id,
-        ],
+          roleResult.rows[0]?.id
+        ]
       );
 
       await client.query(
         `INSERT INTO system_configs (config_key, config_value, description)
          VALUES ('admin_password_policy', $1, '管理员密码强度策略')
          ON CONFLICT (config_key) DO NOTHING`,
-        [JSON.stringify(passwordPolicy)],
+        [JSON.stringify(passwordPolicy)]
       );
       await client.query(
         `INSERT INTO system_configs (config_key, config_value, description)
          VALUES ('installed_at', NOW()::text, '安装器完成初始化的时间')
-         ON CONFLICT (config_key) DO NOTHING`,
+         ON CONFLICT (config_key) DO NOTHING`
       );
       await client.query("COMMIT");
 
@@ -411,10 +411,10 @@ export class InstallerService {
         host: input.database.host.trim(),
         port: input.database.port,
         database: input.database.database.trim(),
-        username: input.database.username.trim(),
+        username: input.database.username.trim()
       };
       const settingsSaved = await this.persistDatabaseUrl(input.database).catch(
-        () => false,
+        () => false
       );
       this.databaseSettingsSaveAttempted = true;
       this.databaseSettingsSaved = settingsSaved;
@@ -424,7 +424,7 @@ export class InstallerService {
         administrator: input.administrator.username.trim(),
         walletConnectConfigured: Boolean(this.walletConnectProjectId()),
         installation,
-        settingsSaved,
+        settingsSaved
       };
     } catch (error) {
       await client.query("ROLLBACK").catch(() => undefined);
@@ -442,7 +442,7 @@ export class InstallerService {
     if (!pool) {
       return {
         walletConnectConfigured: Boolean(projectId),
-        installed: false,
+        installed: false
       };
     }
 
@@ -451,13 +451,13 @@ export class InstallerService {
         config_key: string;
         config_value: string;
       }>(
-        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('admin_password_policy', 'system_name', 'token_name', 'token_symbol')",
+        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('admin_password_policy', 'system_name', 'token_name', 'token_symbol')"
       );
       const installed = await pool.query(
-        "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'",
+        "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'"
       );
       const configs = new Map(
-        result.rows.map((item) => [item.config_key, item.config_value]),
+        result.rows.map(item => [item.config_key, item.config_value])
       );
       const installation = this.parseInstallationIdentity(configs);
       if (installation) {
@@ -467,16 +467,16 @@ export class InstallerService {
       return {
         walletConnectConfigured: Boolean(projectId),
         passwordPolicy: this.parsePasswordPolicy(
-          configs.get("admin_password_policy"),
+          configs.get("admin_password_policy")
         ),
         installation,
-        installed: installed.rowCount === 1,
+        installed: installed.rowCount === 1
       };
     } catch {
       return {
         walletConnectConfigured: Boolean(projectId),
         installation: null,
-        installed: false,
+        installed: false
       };
     }
   }
@@ -491,7 +491,7 @@ export class InstallerService {
     const pool = await this.getPool();
     if (!pool) throw new ServiceUnavailableException("请先初始化数据库。");
     const installed = await pool.query(
-      "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'",
+      "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'"
     );
     if (installed.rowCount !== 1) {
       throw new ConflictException("数据库尚未完成初始化，不能补录安装配置。");
@@ -502,7 +502,7 @@ export class InstallerService {
       await client.query("BEGIN");
       const installation = await this.persistInstallationIdentity(
         client,
-        identity,
+        identity
       );
       await client.query("COMMIT");
       return { saved: true, installation };
@@ -523,21 +523,21 @@ export class InstallerService {
       const [database, administrator, records, configs, binding] =
         await Promise.all([
           pool.query<{ database_name: string }>(
-            "SELECT current_database() AS database_name",
+            "SELECT current_database() AS database_name"
           ),
           pool.query<{ username: string }>(
-            "SELECT username FROM admin_users ORDER BY id LIMIT 1",
+            "SELECT username FROM admin_users ORDER BY id LIMIT 1"
           ),
           pool.query<{ config_value: string }>(
-            "SELECT config_value FROM system_configs WHERE config_key = 'deployment_records'",
+            "SELECT config_value FROM system_configs WHERE config_key = 'deployment_records'"
           ),
           pool.query<{ config_key: string; config_value: string }>(
-            "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('admin_password_policy', 'installed_at', 'system_name', 'token_name', 'token_symbol')",
+            "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('admin_password_policy', 'installed_at', 'system_name', 'token_name', 'token_symbol')"
           ),
-          this.readRuntimeBinding(pool),
+          this.readRuntimeBinding(pool)
         ]);
       const configValues = new Map(
-        configs.rows.map((item) => [item.config_key, item.config_value]),
+        configs.rows.map(item => [item.config_key, item.config_value])
       );
       // 只有写入 installed_at 才算初始化完成；仅能连接数据库不足以解锁后续安装步骤。
       const initialized = Boolean(configValues.get("installed_at"));
@@ -551,14 +551,14 @@ export class InstallerService {
         deployments: this.parseDeploymentRecords(records.rows[0]?.config_value),
         walletConnectConfigured: Boolean(this.walletConnectProjectId()),
         passwordPolicy: this.parsePasswordPolicy(
-          configValues.get("admin_password_policy"),
+          configValues.get("admin_password_policy")
         ),
         installation,
         installedAt: configValues.get("installed_at") ?? null,
         // 切换保存失败时不能把原目标库的 .env 误报为当前目标已保存。
         settingsSaved: this.databaseSettingsSaveAttempted
           ? this.databaseSettingsSaved
-          : await this.hasSavedDatabaseUrl(),
+          : await this.hasSavedDatabaseUrl()
       };
     } catch {
       return { installed: false };
@@ -581,7 +581,7 @@ export class InstallerService {
     if (!pool) throw new ServiceUnavailableException("请先初始化数据库。");
 
     const current = await pool.query<{ config_value: string }>(
-      "SELECT config_value FROM system_configs WHERE config_key = 'deployment_records'",
+      "SELECT config_value FROM system_configs WHERE config_key = 'deployment_records'"
     );
     const records = this.parseDeploymentRecords(current.rows[0]?.config_value);
     records.push({ ...record, createdAt: new Date().toISOString() });
@@ -590,7 +590,7 @@ export class InstallerService {
        VALUES ('deployment_records', $1, '安装器记录的合约部署结果')
        ON CONFLICT (config_key) DO UPDATE
          SET config_value = EXCLUDED.config_value, updated_at = NOW()`,
-      [JSON.stringify(records)],
+      [JSON.stringify(records)]
     );
     return { saved: true, records };
   }
@@ -606,13 +606,13 @@ export class InstallerService {
     }
 
     const plan = JSON.parse(
-      await readFile(planPath, "utf8"),
+      await readFile(planPath, "utf8")
     ) as ContractPackagePlan;
     const networkPath = join(
       packageRoot,
       "config",
       "networks",
-      `${this.validateChainId(chainId)}.json`,
+      `${this.validateChainId(chainId)}.json`
     );
     const networkConfig =
       await this.readJsonFile<Record<string, unknown>>(networkPath);
@@ -622,10 +622,10 @@ export class InstallerService {
       "PancakeV2Factory",
       "PancakeV2Router",
       "PancakeV2Pair",
-      "PaymentToken",
+      "PaymentToken"
     ]) {
       externalAbis[name] = await this.readJsonFile(
-        join(packageRoot, "external-abi", `${name}.json`),
+        join(packageRoot, "external-abi", `${name}.json`)
       );
     }
 
@@ -637,11 +637,11 @@ export class InstallerService {
       networkConfig,
       artifacts,
       artifactsReady: plan.nodes
-        .filter((node) => node.kind === "transaction")
-        .every((node) => Boolean(artifacts[String(node.contractName)])),
+        .filter(node => node.kind === "transaction")
+        .every(node => Boolean(artifacts[String(node.contractName)])),
       mockArtifact: await this.findArtifact(packageRoot, "MockUSDT"),
       externalAbis,
-      outputRoot: `contracts/deploy/${chainId}`,
+      outputRoot: `contracts/deploy/${chainId}`
     };
   }
 
@@ -674,26 +674,26 @@ export class InstallerService {
     const directory = await this.chainDeployDirectory(chainId);
     const runsDirectory = join(directory, "runs");
     const entries = await readdir(runsDirectory, { withFileTypes: true }).catch(
-      () => [],
+      () => []
     );
     const deployments = await Promise.all(
       entries
-        .filter((entry) => entry.isDirectory())
-        .map(async (entry) => {
+        .filter(entry => entry.isDirectory())
+        .map(async entry => {
           const deployment = await this.readJsonFile<Record<string, unknown>>(
-            join(runsDirectory, entry.name, "deployment.json"),
+            join(runsDirectory, entry.name, "deployment.json")
           );
           return deployment?.status === "complete" ? deployment : undefined;
-        }),
+        })
     );
     return {
       deployments: deployments
-        .filter((item) => Boolean(item))
+        .filter(item => Boolean(item))
         .sort((left, right) =>
           String(right?.completedAt ?? "").localeCompare(
-            String(left?.completedAt ?? ""),
-          ),
-        ),
+            String(left?.completedAt ?? "")
+          )
+        )
     };
   }
 
@@ -703,7 +703,7 @@ export class InstallerService {
       await this.chainDeployDirectory(chainId),
       "runs",
       safeId,
-      "deployment.json",
+      "deployment.json"
     );
     const deployment = await this.readJsonFile<Record<string, unknown>>(file);
     if (deployment?.status !== "complete") {
@@ -726,7 +726,7 @@ export class InstallerService {
       safeChainId,
       deploymentId,
       deployment,
-      true,
+      true
     );
     return { deploymentId, chainId: safeChainId, installation };
   }
@@ -736,8 +736,8 @@ export class InstallerService {
       (await this.readJsonFile<Record<string, unknown>>(
         join(
           await this.chainDeployDirectory(chainId),
-          ".pending-deployment.json",
-        ),
+          ".pending-deployment.json"
+        )
       )) ?? null
     );
   }
@@ -746,15 +746,15 @@ export class InstallerService {
     const root = await this.findWorkspaceRoot();
     const deploymentRoot = join(root, "contracts", "deploy");
     const entries = await readdir(deploymentRoot, {
-      withFileTypes: true,
+      withFileTypes: true
     }).catch((error: unknown) => {
       if ((error as { code?: string }).code === "ENOENT") return [];
       throw error;
     });
     const pending = await Promise.all(
       entries
-        .filter((entry) => entry.isDirectory() && /^\d{1,9}$/.test(entry.name))
-        .map(async (entry) => {
+        .filter(entry => entry.isDirectory() && /^\d{1,9}$/.test(entry.name))
+        .map(async entry => {
           const chainId = Number(entry.name);
           if (
             !Number.isSafeInteger(chainId) ||
@@ -763,30 +763,34 @@ export class InstallerService {
           )
             return undefined;
           const record = await this.readJsonFile<Record<string, unknown>>(
-            join(deploymentRoot, entry.name, ".pending-deployment.json"),
+            join(deploymentRoot, entry.name, ".pending-deployment.json")
           );
           if (record?.status !== "in_progress") return undefined;
           return {
             chainId,
             deployer: String(record.deployer ?? ""),
             releaseVersion: String(record.releaseVersion ?? ""),
-            updatedAt: String(record.updatedAt ?? ""),
+            updatedAt: String(record.updatedAt ?? "")
           };
-        }),
+        })
     );
-    return { pending: pending.filter((item) => item !== undefined) };
+    return { pending: pending.filter(item => item !== undefined) };
   }
 
   async savePendingDeployment(
     chainId: number,
-    pending: Record<string, unknown>,
+    pending: Record<string, unknown>
   ) {
     await this.writeJsonFile(
       join(
         await this.chainDeployDirectory(chainId),
-        ".pending-deployment.json",
+        ".pending-deployment.json"
       ),
-      { ...pending, chainId, updatedAt: new Date().toISOString() },
+      {
+        ...pending,
+        chainId,
+        updatedAt: new Date().toISOString()
+      }
     );
     return { saved: true };
   }
@@ -795,16 +799,16 @@ export class InstallerService {
     await rm(
       join(
         await this.chainDeployDirectory(chainId),
-        ".pending-deployment.json",
+        ".pending-deployment.json"
       ),
-      { force: true },
+      { force: true }
     );
     return { cleared: true };
   }
 
   async saveCompletedDeployment(
     chainId: number,
-    deployment: Record<string, unknown>,
+    deployment: Record<string, unknown>
   ) {
     const safeChainId = this.validateChainId(chainId);
     if (
@@ -817,14 +821,14 @@ export class InstallerService {
     const directory = join(
       await this.chainDeployDirectory(safeChainId),
       "runs",
-      deploymentId,
+      deploymentId
     );
     const outputPath = `contracts/deploy/${safeChainId}/runs/${deploymentId}/deployment.json`;
     const saved = {
       ...deployment,
       deploymentId,
       outputPath,
-      completedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString()
     };
     const deploymentFile = join(directory, "deployment.json");
     await this.writeJsonFile(deploymentFile, saved);
@@ -835,11 +839,11 @@ export class InstallerService {
         safeChainId,
         deploymentId,
         saved,
-        false,
+        false
       );
     } catch (error) {
       await rm(directory, { recursive: true, force: true }).catch(
-        () => undefined,
+        () => undefined
       );
       throw error;
     }
@@ -851,7 +855,7 @@ export class InstallerService {
     chainId: number,
     deploymentId: string,
     deployment: Record<string, unknown>,
-    allowLegacyVerification: boolean,
+    allowLegacyVerification: boolean
   ) {
     const pool = await this.getPool();
     if (!pool) throw new ServiceUnavailableException("请先初始化数据库。");
@@ -862,7 +866,7 @@ export class InstallerService {
       // 与后台设置写入共用锁，确保当前合约绑定和身份设置串行完成。
       await client.query("SELECT pg_advisory_xact_lock(4102, 4)");
       const installed = await client.query(
-        "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'",
+        "SELECT 1 FROM system_configs WHERE config_key = 'installed_at'"
       );
       if (installed.rowCount !== 1) {
         throw new ConflictException("数据库尚未完成初始化，不能锁定目标链。");
@@ -871,24 +875,24 @@ export class InstallerService {
         config_key: string;
         config_value: string;
       }>(
-        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('system_name', 'token_name', 'token_symbol')",
+        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('system_name', 'token_name', 'token_symbol')"
       );
       const configs = new Map(
-        current.rows.map((item) => [item.config_key, item.config_value]),
+        current.rows.map(item => [item.config_key, item.config_value])
       );
       const identity = this.parseInstallationIdentity(configs);
       if (!identity) {
         throw new ConflictException("请先确认系统名称和代币信息。");
       }
       const existingBinding = await client.query<{ chain_id: string }>(
-        "SELECT chain_id::text FROM runtime_contract_binding WHERE singleton = TRUE FOR UPDATE",
+        "SELECT chain_id::text FROM runtime_contract_binding WHERE singleton = TRUE FOR UPDATE"
       );
       const existingChainId = existingBinding.rows[0]
         ? Number(existingBinding.rows[0].chain_id)
         : null;
       if (existingChainId !== null && existingChainId !== chainId) {
         throw new ConflictException(
-          `当前合约已绑定 ChainId ${existingChainId}，当前部署为 ${chainId}。`,
+          `当前合约已绑定 ChainId ${existingChainId}，当前部署为 ${chainId}。`
         );
       }
       if (
@@ -896,7 +900,7 @@ export class InstallerService {
         deployment.status !== "complete"
       ) {
         throw new ConflictException(
-          "部署归档与当前 ChainId 或完成状态不匹配。",
+          "部署归档与当前 ChainId 或完成状态不匹配。"
         );
       }
       const sourceContracts = deployment.contracts;
@@ -922,7 +926,7 @@ export class InstallerService {
           address,
           transactionHash: /^0x[a-fA-F0-9]{64}$/.test(transactionHash)
             ? transactionHash
-            : null,
+            : null
         };
       }
       if (!runtimeContracts.ProjectToken || !runtimeContracts.FairSaleV2) {
@@ -945,7 +949,7 @@ export class InstallerService {
           : null;
       const verifiedBlockHashValue = String(deployment.verifiedBlockHash ?? "");
       const verifiedBlockHash = /^0x[a-fA-F0-9]{64}$/.test(
-        verifiedBlockHashValue,
+        verifiedBlockHashValue
       )
         ? verifiedBlockHashValue
         : null;
@@ -954,7 +958,7 @@ export class InstallerService {
         (verifiedBlock === null || !verifiedBlockHash)
       ) {
         throw new ConflictException(
-          "部署归档缺少最终链上核验证据，请重新核验。",
+          "部署归档缺少最终链上核验证据，请重新核验。"
         );
       }
       // 数据库只保留运行时需要的地址映射和部署核验摘要，不复制完整安装档案。
@@ -979,13 +983,13 @@ export class InstallerService {
           JSON.stringify(runtimeContracts),
           pairAddress,
           verifiedBlock,
-          verifiedBlockHash,
-        ],
+          verifiedBlockHash
+        ]
       );
       // 完成绑定后清理由旧版本使用的配置键，ChainId 只保存在运行时绑定表。
       await client.query(
         "DELETE FROM system_configs WHERE config_key = ANY($1::text[])",
-        [["installation_chain_id", "deployment_id", "chain_id"]],
+        [["installation_chain_id", "deployment_id", "chain_id"]]
       );
       await client.query("COMMIT");
       return { ...identity, chainId };
@@ -1002,7 +1006,7 @@ export class InstallerService {
     const file = join(await this.chainDeployDirectory(chainId), "tokens.json");
     return (
       (await this.readJsonFile<{ tokens: Array<Record<string, unknown>> }>(
-        file,
+        file
       )) ?? { chainId, tokens: [] }
     );
   }
@@ -1019,15 +1023,15 @@ export class InstallerService {
     }
     const current = await this.getSavedTokens(safeChainId);
     const tokens = current.tokens.filter(
-      (item) =>
+      item =>
         String(item.address).toLowerCase() !==
-        String(token.address).toLowerCase(),
+        String(token.address).toLowerCase()
     );
     tokens.unshift({ ...token, createdAt: new Date().toISOString() });
     const result = { chainId: safeChainId, tokens };
     await this.writeJsonFile(
       join(await this.chainDeployDirectory(safeChainId), "tokens.json"),
-      result,
+      result
     );
     return result;
   }
@@ -1052,7 +1056,7 @@ export class InstallerService {
       root,
       "contracts",
       "deploy",
-      String(this.validateChainId(chainId)),
+      String(this.validateChainId(chainId))
     );
   }
 
@@ -1069,14 +1073,14 @@ export class InstallerService {
     await mkdir(dirname(file), { recursive: true });
     const temporary = `${file}.${process.pid}.tmp`;
     await writeFile(temporary, `${JSON.stringify(value, null, 2)}\n`, {
-      mode: 0o600,
+      mode: 0o600
     });
     await rename(temporary, file);
   }
 
   private async loadContractArtifacts(
     packageRoot: string,
-    nodes: Array<Record<string, unknown>>,
+    nodes: Array<Record<string, unknown>>
   ) {
     const artifacts: Record<string, Record<string, unknown>> = {};
     for (const node of nodes) {
@@ -1092,12 +1096,12 @@ export class InstallerService {
   private async runPackageCommand(
     packageRoot: string,
     args: string[],
-    timeoutMinutes: number,
+    timeoutMinutes: number
   ) {
     return new Promise<string>((resolveCommand, rejectCommand) => {
       const child = spawn("npm", args, {
         cwd: packageRoot,
-        stdio: ["ignore", "pipe", "pipe"],
+        stdio: ["ignore", "pipe", "pipe"]
       });
       let combined = "";
       const append = (chunk: Buffer) => {
@@ -1107,20 +1111,20 @@ export class InstallerService {
       child.stderr.on("data", append);
       const timer = setTimeout(
         () => child.kill("SIGTERM"),
-        timeoutMinutes * 60 * 1000,
+        timeoutMinutes * 60 * 1000
       );
-      child.on("error", (error) => {
+      child.on("error", error => {
         clearTimeout(timer);
         rejectCommand(error);
       });
-      child.on("close", (code) => {
+      child.on("close", code => {
         clearTimeout(timer);
         if (code === 0) resolveCommand(combined);
         else {
           rejectCommand(
             new Error(
-              `命令 npm ${args.join(" ")} 失败（退出码 ${code ?? "unknown"}）。\n${combined}`,
-            ),
+              `命令 npm ${args.join(" ")} 失败（退出码 ${code ?? "unknown"}）。\n${combined}`
+            )
           );
         }
       });
@@ -1131,10 +1135,10 @@ export class InstallerService {
     // Hardhat 3 把合约产物放在 artifacts/sources 下；递归查找以兼容源码子目录。
     const root = join(packageRoot, "artifacts", "sources");
     const visit = async (
-      directory: string,
+      directory: string
     ): Promise<Record<string, unknown> | undefined> => {
       const entries = await readdir(directory, { withFileTypes: true }).catch(
-        () => [],
+        () => []
       );
       for (const entry of entries) {
         const candidate = join(directory, entry.name);
@@ -1162,7 +1166,7 @@ export class InstallerService {
 
   private createPoolConfig(
     settings: DatabaseSettings,
-    database = settings.database.trim(),
+    database = settings.database.trim()
   ): PoolConfig {
     return {
       host: settings.host.trim(),
@@ -1172,15 +1176,15 @@ export class InstallerService {
       password: settings.password,
       ssl: settings.ssl ? { rejectUnauthorized: true } : undefined,
       connectionTimeoutMillis: 8000,
-      max: 3,
+      max: 3
     };
   }
 
   private async inspectDatabase(
-    settings: DatabaseSettings,
+    settings: DatabaseSettings
   ): Promise<DatabaseCheck> {
     const maintenancePool = new Pool(
-      this.createPoolConfig(settings, "postgres"),
+      this.createPoolConfig(settings, "postgres")
     );
     let serverVersion = "PostgreSQL";
     let canCreateDatabase = false;
@@ -1195,15 +1199,15 @@ export class InstallerService {
                 role.rolcreatedb,
                 role.rolsuper
            FROM pg_roles AS role
-          WHERE role.rolname = current_user`,
+          WHERE role.rolname = current_user`
       );
       serverVersion = server.rows[0]?.server_version ?? serverVersion;
       canCreateDatabase = Boolean(
-        server.rows[0]?.rolcreatedb || server.rows[0]?.rolsuper,
+        server.rows[0]?.rolcreatedb || server.rows[0]?.rolsuper
       );
       const database = await maintenancePool.query(
         "SELECT 1 FROM pg_database WHERE datname = $1",
-        [settings.database.trim()],
+        [settings.database.trim()]
       );
       exists = database.rowCount === 1;
     } finally {
@@ -1219,7 +1223,7 @@ export class InstallerService {
         empty: true,
         tableCount: 0,
         tables: [],
-        canCreateDatabase,
+        canCreateDatabase
       };
     }
 
@@ -1229,9 +1233,9 @@ export class InstallerService {
         `SELECT schemaname || '.' || tablename AS table_name
            FROM pg_tables
           WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
-          ORDER BY schemaname, tablename`,
+          ORDER BY schemaname, tablename`
       );
-      const tables = tableResult.rows.map((row) => row.table_name);
+      const tables = tableResult.rows.map(row => row.table_name);
       return {
         connected: true,
         database: settings.database.trim(),
@@ -1243,7 +1247,7 @@ export class InstallerService {
         canCreateDatabase,
         existingInstallation: tables.length
           ? await this.recognizeInstallation(targetPool)
-          : undefined,
+          : undefined
       };
     } finally {
       await targetPool.end();
@@ -1256,11 +1260,11 @@ export class InstallerService {
       const permission = await pool.query<{ can_create: boolean }>(
         `SELECT rolcreatedb OR rolsuper AS can_create
            FROM pg_roles
-          WHERE rolname = current_user`,
+          WHERE rolname = current_user`
       );
       if (!permission.rows[0]?.can_create) {
         throw new ServiceUnavailableException(
-          "目标数据库不存在；当前 PostgreSQL 用户没有 CREATEDB 权限。",
+          "目标数据库不存在；当前 PostgreSQL 用户没有 CREATEDB 权限。"
         );
       }
 
@@ -1287,12 +1291,12 @@ export class InstallerService {
         input.passwordPolicy.minimumLength > 128)
     ) {
       throw new ServiceUnavailableException(
-        "管理员密码最小长度须为 8 到 128 位整数。",
+        "管理员密码最小长度须为 8 到 128 位整数。"
       );
     }
     if (!/^[\p{L}\p{N}_.-]{3,64}$/u.test(administrator.username.trim())) {
       throw new ServiceUnavailableException(
-        "管理员账号须为 3 到 64 位字母、数字或 . _ -。",
+        "管理员账号须为 3 到 64 位字母、数字或 . _ -。"
       );
     }
     if (
@@ -1301,12 +1305,12 @@ export class InstallerService {
       administrator.password.length > 1024
     ) {
       throw new ServiceUnavailableException(
-        "首位管理员密码不能为空且最多为 1024 个字符。",
+        "首位管理员密码不能为空且最多为 1024 个字符。"
       );
     }
     if (!this.walletConnectProjectId()) {
       throw new ServiceUnavailableException(
-        "缺少必填配置 WALLETCONNECT_PROJECT_ID，请在根目录 .env 中设置并重启安装服务。",
+        "缺少必填配置 WALLETCONNECT_PROJECT_ID，请在根目录 .env 中设置并重启安装服务。"
       );
     }
   }
@@ -1325,37 +1329,37 @@ export class InstallerService {
       !/^[\p{L}\p{N}._-]{1,16}$/u.test(identity.tokenSymbol?.trim() ?? "")
     ) {
       throw new ServiceUnavailableException(
-        "请填写有效的系统名称、代币名称和代币简称。",
+        "请填写有效的系统名称、代币名称和代币简称。"
       );
     }
   }
 
   private async persistInstallationIdentity(
     client: PoolClient,
-    identity: InstallationIdentityInput,
+    identity: InstallationIdentityInput
   ): Promise<InstallationIdentity> {
     // 安装身份只允许首次写入；已有值不匹配时中止事务，避免覆盖旧部署配置。
     await client.query("SELECT pg_advisory_xact_lock(4102, 4)");
     const entries = [
       ["system_name", identity.systemName.trim(), "安装时确认的系统名称"],
       ["token_name", identity.tokenName.trim(), "链上主代币全称"],
-      ["token_symbol", identity.tokenSymbol.trim(), "链上主代币简称"],
+      ["token_symbol", identity.tokenSymbol.trim(), "链上主代币简称"]
     ] as const;
     const current = await client.query<{
       config_key: string;
       config_value: string;
     }>(
       "SELECT config_key, config_value FROM system_configs WHERE config_key = ANY($1::text[])",
-      [entries.map(([key]) => key)],
+      [entries.map(([key]) => key)]
     );
     const existing = new Map(
-      current.rows.map((item) => [item.config_key, item.config_value]),
+      current.rows.map(item => [item.config_key, item.config_value])
     );
     for (const [key, value] of entries) {
       const saved = existing.get(key);
       if (saved !== undefined && saved !== value) {
         throw new ConflictException(
-          `数据库中的安装配置 ${key} 已存在且与本次输入不同，请使用原配置。`,
+          `数据库中的安装配置 ${key} 已存在且与本次输入不同，请使用原配置。`
         );
       }
       await client.query(
@@ -1365,18 +1369,18 @@ export class InstallerService {
         [
           key,
           value,
-          entries.find((entry) => entry[0] === key)?.[2] ?? "安装身份配置",
-        ],
+          entries.find(entry => entry[0] === key)?.[2] ?? "安装身份配置"
+        ]
       );
     }
     const saved = await client.query<{
       config_key: string;
       config_value: string;
     }>(
-      "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('system_name', 'token_name', 'token_symbol')",
+      "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('system_name', 'token_name', 'token_symbol')"
     );
     const configs = new Map(
-      saved.rows.map((item) => [item.config_key, item.config_value]),
+      saved.rows.map(item => [item.config_key, item.config_value])
     );
     const installation = this.parseInstallationIdentity(configs);
     if (!installation) {
@@ -1386,7 +1390,7 @@ export class InstallerService {
   }
 
   private parseInstallationIdentity(
-    configs: Map<string, string>,
+    configs: Map<string, string>
   ): InstallationIdentity | null {
     const systemName = configs.get("system_name")?.trim() ?? "";
     const tokenName = configs.get("token_name")?.trim() ?? "";
@@ -1405,13 +1409,13 @@ export class InstallerService {
       database.port > 65535
     ) {
       throw new ServiceUnavailableException(
-        "请填写有效的 PostgreSQL 连接信息；数据库名须为 1 到 63 位字母、数字、下划线或短横线。",
+        "请填写有效的 PostgreSQL 连接信息；数据库名须为 1 到 63 位字母、数字、下划线或短横线。"
       );
     }
   }
 
   private normalizePasswordPolicy(
-    input?: AdminPasswordPolicy,
+    input?: AdminPasswordPolicy
   ): AdminPasswordPolicy {
     const configuredLength = input?.minimumLength;
     return {
@@ -1425,7 +1429,7 @@ export class InstallerService {
       requireUppercase: input?.requireUppercase ?? true,
       requireLowercase: input?.requireLowercase ?? true,
       requireNumber: input?.requireNumber ?? true,
-      requireSymbol: input?.requireSymbol ?? true,
+      requireSymbol: input?.requireSymbol ?? true
     };
   }
 
@@ -1443,21 +1447,21 @@ export class InstallerService {
   private validateAdminPassword(password: string, policy: AdminPasswordPolicy) {
     if (password.length < policy.minimumLength) {
       throw new ServiceUnavailableException(
-        `管理员密码至少需要 ${policy.minimumLength} 个字符。`,
+        `管理员密码至少需要 ${policy.minimumLength} 个字符。`
       );
     }
     const requirements: Array<[boolean, RegExp, string]> = [
       [policy.requireUppercase, /[A-Z]/, "大写字母"],
       [policy.requireLowercase, /[a-z]/, "小写字母"],
       [policy.requireNumber, /[0-9]/, "数字"],
-      [policy.requireSymbol, /[^A-Za-z0-9]/, "特殊字符"],
+      [policy.requireSymbol, /[^A-Za-z0-9]/, "特殊字符"]
     ];
     const missing = requirements
       .filter(([required, pattern]) => required && !pattern.test(password))
       .map(([, , label]) => label);
     if (missing.length) {
       throw new ServiceUnavailableException(
-        `管理员密码还需要包含：${missing.join("、")}。`,
+        `管理员密码还需要包含：${missing.join("、")}。`
       );
     }
   }
@@ -1472,7 +1476,7 @@ export class InstallerService {
   private async findMigrationsDirectory() {
     const startingPoints = [
       process.cwd(),
-      dirname(fileURLToPath(import.meta.url)),
+      dirname(fileURLToPath(import.meta.url))
     ];
     for (const start of startingPoints) {
       let directory = resolve(start);
@@ -1494,28 +1498,28 @@ export class InstallerService {
     await client.query("SELECT pg_advisory_xact_lock(4102, 3)");
     const migrationsDirectory = await this.findMigrationsDirectory();
     const files = (await readdir(migrationsDirectory))
-      .filter((file) => /^\d{4}_[a-z0-9_]+\.sql$/i.test(file))
+      .filter(file => /^\d{4}_[a-z0-9_]+\.sql$/i.test(file))
       .sort((left, right) => left.localeCompare(right));
     const applied: string[] = [];
 
     for (const file of files) {
       const version = file.slice(0, -4);
       const table = await client.query<{ exists: boolean }>(
-        "SELECT to_regclass('public.schema_migrations') IS NOT NULL AS exists",
+        "SELECT to_regclass('public.schema_migrations') IS NOT NULL AS exists"
       );
       if (table.rows[0]?.exists) {
         const previous = await client.query(
           "SELECT 1 FROM schema_migrations WHERE version = $1",
-          [version],
+          [version]
         );
         if (previous.rowCount) continue;
       }
 
       await client.query(
-        await readFile(join(migrationsDirectory, file), "utf8"),
+        await readFile(join(migrationsDirectory, file), "utf8")
       );
       const created = await client.query<{ exists: boolean }>(
-        "SELECT to_regclass('public.schema_migrations') IS NOT NULL AS exists",
+        "SELECT to_regclass('public.schema_migrations') IS NOT NULL AS exists"
       );
       if (!created.rows[0]?.exists) {
         throw new Error(`迁移 ${version} 未创建 schema_migrations 表。`);
@@ -1523,7 +1527,7 @@ export class InstallerService {
       await client.query(
         `INSERT INTO schema_migrations (version)
          VALUES ($1) ON CONFLICT (version) DO NOTHING`,
-        [version],
+        [version]
       );
       applied.push(version);
     }
@@ -1583,7 +1587,7 @@ export class InstallerService {
     const pool = new Pool({
       connectionString,
       connectionTimeoutMillis: 3000,
-      max: 3,
+      max: 3
     });
     try {
       await pool.query("SELECT 1");
@@ -1593,7 +1597,7 @@ export class InstallerService {
         host: databaseUrl.hostname,
         port: Number(databaseUrl.port || 5432),
         database: decodeURIComponent(databaseUrl.pathname.replace(/^\//, "")),
-        username: decodeURIComponent(databaseUrl.username),
+        username: decodeURIComponent(databaseUrl.username)
       };
       return pool;
     } catch {
@@ -1607,7 +1611,7 @@ export class InstallerService {
       const root = await this.findWorkspaceRoot();
       const contents = await readFile(join(root, ".env"), "utf8");
       const match = contents.match(
-        /^\s*(?:export\s+)?DATABASE_URL\s*=\s*(?:'([^']*)'|"([^"]*)"|([^\s#]+))\s*$/m,
+        /^\s*(?:export\s+)?DATABASE_URL\s*=\s*(?:'([^']*)'|"([^"]*)"|([^\s#]+))\s*$/m
       );
       return match?.[1] ?? match?.[2] ?? match?.[3];
     } catch {

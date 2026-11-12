@@ -129,8 +129,8 @@
                   max-file-size="10485760"
                   :disable="!canUpdate"
                   @update:model-value="
-                    (file) =>
-                      uploadAsset(file, (url) => (item.desktopImageUrl = url))
+                    file =>
+                      uploadAsset(file, url => (item.desktopImageUrl = url))
                   "
                 />
               </div>
@@ -151,8 +151,8 @@
                   max-file-size="10485760"
                   :disable="!canUpdate"
                   @update:model-value="
-                    (file) =>
-                      uploadAsset(file, (url) => (item.mobileImageUrl = url))
+                    file =>
+                      uploadAsset(file, url => (item.mobileImageUrl = url))
                   "
                 />
               </div>
@@ -360,8 +360,8 @@
                   max-file-size="104857600"
                   :disable="!canUpdate"
                   @update:model-value="
-                    (file) =>
-                      uploadAsset(file, (url) => {
+                    file =>
+                      uploadAsset(file, url => {
                         item.mediaUrl = url;
                         item.mediaMode = 'upload';
                       })
@@ -393,7 +393,7 @@ import {
   adminRequest,
   type ContentManagementSettings,
   type ManagedAnnouncement,
-  type ManagedCarouselItem,
+  type ManagedCarouselItem
 } from "../services/admin-api";
 import { canAccess } from "../services/admin-session";
 
@@ -403,8 +403,8 @@ const emptySettings = (): ContentManagementSettings => ({
   tickerSettings: {
     scrollDurationMs: 12000,
     itemDelayMs: 500,
-    fontSizePx: 14,
-  },
+    fontSizePx: 14
+  }
 });
 
 const activeTab = ref("carousel");
@@ -420,19 +420,19 @@ const successMessage = ref("");
 const actionOptions = [
   { label: "无动作", value: "none" },
   { label: "站内路由", value: "route" },
-  { label: "外部链接", value: "external" },
+  { label: "外部链接", value: "external" }
 ];
 const widthOptions = [
   { label: "默认宽度", value: "default" },
-  { label: "通栏", value: "full" },
+  { label: "通栏", value: "full" }
 ];
 const announcementTypeOptions = [
   { label: "图文", value: "article" },
-  { label: "视频", value: "video" },
+  { label: "视频", value: "video" }
 ];
 const mediaModeOptions = [
   { label: "平台上传", value: "upload" },
-  { label: "外部链接", value: "external" },
+  { label: "外部链接", value: "external" }
 ];
 
 function applySettings(value: ContentManagementSettings) {
@@ -440,7 +440,7 @@ function applySettings(value: ContentManagementSettings) {
   form.announcements = value.announcements ?? [];
   form.tickerSettings = {
     ...emptySettings().tickerSettings,
-    ...value.tickerSettings,
+    ...value.tickerSettings
   };
 }
 
@@ -449,7 +449,7 @@ async function loadSettings() {
   errorMessage.value = "";
   try {
     const result = await adminRequest<ContentManagementSettings>(
-      "/content-management",
+      "/content-management"
     );
     applySettings(result ?? emptySettings());
   } catch (error) {
@@ -467,7 +467,7 @@ async function saveSettings() {
   try {
     const result = await adminRequest<ContentManagementSettings>(
       "/content-management",
-      { method: "PUT", body: JSON.stringify(form) },
+      { method: "PUT", body: JSON.stringify(form) }
     );
     if (result) applySettings(result);
     successMessage.value = "首页内容已保存。";
@@ -495,7 +495,7 @@ function addCarousel() {
     desktopHeight: 320,
     mobileHeight: 200,
     sortOrder: form.carouselItems.length,
-    isVisible: true,
+    isVisible: true
   };
   form.carouselItems.push(item);
 }
@@ -513,7 +513,7 @@ function addAnnouncement() {
     body: "",
     mediaUrl: "",
     mediaMode: "upload",
-    isVisible: true,
+    isVisible: true
   };
   form.announcements.push(item);
 }
@@ -530,7 +530,7 @@ async function uploadAsset(file: File | null, setUrl: (url: string) => void) {
     body.append("file", file);
     const result = await adminRequest<{ url: string }>(
       "/content-management/uploads",
-      { method: "POST", body },
+      { method: "POST", body }
     );
     setUrl(result.url);
     successMessage.value = "文件已上传。保存后发布内容配置。";
@@ -543,12 +543,12 @@ async function uploadAsset(file: File | null, setUrl: (url: string) => void) {
 onMounted(loadSettings);
 watch(
   () => route.path,
-  (path) => {
+  path => {
     activeTab.value = path === "/announcements" ? "announcements" : "carousel";
   },
-  { immediate: true },
+  { immediate: true }
 );
-watch(activeTab, (tab) => {
+watch(activeTab, tab => {
   const path = tab === "announcements" ? "/announcements" : "/carousel";
   if (route.path !== path) void router.replace(path);
 });

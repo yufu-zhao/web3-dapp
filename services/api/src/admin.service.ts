@@ -5,13 +5,13 @@ import {
   HttpException,
   Injectable,
   NotFoundException,
-  ServiceUnavailableException,
+  ServiceUnavailableException
 } from "@nestjs/common";
 import { randomBytes, scryptSync } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import {
   ADMIN_PASSWORD_MAX_LENGTH,
-  type AdminMenuType,
+  type AdminMenuType
 } from "./admin.types.js";
 import { DatabaseService } from "./database.service.js";
 import {
@@ -19,7 +19,7 @@ import {
   probeRpcNode,
   resolveRpcConfiguration,
   type RpcConfiguration,
-  type RpcNodeMetric,
+  type RpcNodeMetric
 } from "./chain-rpc.js";
 
 export interface PageQuery {
@@ -112,6 +112,9 @@ interface AdminSettings {
   tokenName: string;
   tokenSymbol: string;
   passwordPolicy: AdminPasswordPolicy;
+  userAccess: {
+    requireInvitationForRegistration: boolean;
+  };
   installationChainId: number | null;
   themePalettes: ThemePalettes;
   rpcConfiguration: RpcConfiguration;
@@ -122,7 +125,7 @@ const DEFAULT_PASSWORD_POLICY: AdminPasswordPolicy = {
   requireUppercase: true,
   requireLowercase: true,
   requireNumber: true,
-  requireSymbol: true,
+  requireSymbol: true
 };
 
 const DEFAULT_THEME_PALETTES: ThemePalettes = {
@@ -131,7 +134,7 @@ const DEFAULT_THEME_PALETTES: ThemePalettes = {
     background: "#111827",
     surface: "#1b2434",
     text: "#f9fafb",
-    mutedText: "#cbd5e1",
+    mutedText: "#cbd5e1"
   },
   admin: {
     primary: "#ffc832",
@@ -139,8 +142,8 @@ const DEFAULT_THEME_PALETTES: ThemePalettes = {
     surface: "#ffffff",
     text: "#202d42",
     mutedText: "#738096",
-    border: "#d9e0e9",
-  },
+    border: "#d9e0e9"
+  }
 };
 
 const ALLOWED_ROLE_PERMISSIONS = new Set([
@@ -163,6 +166,13 @@ const ALLOWED_ROLE_PERMISSIONS = new Set([
   "presale:schedule",
   "presale:finalize",
   "presale:records:read",
+  "user_accounts:read",
+  "user_accounts:update",
+  "launch:read",
+  "launch:fund",
+  "launch:seed",
+  "launch:schedule",
+  "launch:oracle"
 ]);
 
 @Injectable()
@@ -182,7 +192,7 @@ export class AdminService {
     if (search) {
       values.push(`%${search}%`);
       where.push(
-        `(u.username ILIKE $${values.length} OR r.name ILIKE $${values.length})`,
+        `(u.username ILIKE $${values.length} OR r.name ILIKE $${values.length})`
       );
     }
     if (active !== undefined) {
@@ -207,15 +217,15 @@ export class AdminService {
              ${clause}
             ORDER BY u.id
             LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
-          [...values, pageSize, (page - 1) * pageSize],
+          [...values, pageSize, (page - 1) * pageSize]
         ),
         pool.query<{ total: string }>(
           `SELECT COUNT(*)::text AS total
              FROM admin_users u
              JOIN roles r ON r.id = u.role_id
              ${clause}`,
-          values,
-        ),
+          values
+        )
       ]);
       return this.pageResult(items.rows, count.rows[0]?.total, page, pageSize);
     } catch {
@@ -237,7 +247,7 @@ export class AdminService {
       // 与角色停用/删除共用行锁，避免并发创建出绑定到已停用角色的管理员。
       const role = await client.query(
         "SELECT id FROM roles WHERE id = $1 AND is_active = TRUE FOR SHARE",
-        [roleId],
+        [roleId]
       );
       if (!role.rowCount)
         throw new BadRequestException("所选角色不存在或已停用。");
@@ -249,7 +259,7 @@ export class AdminService {
                    (SELECT name FROM roles WHERE id = role_id) AS "roleName",
                    is_active AS "isActive", last_login_at AS "lastLoginAt",
                    created_at AS "createdAt"`,
-        [username, this.hashPassword(password), roleId, isActive],
+        [username, this.hashPassword(password), roleId, isActive]
       );
       await client.query("COMMIT");
       return result.rows[0];
@@ -301,7 +311,7 @@ export class AdminService {
         `SELECT u.id::text, u.role_id::text, r.code AS role_code, u.is_active
            FROM admin_users u JOIN roles r ON r.id = u.role_id
           WHERE u.id = $1 FOR UPDATE OF u`,
-        [id],
+        [id]
       );
       const row = current.rows[0];
       if (!row) throw new NotFoundException("管理员不存在。");
@@ -337,12 +347,12 @@ export class AdminService {
                   (SELECT name FROM roles WHERE id = role_id) AS "roleName",
                   is_active AS "isActive", last_login_at AS "lastLoginAt",
                   created_at AS "createdAt"`,
-        values,
+        values
       );
       if (Object.hasOwn(body, "password")) {
         await client.query(
           "DELETE FROM admin_sessions WHERE admin_user_id = $1",
-          [id],
+          [id]
         );
       }
       await client.query("COMMIT");
@@ -371,7 +381,7 @@ export class AdminService {
         `SELECT u.id::text, r.code AS role_code, u.is_active
            FROM admin_users u JOIN roles r ON r.id = u.role_id
           WHERE u.id = $1 FOR UPDATE OF u`,
-        [id],
+        [id]
       );
       const row = current.rows[0];
       if (!row) throw new NotFoundException("管理员不存在。");
@@ -399,7 +409,7 @@ export class AdminService {
     if (search) {
       values.push(`%${search}%`);
       where.push(
-        `(code ILIKE $${values.length} OR name ILIKE $${values.length})`,
+        `(code ILIKE $${values.length} OR name ILIKE $${values.length})`
       );
     }
     if (active !== undefined) {
@@ -416,21 +426,21 @@ export class AdminService {
              FROM roles ${clause}
             ORDER BY id
             LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
-          [...values, pageSize, (page - 1) * pageSize],
+          [...values, pageSize, (page - 1) * pageSize]
         ),
         pool.query<{ total: string }>(
           `SELECT COUNT(*)::text AS total FROM roles ${clause}`,
-          values,
-        ),
+          values
+        )
       ]);
       return this.pageResult(
-        items.rows.map((item) => ({
+        items.rows.map(item => ({
           ...item,
-          permissions: this.parsePermissions(item.permissions),
+          permissions: this.parsePermissions(item.permissions)
         })),
         count.rows[0]?.total,
         page,
-        pageSize,
+        pageSize
       );
     } catch {
       throw new ServiceUnavailableException("无法读取角色列表。");
@@ -443,7 +453,7 @@ export class AdminService {
     this.assertDelegablePermissions(
       value.permissions ?? [],
       actorPermissions,
-      [],
+      []
     );
     if (value.code === "super_admin") {
       throw new ConflictException("超级管理员角色为系统保留角色。");
@@ -460,22 +470,22 @@ export class AdminService {
           value.name,
           value.description ?? "",
           JSON.stringify(value.permissions ?? []),
-          value.isActive ?? true,
-        ],
+          value.isActive ?? true
+        ]
       )
       .catch((error: unknown) =>
-        this.translateWriteError(error, "无法创建角色。"),
+        this.translateWriteError(error, "无法创建角色。")
       );
     return {
       ...result.rows[0],
-      permissions: this.parsePermissions(result.rows[0]?.permissions),
+      permissions: this.parsePermissions(result.rows[0]?.permissions)
     };
   }
 
   async updateRole(
     idValue: string,
     input: unknown,
-    actorPermissions: string[],
+    actorPermissions: string[]
   ) {
     const id = this.parseId(idValue, "id");
     const body = this.record(input);
@@ -495,7 +505,7 @@ export class AdminService {
         this.assertDelegablePermissions(
           value.permissions,
           actorPermissions,
-          this.parsePermissions(current.rows[0].permissions),
+          this.parsePermissions(current.rows[0].permissions)
         );
       }
       if (value.code === "super_admin") {
@@ -504,7 +514,7 @@ export class AdminService {
       if (value.isActive === false) {
         const users = await client.query<{ total: string }>(
           "SELECT COUNT(*)::text AS total FROM admin_users WHERE role_id = $1 AND is_active = TRUE",
-          [id],
+          [id]
         );
         if (Number(users.rows[0]?.total ?? 0) > 0) {
           throw new ConflictException("仍有启用中的管理员使用此角色。");
@@ -517,15 +527,15 @@ export class AdminService {
         ["name", "name"],
         ["description", "description"],
         ["permissions", "permissions"],
-        ["isActive", "is_active"],
+        ["isActive", "is_active"]
       ] as const) {
         if (!Object.hasOwn(body, field)) continue;
         const fieldValue = value[field];
         values.push(
-          field === "permissions" ? JSON.stringify(fieldValue) : fieldValue,
+          field === "permissions" ? JSON.stringify(fieldValue) : fieldValue
         );
         fields.push(
-          `${column} = $${values.length}${field === "permissions" ? "::jsonb" : ""}`,
+          `${column} = $${values.length}${field === "permissions" ? "::jsonb" : ""}`
         );
       }
       if (!fields.length)
@@ -536,12 +546,12 @@ export class AdminService {
           WHERE id = $${values.length}
         RETURNING id::text, code, name, description, permissions,
                   is_active AS "isActive", created_at AS "createdAt"`,
-        values,
+        values
       );
       await client.query("COMMIT");
       return {
         ...updated.rows[0],
-        permissions: this.parsePermissions(updated.rows[0]?.permissions),
+        permissions: this.parsePermissions(updated.rows[0]?.permissions)
       };
     } catch (error) {
       await client.query("ROLLBACK").catch(() => undefined);
@@ -558,7 +568,7 @@ export class AdminService {
       await client.query("BEGIN");
       const current = await client.query<{ code: string }>(
         "SELECT code FROM roles WHERE id = $1 FOR UPDATE",
-        [id],
+        [id]
       );
       if (!current.rows[0]) throw new NotFoundException("角色不存在。");
       if (current.rows[0].code === "super_admin") {
@@ -566,7 +576,7 @@ export class AdminService {
       }
       const users = await client.query<{ total: string }>(
         "SELECT COUNT(*)::text AS total FROM admin_users WHERE role_id = $1",
-        [id],
+        [id]
       );
       if (Number(users.rows[0]?.total ?? 0) > 0) {
         throw new ConflictException("仍有管理员使用此角色，不能删除。");
@@ -596,7 +606,7 @@ export class AdminService {
     if (search) {
       values.push(`%${search}%`);
       where.push(
-        `(m.code ILIKE $${values.length} OR m.name ILIKE $${values.length} OR m.path ILIKE $${values.length})`,
+        `(m.code ILIKE $${values.length} OR m.name ILIKE $${values.length} OR m.path ILIKE $${values.length})`
       );
     }
     if (active !== undefined) {
@@ -625,12 +635,12 @@ export class AdminService {
              ${clause}
             ORDER BY m.sort_order, m.id
             LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
-          [...values, pageSize, (page - 1) * pageSize],
+          [...values, pageSize, (page - 1) * pageSize]
         ),
         pool.query<{ total: string }>(
           `SELECT COUNT(*)::text AS total FROM menus m ${clause}`,
-          values,
-        ),
+          values
+        )
       ]);
       return this.pageResult(items.rows, count.rows[0]?.total, page, pageSize);
     } catch {
@@ -652,7 +662,7 @@ export class AdminService {
                 menu.created_at AS "createdAt"
            FROM menus menu
            LEFT JOIN menus parent ON parent.id = menu.parent_id
-          ORDER BY menu.sort_order, menu.id`,
+          ORDER BY menu.sort_order, menu.id`
       );
       const nodes = new Map<string, MenuRecord>();
       for (const row of result.rows)
@@ -680,7 +690,7 @@ export class AdminService {
       await client.query("SELECT pg_advisory_xact_lock(4102, 2)");
       const current = await client.query<{ id: string; type: AdminMenuType }>(
         "SELECT id::text, menu_type AS type FROM menus WHERE id = $1 FOR UPDATE",
-        [id],
+        [id]
       );
       if (!current.rows[0]) throw new NotFoundException("菜单不存在。");
       if (current.rows[0].type === "button") {
@@ -691,7 +701,7 @@ export class AdminService {
           value.parentId,
           id,
           current.rows[0].type,
-          client,
+          client
         );
       }
       const fields: string[] = [];
@@ -703,7 +713,7 @@ export class AdminService {
         ["parentId", "parent_id"],
         ["sortOrder", "sort_order"],
         ["isVisible", "is_visible"],
-        ["isActive", "is_active"],
+        ["isActive", "is_active"]
       ] as const;
       for (const [field, column] of fieldMap) {
         if (!Object.hasOwn(body, field)) continue;
@@ -723,7 +733,7 @@ export class AdminService {
                   (SELECT parent.name FROM menus parent WHERE parent.id = target.parent_id) AS "parentName",
                   target.sort_order AS "sortOrder", target.is_visible AS "isVisible",
                   target.is_active AS "isActive", target.created_at AS "createdAt"`,
-        values,
+        values
       );
       await client.query("COMMIT");
       return updated.rows[0];
@@ -746,8 +756,9 @@ export class AdminService {
       "tokenName",
       "tokenSymbol",
       "passwordPolicy",
+      "userAccess",
       "themePalettes",
-      "rpcConfiguration",
+      "rpcConfiguration"
     ]);
     for (const key of Object.keys(body)) {
       if (!allowed.has(key))
@@ -758,7 +769,7 @@ export class AdminService {
       changes.push([
         "system_name",
         this.validateText(body.systemName, "systemName", 80),
-        "安装时确认的系统名称",
+        "安装时确认的系统名称"
       ]);
     }
     if (Object.hasOwn(body, "tokenName")) {
@@ -777,7 +788,26 @@ export class AdminService {
       changes.push([
         "admin_password_policy",
         JSON.stringify(policy),
-        "管理员密码强度策略",
+        "管理员密码强度策略"
+      ]);
+    }
+    if (Object.hasOwn(body, "userAccess")) {
+      const settings = this.record(body.userAccess);
+      const allowed = new Set(["requireInvitationForRegistration"]);
+      for (const key of Object.keys(settings)) {
+        if (!allowed.has(key))
+          throw new BadRequestException(`不支持更新用户端设置项 ${key}。`);
+      }
+      if (Object.keys(settings).length !== allowed.size)
+        throw new BadRequestException("用户端访问设置内容不完整。");
+      for (const key of allowed) {
+        if (typeof settings[key] !== "boolean")
+          throw new BadRequestException(`用户端设置 ${key} 必须为布尔值。`);
+      }
+      changes.push([
+        "require_invitation_for_registration",
+        String(settings.requireInvitationForRegistration),
+        "用户注册是否必须使用邀请码"
       ]);
     }
     if (Object.hasOwn(body, "themePalettes")) {
@@ -785,17 +815,17 @@ export class AdminService {
       changes.push([
         "theme_palettes",
         JSON.stringify(palettes),
-        "用户端与管理后台配色方案",
+        "用户端与管理后台配色方案"
       ]);
     }
     if (Object.hasOwn(body, "rpcConfiguration")) {
       const configuration = await this.validateRpcConfigurationInput(
-        body.rpcConfiguration,
+        body.rpcConfiguration
       );
       changes.push([
         "rpc_nodes",
         JSON.stringify(configuration),
-        "业务链 RPC 节点配置",
+        "业务链 RPC 节点配置"
       ]);
     }
 
@@ -810,14 +840,14 @@ export class AdminService {
           this.assertTokenIdentityChange(
             current.tokenName,
             value,
-            current.installationChainId,
+            current.installationChainId
           );
         }
         if (key === "token_symbol") {
           this.assertTokenIdentityChange(
             current.tokenSymbol,
             value,
-            current.installationChainId,
+            current.installationChainId
           );
         }
         await client.query(
@@ -827,7 +857,7 @@ export class AdminService {
              SET config_value = EXCLUDED.config_value,
                  description = EXCLUDED.description,
                  updated_at = NOW()`,
-          [key, value, description],
+          [key, value, description]
         );
       }
       await client.query("COMMIT");
@@ -850,7 +880,7 @@ export class AdminService {
     const result = await probeRpcNode(
       body.url,
       settings.installationChainId,
-      timeoutMs,
+      timeoutMs
     );
     const metric: RpcNodeMetric = {
       status: result.status,
@@ -859,12 +889,12 @@ export class AdminService {
       ...(result.blockNumber === undefined
         ? {}
         : { blockNumber: result.blockNumber }),
-      ...(result.message ? { message: result.message } : {}),
+      ...(result.message ? { message: result.message } : {})
     };
     await this.storeRpcNodeMetric(
       settings.installationChainId,
       result.url,
-      metric,
+      metric
     );
     return { ...result, testedAt: metric.testedAt };
   }
@@ -872,14 +902,14 @@ export class AdminService {
   private async storeRpcNodeMetric(
     chainId: number,
     url: string,
-    metric: RpcNodeMetric,
+    metric: RpcNodeMetric
   ) {
     const client = await this.databaseService.getPool().connect();
     try {
       await client.query("BEGIN");
       await client.query("SELECT pg_advisory_xact_lock(4102, 6)");
       const current = await client.query<{ config_value: string }>(
-        "SELECT config_value FROM system_configs WHERE config_key = 'rpc_node_metrics' FOR UPDATE",
+        "SELECT config_value FROM system_configs WHERE config_key = 'rpc_node_metrics' FOR UPDATE"
       );
       let metrics: Record<string, RpcNodeMetric> = {};
       if (current.rows[0]?.config_value) {
@@ -903,7 +933,7 @@ export class AdminService {
            SET config_value = EXCLUDED.config_value,
                description = EXCLUDED.description,
                updated_at = NOW()`,
-        [JSON.stringify({ chainId, metrics })],
+        [JSON.stringify({ chainId, metrics })]
       );
       await client.query("COMMIT");
     } catch (error) {
@@ -930,7 +960,7 @@ export class AdminService {
     ) {
       throw new BadRequestException("RPC 配置内容无效或与安装链不匹配。");
     }
-    const nodes = [...new Set(body.nodes.map((url) => normalizeRpcUrl(url)))];
+    const nodes = [...new Set(body.nodes.map(url => normalizeRpcUrl(url)))];
     const activeUrl = normalizeRpcUrl(body.activeUrl);
     if (!nodes.includes(activeUrl)) {
       throw new BadRequestException("当前 RPC 必须属于已配置的节点列表。");
@@ -941,7 +971,7 @@ export class AdminService {
   private assertTokenIdentityChange(
     currentValue: string,
     nextValue: string,
-    installationChainId: number | null,
+    installationChainId: number | null
   ) {
     if (installationChainId !== null && currentValue !== nextValue) {
       throw new ConflictException("已锁定目标链，不能更改链上代币名称或简称。");
@@ -962,48 +992,54 @@ export class AdminService {
           "token_name",
           "token_symbol",
           "admin_password_policy",
+          "require_invitation_for_registration",
           "theme_palettes",
           "rpc_nodes",
-          "rpc_node_metrics",
-        ],
-      ],
+          "rpc_node_metrics"
+        ]
+      ]
     );
     const values = new Map(
-      result.rows.map((row) => [row.config_key, row.config_value]),
+      result.rows.map(row => [row.config_key, row.config_value])
     );
     const installationChainId = await this.readRuntimeChainId(database);
     const policy = this.parsePasswordPolicy(
-      values.get("admin_password_policy"),
+      values.get("admin_password_policy")
     );
     return {
       systemName: values.get("system_name") ?? "",
       tokenName: values.get("token_name") ?? "",
       tokenSymbol: values.get("token_symbol") ?? "",
       passwordPolicy: policy,
+      userAccess: {
+        requireInvitationForRegistration: this.parseConfigBoolean(
+          values.get("require_invitation_for_registration")
+        )
+      },
       installationChainId,
       themePalettes: this.parseThemePalettes(values.get("theme_palettes")),
       rpcConfiguration: await resolveRpcConfiguration(
         installationChainId,
         values.get("rpc_nodes"),
-        values.get("rpc_node_metrics"),
-      ),
+        values.get("rpc_node_metrics")
+      )
     };
   }
 
   private async readRuntimeChainId(database: Pool | PoolClient) {
     const table = await database.query<{ exists: boolean }>(
-      "SELECT to_regclass('public.runtime_contract_binding') IS NOT NULL AS exists",
+      "SELECT to_regclass('public.runtime_contract_binding') IS NOT NULL AS exists"
     );
     const binding = table.rows[0]?.exists
       ? await database.query<{ chain_id: string }>(
-          "SELECT chain_id::text FROM runtime_contract_binding WHERE singleton = TRUE",
+          "SELECT chain_id::text FROM runtime_contract_binding WHERE singleton = TRUE"
         )
       : { rows: [] as Array<{ chain_id: string }> };
     let value = binding.rows[0]?.chain_id;
     if (value === undefined) {
       // 兼容尚未由安装器回填到运行时绑定表的旧安装。
       const legacy = await database.query<{ config_value: string }>(
-        "SELECT config_value FROM system_configs WHERE config_key = 'installation_chain_id'",
+        "SELECT config_value FROM system_configs WHERE config_key = 'installation_chain_id'"
       );
       value = legacy.rows[0]?.config_value;
     }
@@ -1013,6 +1049,13 @@ export class AdminService {
       throw new ServiceUnavailableException("生效合约绑定的 ChainId 无效。");
     }
     return chainId;
+  }
+
+  // 老安装尚无此配置时沿用开启状态，与数据库迁移默认值保持一致。
+  private parseConfigBoolean(value?: string) {
+    if (value === undefined || value === "true") return true;
+    if (value === "false") return false;
+    throw new ServiceUnavailableException("用户端访问设置格式无效。");
   }
 
   private parseThemePalettes(value?: string): ThemePalettes {
@@ -1041,7 +1084,7 @@ export class AdminService {
         background: validateColor(user.background, "user.background"),
         surface: validateColor(user.surface, "user.surface"),
         text: validateColor(user.text, "user.text"),
-        mutedText: validateColor(user.mutedText, "user.mutedText"),
+        mutedText: validateColor(user.mutedText, "user.mutedText")
       },
       admin: {
         primary: validateColor(admin.primary, "admin.primary"),
@@ -1049,8 +1092,8 @@ export class AdminService {
         surface: validateColor(admin.surface, "admin.surface"),
         text: validateColor(admin.text, "admin.text"),
         mutedText: validateColor(admin.mutedText, "admin.mutedText"),
-        border: validateColor(admin.border, "admin.border"),
-      },
+        border: validateColor(admin.border, "admin.border")
+      }
     };
   }
 
@@ -1080,7 +1123,7 @@ export class AdminService {
         requireSymbol:
           typeof parsed.requireSymbol === "boolean"
             ? parsed.requireSymbol
-            : DEFAULT_PASSWORD_POLICY.requireSymbol,
+            : DEFAULT_PASSWORD_POLICY.requireSymbol
       };
     } catch {
       return { ...DEFAULT_PASSWORD_POLICY };
@@ -1101,14 +1144,14 @@ export class AdminService {
       minimumLength: Number(minimumLength),
       requireUppercase: this.requireBoolean(
         value.requireUppercase,
-        "requireUppercase",
+        "requireUppercase"
       ),
       requireLowercase: this.requireBoolean(
         value.requireLowercase,
-        "requireLowercase",
+        "requireLowercase"
       ),
       requireNumber: this.requireBoolean(value.requireNumber, "requireNumber"),
-      requireSymbol: this.requireBoolean(value.requireSymbol, "requireSymbol"),
+      requireSymbol: this.requireBoolean(value.requireSymbol, "requireSymbol")
     };
   }
 
@@ -1116,25 +1159,25 @@ export class AdminService {
     const result = await this.databaseService
       .getPool()
       .query<{ config_value: string }>(
-        "SELECT config_value FROM system_configs WHERE config_key = 'admin_password_policy'",
+        "SELECT config_value FROM system_configs WHERE config_key = 'admin_password_policy'"
       );
     return this.parsePasswordPolicy(result.rows[0]?.config_value);
   }
 
   private validatePasswordPolicy(
     password: string,
-    policy: AdminPasswordPolicy,
+    policy: AdminPasswordPolicy
   ) {
     if (password.length < policy.minimumLength) {
       throw new BadRequestException(
-        `密码至少需要 ${policy.minimumLength} 个字符。`,
+        `密码至少需要 ${policy.minimumLength} 个字符。`
       );
     }
     const requirements: Array<[boolean, RegExp, string]> = [
       [policy.requireUppercase, /[A-Z]/, "大写字母"],
       [policy.requireLowercase, /[a-z]/, "小写字母"],
       [policy.requireNumber, /[0-9]/, "数字"],
-      [policy.requireSymbol, /[^A-Za-z0-9]/, "特殊字符"],
+      [policy.requireSymbol, /[^A-Za-z0-9]/, "特殊字符"]
     ];
     const missing = requirements
       .filter(([required, pattern]) => required && !pattern.test(password))
@@ -1148,7 +1191,7 @@ export class AdminService {
     parentId: string | null,
     currentId: string,
     currentType: AdminMenuType,
-    queryable?: PoolClient,
+    queryable?: PoolClient
   ) {
     if (!parentId) return;
     if (parentId === currentId)
@@ -1156,7 +1199,7 @@ export class AdminService {
     const db = queryable ?? this.databaseService.getPool();
     const parent = await db.query<{ type: AdminMenuType }>(
       "SELECT menu_type AS type FROM menus WHERE id = $1",
-      [parentId],
+      [parentId]
     );
     if (!parent.rows[0]) throw new BadRequestException("父目录不存在。");
     if (parent.rows[0].type !== "directory") {
@@ -1173,7 +1216,7 @@ export class AdminService {
            JOIN descendants parent ON child.parent_id = parent.id
        )
        SELECT 1 FROM descendants WHERE id = $2 LIMIT 1`,
-      [currentId, parentId],
+      [currentId, parentId]
     );
     if (descendant.rowCount)
       throw new ConflictException("不能将菜单移到自己的子级下。");
@@ -1196,7 +1239,7 @@ export class AdminService {
       "parentId",
       "sortOrder",
       "isVisible",
-      "isActive",
+      "isActive"
     ];
     for (const field of fields) {
       if (!Object.hasOwn(body, field)) continue;
@@ -1235,7 +1278,7 @@ export class AdminService {
             body.sortOrder,
             "sortOrder",
             0,
-            100_000,
+            100_000
           );
           break;
         case "isVisible":
@@ -1253,7 +1296,7 @@ export class AdminService {
       parentId: output.parentId ?? null,
       sortOrder: output.sortOrder ?? 0,
       isVisible: output.isVisible ?? true,
-      isActive: output.isActive ?? true,
+      isActive: output.isActive ?? true
     };
   }
 
@@ -1261,13 +1304,13 @@ export class AdminService {
   private assertDelegablePermissions(
     next: string[],
     actor: string[],
-    existing: string[],
+    existing: string[]
   ) {
     if (actor.includes("*")) return;
     if (
       next.some(
-        (permission) =>
-          !actor.includes(permission) && !existing.includes(permission),
+        permission =>
+          !actor.includes(permission) && !existing.includes(permission)
       )
     ) {
       throw new ForbiddenException("不能授予超出自身权限的操作。");
@@ -1292,7 +1335,7 @@ export class AdminService {
       const code = this.validateText(body.code, "code", 64);
       if (!/^[a-z][a-z0-9_-]{2,63}$/.test(code)) {
         throw new BadRequestException(
-          "角色 code 须为 3 到 64 位小写字母、数字、下划线或短横线。",
+          "角色 code 须为 3 到 64 位小写字母、数字、下划线或短横线。"
         );
       }
       output.code = code;
@@ -1304,7 +1347,7 @@ export class AdminService {
         body.description,
         "description",
         1000,
-        true,
+        true
       );
     }
     if (Object.hasOwn(body, "permissions")) {
@@ -1313,20 +1356,20 @@ export class AdminService {
       }
       const permissions = [
         ...new Set(
-          body.permissions.map((permission) => {
+          body.permissions.map(permission => {
             if (typeof permission !== "string") {
               throw new BadRequestException("角色权限须为文本编码。");
             }
             return permission;
-          }),
-        ),
+          })
+        )
       ];
       if (
         permissions.some(
-          (permission) =>
+          permission =>
             typeof permission !== "string" ||
             permission === "*" ||
-            !ALLOWED_ROLE_PERMISSIONS.has(permission),
+            !ALLOWED_ROLE_PERMISSIONS.has(permission)
         )
       ) {
         throw new BadRequestException("角色权限包含未知或保留权限。");
@@ -1342,7 +1385,7 @@ export class AdminService {
   private async roleCode(client: PoolClient, roleId: string) {
     const role = await client.query<{ code: string }>(
       "SELECT code FROM roles WHERE id = $1 AND is_active = TRUE FOR SHARE",
-      [roleId],
+      [roleId]
     );
     if (!role.rows[0])
       throw new BadRequestException("所选角色不存在或已停用。");
@@ -1351,14 +1394,14 @@ export class AdminService {
 
   private async ensureAnotherActiveSuperAdmin(
     client: PoolClient,
-    excludingId: string,
+    excludingId: string
   ) {
     const result = await client.query<{ total: string }>(
       `SELECT COUNT(*)::text AS total
          FROM admin_users u JOIN roles r ON r.id = u.role_id
         WHERE r.code = 'super_admin' AND r.is_active = TRUE
           AND u.is_active = TRUE AND u.id <> $1`,
-      [excludingId],
+      [excludingId]
     );
     if (Number(result.rows[0]?.total ?? 0) < 1) {
       throw new ConflictException("不能停用或移除最后一个有效超级管理员。");
@@ -1417,12 +1460,12 @@ export class AdminService {
     raw: unknown,
     field: string,
     minimum: number,
-    maximum: number,
+    maximum: number
   ) {
     const value = typeof raw === "number" ? raw : Number(raw);
     if (!Number.isInteger(value) || value < minimum || value > maximum) {
       throw new BadRequestException(
-        `${field} 须为 ${minimum} 到 ${maximum} 之间的整数。`,
+        `${field} 须为 ${minimum} 到 ${maximum} 之间的整数。`
       );
     }
     return value;
@@ -1432,7 +1475,7 @@ export class AdminService {
     const value = this.validateText(raw, "username", 64);
     if (!/^[\p{L}\p{N}_.-]{3,64}$/u.test(value)) {
       throw new BadRequestException(
-        "管理员账号须为 3 到 64 位字母、数字或 . _ -。",
+        "管理员账号须为 3 到 64 位字母、数字或 . _ -。"
       );
     }
     return value;
@@ -1453,14 +1496,14 @@ export class AdminService {
     raw: unknown,
     field: string,
     maximum: number,
-    allowEmpty = false,
+    allowEmpty = false
   ) {
     if (typeof raw !== "string")
       throw new BadRequestException(`${field} 须为文本。`);
     const value = raw.trim();
     if ((!allowEmpty && !value) || value.length > maximum) {
       throw new BadRequestException(
-        `${field} 不能为空且最多为 ${maximum} 个字符。`,
+        `${field} 不能为空且最多为 ${maximum} 个字符。`
       );
     }
     return value;
@@ -1498,7 +1541,7 @@ export class AdminService {
     items: T[],
     totalValue: string | undefined,
     page: number,
-    pageSize: number,
+    pageSize: number
   ): Page<T> {
     return { items, total: Number(totalValue ?? 0), page, pageSize };
   }

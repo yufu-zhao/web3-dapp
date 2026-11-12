@@ -108,7 +108,7 @@
               dense
               label="登录账号"
               maxlength="64"
-              :rules="[(value) => Boolean(value) || '请输入登录账号']"
+              :rules="[value => Boolean(value) || '请输入登录账号']"
             />
             <q-input
               v-model="form.password"
@@ -129,7 +129,7 @@
               map-options
               label="所属角色"
               :options="roleOptions"
-              :rules="[(value) => Boolean(value) || '请选择角色']"
+              :rules="[value => Boolean(value) || '请选择角色']"
             />
             <q-toggle
               v-model="form.isActive"
@@ -193,7 +193,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import AdminDataTable, {
-  type AdminTableColumn,
+  type AdminTableColumn
 } from "../components/AdminDataTable.vue";
 import {
   adminRequest,
@@ -204,7 +204,7 @@ import {
   type AdminPasswordPolicy,
   type AdminRole,
   type AdminSettings,
-  type AdminUser,
+  type AdminUser
 } from "../services/admin-api";
 import { useAdminPage } from "../services/use-admin-page";
 import { canAccess } from "../services/admin-session";
@@ -222,7 +222,7 @@ const passwordPolicy = ref<AdminPasswordPolicy>({
   requireUppercase: true,
   requireLowercase: true,
   requireNumber: true,
-  requireSymbol: true,
+  requireSymbol: true
 });
 const roleError = ref("");
 const settingsError = ref("");
@@ -239,12 +239,12 @@ const activeFilter = ref<boolean | null>(null);
 const roleFilter = ref<string | null>(null);
 const statusOptions = [
   { label: "已启用", value: true },
-  { label: "已停用", value: false },
+  { label: "已停用", value: false }
 ];
 const form = ref({ username: "", password: "", roleId: "", isActive: true });
 const passwordHint = computed(
   () =>
-    `密码至少 ${passwordPolicy.value.minimumLength} 位，并符合已启用的字符要求。`,
+    `密码至少 ${passwordPolicy.value.minimumLength} 位，并符合已启用的字符要求。`
 );
 
 const columns: AdminTableColumn[] = [
@@ -254,21 +254,21 @@ const columns: AdminTableColumn[] = [
     name: "isActive",
     label: "状态",
     field: "isActive",
-    format: (value) => (value ? "启用" : "停用"),
+    format: value => (value ? "启用" : "停用")
   },
   {
     name: "lastLoginAt",
     label: "最近登录",
     field: "lastLoginAt",
-    format: formatDate,
+    format: formatDate
   },
   {
     name: "createdAt",
     label: "创建时间",
     field: "createdAt",
-    format: formatDate,
+    format: formatDate
   },
-  { name: "actions", label: "操作", field: "id", align: "right" },
+  { name: "actions", label: "操作", field: "id", align: "right" }
 ];
 
 const passwordRequirements = computed(
@@ -277,8 +277,8 @@ const passwordRequirements = computed(
       [passwordPolicy.value.requireUppercase, /[A-Z]/, "大写字母"],
       [passwordPolicy.value.requireLowercase, /[a-z]/, "小写字母"],
       [passwordPolicy.value.requireNumber, /[0-9]/, "数字"],
-      [passwordPolicy.value.requireSymbol, /[^A-Za-z0-9]/, "特殊字符"],
-    ] as Array<[boolean, RegExp, string]>,
+      [passwordPolicy.value.requireSymbol, /[^A-Za-z0-9]/, "特殊字符"]
+    ] as Array<[boolean, RegExp, string]>
 );
 
 function validatePassword(value: string) {
@@ -303,12 +303,12 @@ async function loadOptions() {
   settingsError.value = "";
   const [roles, settings] = await Promise.allSettled([
     getPage<AdminRole>("roles", 1, 100, ""),
-    adminRequest<{ settings: AdminSettings }>("/settings"),
+    adminRequest<{ settings: AdminSettings }>("/settings")
   ]);
   if (roles.status === "fulfilled") {
-    roleOptions.value = roles.value.items.map((role) => ({
+    roleOptions.value = roles.value.items.map(role => ({
       label: role.name,
-      value: role.id,
+      value: role.id
     }));
   } else {
     roleError.value =
@@ -356,7 +356,7 @@ function openEdit(user: AdminUser) {
     username: user.username,
     password: "",
     roleId: user.roleId,
-    isActive: user.isActive,
+    isActive: user.isActive
   };
   formError.value = "";
   successMessage.value = "";
@@ -372,7 +372,7 @@ async function saveUser() {
   const payload: Record<string, unknown> = {
     username: form.value.username,
     roleId: form.value.roleId,
-    isActive: form.value.isActive,
+    isActive: form.value.isActive
   };
   if (form.value.password) payload.password = form.value.password;
   try {

@@ -185,7 +185,7 @@
               dense
               label="名称"
               maxlength="128"
-              :rules="[(value) => Boolean(value) || '请输入名称']"
+              :rules="[value => Boolean(value) || '请输入名称']"
             />
             <q-select
               v-model="form.parentId"
@@ -283,7 +283,7 @@ const form = ref({
   parentId: null as string | null,
   sortOrder: 0,
   isVisible: true,
-  isActive: true,
+  isActive: true
 });
 
 const columns: QTableColumn[] = [
@@ -293,11 +293,11 @@ const columns: QTableColumn[] = [
     name: "permissionCode",
     label: "权限编码",
     field: "permissionCode",
-    align: "left",
+    align: "left"
   },
   { name: "path", label: "路由", field: "path", align: "left" },
   { name: "status", label: "状态", field: "isActive", align: "left" },
-  { name: "actions", label: "操作", field: "id", align: "right" },
+  { name: "actions", label: "操作", field: "id", align: "right" }
 ];
 
 const visibleRows = computed(() => {
@@ -314,12 +314,12 @@ const visibleRows = computed(() => {
   const visit = (
     node: AdminMenu,
     depth: number,
-    forceInclude = false,
+    forceInclude = false
   ): boolean => {
     const children = byParent.get(node.id) ?? [];
     const selfMatches = matchesSearch(node, query);
-    const childMatches = children.filter((child) =>
-      visitMatches(child, byParent, query),
+    const childMatches = children.filter(child =>
+      visitMatches(child, byParent, query)
     );
     const matches =
       !query || forceInclude || selfMatches || childMatches.length > 0;
@@ -340,19 +340,19 @@ const visibleRows = computed(() => {
 function matchesSearch(menu: AdminMenu, query: string) {
   if (!query) return true;
   return [menu.name, menu.code, menu.path, menu.permissionCode ?? ""].some(
-    (value) => value.toLocaleLowerCase().includes(query),
+    value => value.toLocaleLowerCase().includes(query)
   );
 }
 
 function visitMatches(
   menu: AdminMenu,
   byParent: Map<string | null, AdminMenu[]>,
-  query: string,
+  query: string
 ): boolean {
   return (
     matchesSearch(menu, query) ||
-    (byParent.get(menu.id) ?? []).some((child) =>
-      visitMatches(child, byParent, query),
+    (byParent.get(menu.id) ?? []).some(child =>
+      visitMatches(child, byParent, query)
     )
   );
 }
@@ -384,10 +384,8 @@ async function refresh() {
     items.value = result.items;
     expandedIds.value = new Set(
       result.items
-        .filter((item) =>
-          result.items.some((child) => child.parentId === item.id),
-        )
-        .map((item) => item.id),
+        .filter(item => result.items.some(child => child.parentId === item.id))
+        .map(item => item.id)
     );
   } catch (reason) {
     error.value =
@@ -407,12 +405,12 @@ function openEdit(menu: AdminMenu) {
     parentId: menu.parentId,
     sortOrder: menu.sortOrder,
     isVisible: menu.isVisible,
-    isActive: menu.isActive,
+    isActive: menu.isActive
   };
   const descendantIds = new Set<string>();
   const addDescendants = (parentId: string) => {
     for (const child of items.value.filter(
-      (item) => item.parentId === parentId,
+      item => item.parentId === parentId
     )) {
       descendantIds.add(child.id);
       addDescendants(child.id);
@@ -421,12 +419,12 @@ function openEdit(menu: AdminMenu) {
   addDescendants(menu.id);
   parentOptions.value = items.value
     .filter(
-      (item) =>
+      item =>
         item.type === "directory" &&
         item.id !== menu.id &&
-        !descendantIds.has(item.id),
+        !descendantIds.has(item.id)
     )
-    .map((item) => ({ label: item.name, value: item.id }));
+    .map(item => ({ label: item.name, value: item.id }));
   formError.value = "";
   successMessage.value = "";
   formOpen.value = true;
@@ -442,7 +440,7 @@ async function saveMenu() {
       ...form.value,
       name: form.value.name.trim(),
       path: form.value.path.trim(),
-      icon: form.value.icon.trim(),
+      icon: form.value.icon.trim()
     });
     formOpen.value = false;
     successMessage.value = "权限菜单已保存。";

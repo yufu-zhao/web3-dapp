@@ -28,7 +28,7 @@ export const DEFAULT_THEME_PALETTES: ThemePalettes = {
     background: "#111827",
     surface: "#1b2434",
     text: "#f9fafb",
-    mutedText: "#cbd5e1",
+    mutedText: "#cbd5e1"
   },
   admin: {
     primary: "#ffc832",
@@ -36,8 +36,8 @@ export const DEFAULT_THEME_PALETTES: ThemePalettes = {
     surface: "#ffffff",
     text: "#202d42",
     mutedText: "#738096",
-    border: "#d9e0e9",
-  },
+    border: "#d9e0e9"
+  }
 };
 
 export interface PublicInstallationConfig {
@@ -46,6 +46,9 @@ export interface PublicInstallationConfig {
   systemName: string;
   tokenName: string;
   tokenSymbol: string;
+  userAccess: {
+    requireInvitationForRegistration: boolean;
+  };
   themePalettes: ThemePalettes;
 }
 
@@ -56,7 +59,7 @@ export interface PublicWalletConnectConfig {
 // 将服务端返回的调色板映射到当前应用的 CSS 变量及 Quasar 主色。
 export function applyThemePalette(
   target: "user" | "admin",
-  palettes: ThemePalettes | undefined,
+  palettes: ThemePalettes | undefined
 ) {
   if (typeof document === "undefined") return;
 
@@ -66,7 +69,7 @@ export function applyThemePalette(
       ? color
       : fallback;
   const cssKey = (key: string) =>
-    key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+    key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
   const setPalette = (prefix: string, colors: object) => {
     for (const [key, color] of Object.entries(colors)) {
       root.style.setProperty(`--${prefix}-${cssKey(key)}`, color);
@@ -77,9 +80,9 @@ export function applyThemePalette(
       color
         .slice(1)
         .match(/.{2}/g)
-        ?.map((part) => parseInt(part, 16) / 255) ?? [];
-    const linear = channels.map((channel) =>
-      channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+        ?.map(part => parseInt(part, 16) / 255) ?? [];
+    const linear = channels.map(channel =>
+      channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
     );
     const luminance =
       (linear[0] ?? 0) * 0.2126 +
@@ -94,17 +97,17 @@ export function applyThemePalette(
       accent: colorOrDefault(input.accent, DEFAULT_THEME_PALETTES.user.accent),
       background: colorOrDefault(
         input.background,
-        DEFAULT_THEME_PALETTES.user.background,
+        DEFAULT_THEME_PALETTES.user.background
       ),
       surface: colorOrDefault(
         input.surface,
-        DEFAULT_THEME_PALETTES.user.surface,
+        DEFAULT_THEME_PALETTES.user.surface
       ),
       text: colorOrDefault(input.text, DEFAULT_THEME_PALETTES.user.text),
       mutedText: colorOrDefault(
         input.mutedText,
-        DEFAULT_THEME_PALETTES.user.mutedText,
-      ),
+        DEFAULT_THEME_PALETTES.user.mutedText
+      )
     };
     setPalette("user", colors);
     root.style.setProperty("--user-on-primary", onPrimary(colors.accent));
@@ -116,22 +119,22 @@ export function applyThemePalette(
   const colors: AdminThemePalette = {
     primary: colorOrDefault(
       input.primary,
-      DEFAULT_THEME_PALETTES.admin.primary,
+      DEFAULT_THEME_PALETTES.admin.primary
     ),
     background: colorOrDefault(
       input.background,
-      DEFAULT_THEME_PALETTES.admin.background,
+      DEFAULT_THEME_PALETTES.admin.background
     ),
     surface: colorOrDefault(
       input.surface,
-      DEFAULT_THEME_PALETTES.admin.surface,
+      DEFAULT_THEME_PALETTES.admin.surface
     ),
     text: colorOrDefault(input.text, DEFAULT_THEME_PALETTES.admin.text),
     mutedText: colorOrDefault(
       input.mutedText,
-      DEFAULT_THEME_PALETTES.admin.mutedText,
+      DEFAULT_THEME_PALETTES.admin.mutedText
     ),
-    border: colorOrDefault(input.border, DEFAULT_THEME_PALETTES.admin.border),
+    border: colorOrDefault(input.border, DEFAULT_THEME_PALETTES.admin.border)
   };
   setPalette("admin", colors);
   root.style.setProperty("--admin-on-primary", onPrimary(colors.primary));
@@ -149,7 +152,7 @@ export type AdminInitializationStatus =
 // 前端通过同源 API 读取安装身份，避免把每个安装实例的名称编译进静态资源。
 export async function loadPublicInstallationConfig() {
   const response = await fetch("/api/public/config", {
-    headers: { accept: "application/json" },
+    headers: { accept: "application/json" }
   });
   if (!response.ok) {
     throw new Error(`读取安装配置失败（HTTP ${response.status}）。`);
@@ -161,7 +164,7 @@ export async function loadPublicInstallationConfig() {
 export async function loadWalletConnectConfig() {
   const response = await fetch("/api/public/wallet-config", {
     headers: { accept: "application/json" },
-    cache: "no-store",
+    cache: "no-store"
   });
   if (!response.ok) {
     throw new Error(`读取钱包连接配置失败（HTTP ${response.status}）。`);
@@ -173,7 +176,7 @@ export async function loadWalletConnectConfig() {
 export async function loadAdminInitializationStatus() {
   const response = await fetch("/api/public/initialization", {
     headers: { accept: "application/json" },
-    cache: "no-store",
+    cache: "no-store"
   });
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as {
@@ -183,7 +186,7 @@ export async function loadAdminInitializationStatus() {
       ? payload.message.join("；")
       : payload?.message;
     throw new Error(
-      message || `检查管理后台初始化状态失败（HTTP ${response.status}）。`,
+      message || `检查管理后台初始化状态失败（HTTP ${response.status}）。`
     );
   }
   return (await response.json()) as AdminInitializationStatus;

@@ -4,7 +4,7 @@ import {
   useAppKitNetwork,
   useAppKitProvider,
   useDisconnect,
-  useWalletInfo,
+  useWalletInfo
 } from "@reown/appkit/vue";
 import type { ConnectedWallet, Eip1193Provider } from "./wallet-types.js";
 
@@ -41,10 +41,10 @@ export function useWalletConnection(options: WalletConnectionOptions = {}) {
       address: account.value.address,
       chainId: network.value.chainId,
       provider: appKitProvider.walletProvider,
-      walletName: walletInfo.walletInfo?.name,
+      walletName: walletInfo.walletInfo?.name
     }),
     syncAppKitConnection,
-    { immediate: true, flush: "post" },
+    { immediate: true, flush: "post" }
   );
 
   function parseChainId(value: unknown): number | null {
@@ -64,7 +64,7 @@ export function useWalletConnection(options: WalletConnectionOptions = {}) {
   async function readWalletContext(provider: Eip1193Provider) {
     const [accounts, chain] = await Promise.all([
       provider.request({ method: "eth_accounts" }),
-      provider.request({ method: "eth_chainId" }),
+      provider.request({ method: "eth_chainId" })
     ]);
     const address = Array.isArray(accounts) ? accounts[0] : undefined;
     const chainId = parseChainId(chain);
@@ -91,7 +91,7 @@ export function useWalletConnection(options: WalletConnectionOptions = {}) {
       chainId,
       provider,
       walletType: "appkit",
-      walletName: walletInfo.walletInfo?.name || "AppKit 钱包",
+      walletName: walletInfo.walletInfo?.name || "AppKit 钱包"
     };
     if (!wallet.value) {
       wallet.value = candidate;
@@ -123,13 +123,13 @@ export function useWalletConnection(options: WalletConnectionOptions = {}) {
 
   function sameWalletContext(
     left: ConnectedWallet | null,
-    right: ConnectedWallet | null,
+    right: ConnectedWallet | null
   ) {
     return Boolean(
       left &&
       right &&
       left.address.toLowerCase() === right.address.toLowerCase() &&
-      left.chainId === right.chainId,
+      left.chainId === right.chainId
     );
   }
 
@@ -161,7 +161,7 @@ export function useWalletConnection(options: WalletConnectionOptions = {}) {
     try {
       const connected: ConnectedWallet = {
         ...candidate,
-        ...(await readWalletContext(candidate.provider)),
+        ...(await readWalletContext(candidate.provider))
       };
       if (sameWalletContext(connected, wallet.value)) {
         if (connected.provider !== wallet.value?.provider) {
@@ -204,6 +204,6 @@ export function useWalletConnection(options: WalletConnectionOptions = {}) {
     syncingWalletChange,
     changeError,
     syncWalletChange,
-    disconnect,
+    disconnect
   };
 }

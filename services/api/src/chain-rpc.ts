@@ -1,6 +1,6 @@
 import {
   BadRequestException,
-  ServiceUnavailableException,
+  ServiceUnavailableException
 } from "@nestjs/common";
 import { readFile } from "node:fs/promises";
 import { performance } from "node:perf_hooks";
@@ -34,7 +34,7 @@ let catalogPromise: Promise<ChainCatalogEntry[]> | undefined;
 
 async function readChainCatalog() {
   catalogPromise ??= readFile(new URL("./rpcs.json", import.meta.url), "utf8")
-    .then((content) => JSON.parse(content) as ChainCatalogEntry[])
+    .then(content => JSON.parse(content) as ChainCatalogEntry[])
     .catch(() => {
       catalogPromise = undefined;
       return [];
@@ -62,7 +62,7 @@ export function normalizeRpcUrl(input: unknown) {
     url.hash
   ) {
     throw new BadRequestException(
-      "RPC 地址须使用 HTTPS；仅本机地址允许 HTTP，且不能包含账号、密码或片段。",
+      "RPC 地址须使用 HTTPS；仅本机地址允许 HTTP，且不能包含账号、密码或片段。"
     );
   }
   return url.toString();
@@ -70,12 +70,12 @@ export function normalizeRpcUrl(input: unknown) {
 
 async function getDefaultNodes(chainId: number) {
   const catalog = await readChainCatalog();
-  const chain = catalog.find((entry) => entry.chainId === chainId);
+  const chain = catalog.find(entry => entry.chainId === chainId);
   const nodes = (chain?.rpc ?? [])
-    .map((entry) => entry.url)
+    .map(entry => entry.url)
     .filter((url): url is string => typeof url === "string")
-    .filter((url) => !url.includes("${"))
-    .flatMap((url) => {
+    .filter(url => !url.includes("${"))
+    .flatMap(url => {
       try {
         return [normalizeRpcUrl(url)];
       } catch {
@@ -85,7 +85,7 @@ async function getDefaultNodes(chainId: number) {
   return {
     chainName:
       typeof chain?.name === "string" ? chain.name : `Chain ${chainId}`,
-    nodes: [...new Set(nodes)],
+    nodes: [...new Set(nodes)]
   };
 }
 
@@ -106,11 +106,11 @@ function parseSavedConfiguration(value: string, chainId: number) {
     throw new ServiceUnavailableException("已保存的 RPC 配置与安装链不匹配。");
   }
   const saved = parsed as { nodes: unknown[]; activeUrl: string };
-  const nodes = saved.nodes.map((url) => normalizeRpcUrl(url));
+  const nodes = saved.nodes.map(url => normalizeRpcUrl(url));
   const activeUrl = normalizeRpcUrl(saved.activeUrl);
   if (!nodes.includes(activeUrl)) {
     throw new ServiceUnavailableException(
-      "当前 RPC 节点不在已保存的节点列表中。",
+      "当前 RPC 节点不在已保存的节点列表中。"
     );
   }
   return { nodes: [...new Set(nodes)], activeUrl };
@@ -119,7 +119,7 @@ function parseSavedConfiguration(value: string, chainId: number) {
 function parseRpcMetrics(
   value: string | undefined,
   chainId: number,
-  nodes: string[],
+  nodes: string[]
 ) {
   if (!value) return {};
   try {
@@ -129,7 +129,7 @@ function parseRpcMetrics(
     };
     if (parsed.chainId !== chainId || !parsed.metrics) return {};
     return Object.fromEntries(
-      nodes.flatMap((url) => {
+      nodes.flatMap(url => {
         const value = parsed.metrics?.[url];
         if (!value || typeof value !== "object") return [];
         const metric = value as Partial<RpcNodeMetric>;
@@ -142,7 +142,7 @@ function parseRpcMetrics(
           return [];
         }
         return [[url, metric as RpcNodeMetric]];
-      }),
+      })
     );
   } catch {
     return {};
@@ -152,7 +152,7 @@ function parseRpcMetrics(
 export async function resolveRpcConfiguration(
   chainId: number | null,
   savedValue?: string,
-  metricsValue?: string,
+  metricsValue?: string
 ): Promise<RpcConfiguration> {
   if (!chainId) {
     return {
@@ -161,7 +161,7 @@ export async function resolveRpcConfiguration(
       nodes: [],
       activeUrl: "",
       metrics: {},
-      source: "unavailable",
+      source: "unavailable"
     };
   }
   const defaults = await getDefaultNodes(chainId);
@@ -172,7 +172,7 @@ export async function resolveRpcConfiguration(
       chainName: defaults.chainName,
       ...saved,
       metrics: parseRpcMetrics(metricsValue, chainId, saved.nodes),
-      source: "database",
+      source: "database"
     };
   }
   const environmentUrl = process.env.CHAIN_RPC_URL?.trim();
@@ -182,16 +182,13 @@ export async function resolveRpcConfiguration(
       return {
         chainId,
         chainName: defaults.chainName,
-        nodes: [
-          activeUrl,
-          ...defaults.nodes.filter((url) => url !== activeUrl),
-        ],
+        nodes: [activeUrl, ...defaults.nodes.filter(url => url !== activeUrl)],
         activeUrl,
         metrics: parseRpcMetrics(metricsValue, chainId, [
           activeUrl,
-          ...defaults.nodes,
+          ...defaults.nodes
         ]),
-        source: "environment",
+        source: "environment"
       };
     } catch {
       throw new ServiceUnavailableException("CHAIN_RPC_URL 格式无效。");
@@ -204,26 +201,26 @@ export async function resolveRpcConfiguration(
     nodes,
     activeUrl: nodes[0] ?? "",
     metrics: parseRpcMetrics(metricsValue, chainId, nodes),
-    source: nodes.length ? "defaults" : "unavailable",
+    source: nodes.length ? "defaults" : "unavailable"
   };
 }
 
 export async function probeRpcNode(
   urlInput: unknown,
   chainId: number,
-  timeoutMs = 8000,
+  timeoutMs = 8000
 ) {
   const url = normalizeRpcUrl(urlInput);
   const request = new FetchRequest(url);
   request.timeout = timeoutMs;
   const provider = new JsonRpcProvider(request, undefined, {
-    batchMaxCount: 1,
+    batchMaxCount: 1
   });
   const startedAt = performance.now();
   try {
     const [network, blockNumber] = await Promise.all([
       provider.getNetwork(),
-      provider.getBlockNumber(),
+      provider.getBlockNumber()
     ]);
     if (network.chainId !== BigInt(chainId)) {
       return {
@@ -232,7 +229,7 @@ export async function probeRpcNode(
         status: "failed" as const,
         latencyMs: null,
         blockNumber,
-        message: `节点返回 ChainId ${network.chainId.toString()}，与安装链 ${chainId} 不一致。`,
+        message: `节点返回 ChainId ${network.chainId.toString()}，与安装链 ${chainId} 不一致。`
       };
     }
     return {
@@ -240,7 +237,7 @@ export async function probeRpcNode(
       chainId,
       status: "success" as const,
       latencyMs: Math.round(performance.now() - startedAt),
-      blockNumber,
+      blockNumber
     };
   } catch (error) {
     if (error instanceof BadRequestException) throw error;
@@ -249,7 +246,7 @@ export async function probeRpcNode(
       chainId,
       status: "failed" as const,
       latencyMs: null,
-      message: "连接失败或无法读取区块高度。",
+      message: "连接失败或无法读取区块高度。"
     };
   } finally {
     provider.destroy();
@@ -259,30 +256,30 @@ export async function probeRpcNode(
 export async function getBoundRpcProvider(
   chainId: number,
   addresses: string[],
-  database: Pool | PoolClient,
+  database: Pool | PoolClient
 ) {
   const result = await database.query<{
     config_key: string;
     config_value: string;
   }>(
     "SELECT config_key, config_value FROM system_configs WHERE config_key = ANY($1::text[])",
-    [["rpc_nodes", "rpc_node_metrics"]],
+    [["rpc_nodes", "rpc_node_metrics"]]
   );
   const storedValues = new Map(
-    result.rows.map((row) => [row.config_key, row.config_value]),
+    result.rows.map(row => [row.config_key, row.config_value])
   );
   const configuration = await resolveRpcConfiguration(
     chainId,
     storedValues.get("rpc_nodes"),
-    storedValues.get("rpc_node_metrics"),
+    storedValues.get("rpc_node_metrics")
   );
   if (!configuration.activeUrl) {
     throw new ServiceUnavailableException(
-      "当前安装链没有可用 RPC 节点，请在系统设置中配置。",
+      "当前安装链没有可用 RPC 节点，请在系统设置中配置。"
     );
   }
   const fallbackNodes = configuration.nodes
-    .filter((url) => url !== configuration.activeUrl)
+    .filter(url => url !== configuration.activeUrl)
     .sort((left, right) => {
       const leftMetric = configuration.metrics[left];
       const rightMetric = configuration.metrics[right];
@@ -303,16 +300,15 @@ export async function getBoundRpcProvider(
       const network = await provider.getNetwork();
       if (network.chainId !== BigInt(chainId)) throw new Error("网络不匹配");
       const codes = await Promise.all(
-        addresses.map((address) => provider!.getCode(address)),
+        addresses.map(address => provider!.getCode(address))
       );
-      if (codes.some((code) => code === "0x"))
-        throw new Error("未找到绑定合约");
+      if (codes.some(code => code === "0x")) throw new Error("未找到绑定合约");
       return provider;
     } catch {
       provider?.destroy();
     }
   }
   throw new ServiceUnavailableException(
-    "配置的 RPC 节点均不可用或无法读取绑定合约，请在系统设置中检查节点。",
+    "配置的 RPC 节点均不可用或无法读取绑定合约，请在系统设置中检查节点。"
   );
 }

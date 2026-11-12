@@ -6,6 +6,6 @@ export default defineRouter(() =>
   createRouter({
     scrollBehavior: () => ({ left: 0, top: 0 }),
     routes,
-    history: createWebHistory("/"),
-  }),
+    history: createWebHistory("/")
+  })
 );

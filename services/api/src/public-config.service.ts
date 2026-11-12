@@ -10,6 +10,9 @@ interface PublicInstallationConfig {
   systemName: string;
   tokenName: string;
   tokenSymbol: string;
+  userAccess: {
+    requireInvitationForRegistration: boolean;
+  };
   themePalettes: ThemePalettes;
 }
 
@@ -37,7 +40,7 @@ const DEFAULT_THEME_PALETTES: ThemePalettes = {
     background: "#111827",
     surface: "#1b2434",
     text: "#f9fafb",
-    mutedText: "#cbd5e1",
+    mutedText: "#cbd5e1"
   },
   admin: {
     primary: "#ffc832",
@@ -45,8 +48,8 @@ const DEFAULT_THEME_PALETTES: ThemePalettes = {
     surface: "#ffffff",
     text: "#202d42",
     mutedText: "#738096",
-    border: "#d9e0e9",
-  },
+    border: "#d9e0e9"
+  }
 };
 
 type AdminInitializationStatus =
@@ -62,7 +65,7 @@ export class PublicConfigService {
     try {
       const pool = this.databaseService.getPool();
       const exists = await pool.query<{ ready: boolean }>(
-        "SELECT to_regclass('public.runtime_contract_binding') IS NOT NULL AS ready",
+        "SELECT to_regclass('public.runtime_contract_binding') IS NOT NULL AS ready"
       );
       if (!exists.rows[0]?.ready) return { state: "unbound" as const };
       const result = await pool.query<{
@@ -95,7 +98,7 @@ export class PublicConfigService {
       }
       if (!addresses.ProjectToken || !addresses.FairSaleV2)
         throw new ServiceUnavailableException(
-          "生效合约绑定缺少代币或私募模块。",
+          "生效合约绑定缺少代币或私募模块。"
         );
       return {
         state: "bound" as const,
@@ -103,7 +106,7 @@ export class PublicConfigService {
         deploymentId: row.deployment_id,
         releaseVersion: row.release_version,
         contracts: addresses,
-        pairAddress: row.pair_address,
+        pairAddress: row.pair_address
       };
     } catch (error) {
       if (error instanceof ServiceUnavailableException) throw error;
@@ -118,7 +121,7 @@ export class PublicConfigService {
     const provider = await getBoundRpcProvider(
       binding.chainId,
       [binding.contracts.FairSaleV2!, binding.contracts.ProjectToken!],
-      this.databaseService.getPool(),
+      this.databaseService.getPool()
     );
     try {
       const sale = new Contract(
@@ -131,21 +134,21 @@ export class PublicConfigService {
           "function rounds(uint256) view returns(uint256 endTime,uint256 offered,uint256 participants,uint256 allocated,uint256 share,uint256 extraWeiParticipants,uint256 acceptedPayment,bool finalized)",
           "function price(uint8) view returns(uint256)",
           "function paymentUnit() view returns(uint256)",
-          "function ticket() view returns(uint256)",
+          "function ticket() view returns(uint256)"
         ],
-        provider,
+        provider
       );
       const token = new Contract(
         binding.contracts.ProjectToken!,
         ["function sale() view returns(address)"],
-        provider,
+        provider
       );
       const [active, saleToken, tokenSale, cursor, block] = await Promise.all([
         sale.getFunction("activeModule")(),
         sale.getFunction("token")(),
         token.getFunction("sale")(),
         sale.getFunction("cursor")(),
-        provider.getBlock("latest"),
+        provider.getBlock("latest")
       ]);
       if (
         !active ||
@@ -163,7 +166,7 @@ export class PublicConfigService {
         sale.getFunction("rounds")(index),
         sale.getFunction("price")(index),
         sale.getFunction("paymentUnit")(),
-        sale.getFunction("ticket")(),
+        sale.getFunction("ticket")()
       ]);
       if (round.finalized || !start || !round.endTime)
         return { state: "empty" as const };
@@ -193,11 +196,11 @@ export class PublicConfigService {
         price: formatUnits(price, decimals),
         ticket: formatUnits(ticket, decimals),
         offered: formatUnits(round.offered, 18),
-        participants: round.participants.toString(),
+        participants: round.participants.toString()
       };
     } catch {
       throw new ServiceUnavailableException(
-        "无法读取私募状态，请检查链上配置或稍后重试。",
+        "无法读取私募状态，请检查链上配置或稍后重试。"
       );
     } finally {
       provider.destroy();
@@ -217,10 +220,10 @@ export class PublicConfigService {
         config_key: string;
         config_value: string;
       }>(
-        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('installed_at', 'system_name', 'token_name', 'token_symbol', 'theme_palettes')",
+        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('installed_at', 'system_name', 'token_name', 'token_symbol', 'theme_palettes', 'require_invitation_for_registration')"
       );
       const configs = new Map(
-        result.rows.map((item) => [item.config_key, item.config_value]),
+        result.rows.map(item => [item.config_key, item.config_value])
       );
       const initialized = configs.has("installed_at");
       const chainId = await this.readRuntimeChainId(pool);
@@ -237,7 +240,8 @@ export class PublicConfigService {
         systemName: configs.get("system_name")?.trim() || "链构",
         tokenName: configs.get("token_name")?.trim() || "项目代币",
         tokenSymbol: configs.get("token_symbol")?.trim() || "TOKEN",
-        themePalettes: this.parseThemePalettes(configs.get("theme_palettes")),
+        userAccess: this.parseUserAccess(configs),
+        themePalettes: this.parseThemePalettes(configs.get("theme_palettes"))
       };
       if (
         (identity.chainId !== null &&
@@ -261,7 +265,7 @@ export class PublicConfigService {
 
     try {
       const schema = await pool.query<{ exists: boolean }>(
-        "SELECT to_regclass('public.system_configs') IS NOT NULL AS exists",
+        "SELECT to_regclass('public.system_configs') IS NOT NULL AS exists"
       );
       if (!schema.rows[0]?.exists) {
         return { state: "uninitialized", installation: null };
@@ -271,10 +275,10 @@ export class PublicConfigService {
         config_key: string;
         config_value: string;
       }>(
-        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('installed_at', 'system_name', 'token_name', 'token_symbol', 'theme_palettes')",
+        "SELECT config_key, config_value FROM system_configs WHERE config_key IN ('installed_at', 'system_name', 'token_name', 'token_symbol', 'theme_palettes', 'require_invitation_for_registration')"
       );
       const configs = new Map(
-        result.rows.map((item) => [item.config_key, item.config_value]),
+        result.rows.map(item => [item.config_key, item.config_value])
       );
       if (!configs.has("installed_at")) {
         return { state: "uninitialized", installation: null };
@@ -288,7 +292,8 @@ export class PublicConfigService {
         systemName: configs.get("system_name")?.trim() ?? "",
         tokenName: configs.get("token_name")?.trim() ?? "",
         tokenSymbol: configs.get("token_symbol")?.trim() ?? "",
-        themePalettes: this.parseThemePalettes(configs.get("theme_palettes")),
+        userAccess: this.parseUserAccess(configs),
+        themePalettes: this.parseThemePalettes(configs.get("theme_palettes"))
       };
       if (
         (installation.chainId !== null &&
@@ -308,7 +313,7 @@ export class PublicConfigService {
                     SELECT 1 FROM schema_migrations
                      WHERE version = '0010_user_languages'
                   )
-           AS ready`,
+           AS ready`
       );
       if (!adminSchema.rows[0]?.ready) {
         return { state: "migration-required", installation: null };
@@ -334,7 +339,7 @@ export class PublicConfigService {
         user.background,
         user.surface,
         user.text,
-        user.mutedText,
+        user.mutedText
       ];
       const adminColors = [
         admin.primary,
@@ -342,7 +347,7 @@ export class PublicConfigService {
         admin.surface,
         admin.text,
         admin.mutedText,
-        admin.border,
+        admin.border
       ];
       if (![...userColors, ...adminColors].every(isColor)) {
         return structuredClone(DEFAULT_THEME_PALETTES);
@@ -353,7 +358,7 @@ export class PublicConfigService {
           background: user.background,
           surface: user.surface,
           text: user.text,
-          mutedText: user.mutedText,
+          mutedText: user.mutedText
         },
         admin: {
           primary: admin.primary,
@@ -361,28 +366,43 @@ export class PublicConfigService {
           surface: admin.surface,
           text: admin.text,
           mutedText: admin.mutedText,
-          border: admin.border,
-        },
+          border: admin.border
+        }
       };
     } catch {
       return structuredClone(DEFAULT_THEME_PALETTES);
     }
   }
 
+  // 旧数据库未写入该设置时按“开启”处理，并与安装迁移默认值一致。
+  private parseUserAccess(configs: Map<string, string>) {
+    const parseFlag = (key: string) => {
+      const value = configs.get(key);
+      if (value === undefined || value === "true") return true;
+      if (value === "false") return false;
+      throw new ServiceUnavailableException("用户端访问设置格式无效。");
+    };
+    return {
+      requireInvitationForRegistration: parseFlag(
+        "require_invitation_for_registration"
+      )
+    };
+  }
+
   private async readRuntimeChainId(pool: Pool) {
     const table = await pool.query<{ exists: boolean }>(
-      "SELECT to_regclass('public.runtime_contract_binding') IS NOT NULL AS exists",
+      "SELECT to_regclass('public.runtime_contract_binding') IS NOT NULL AS exists"
     );
     const result = table.rows[0]?.exists
       ? await pool.query<{ chain_id: string }>(
-          "SELECT chain_id::text FROM runtime_contract_binding WHERE singleton = TRUE",
+          "SELECT chain_id::text FROM runtime_contract_binding WHERE singleton = TRUE"
         )
       : { rows: [] as Array<{ chain_id: string }> };
     let value = result.rows[0]?.chain_id;
     if (value === undefined) {
       // 兼容尚未由安装器回填到运行时绑定表的旧安装。
       const legacy = await pool.query<{ config_value: string }>(
-        "SELECT config_value FROM system_configs WHERE config_key = 'installation_chain_id'",
+        "SELECT config_value FROM system_configs WHERE config_key = 'installation_chain_id'"
       );
       value = legacy.rows[0]?.config_value;
     }

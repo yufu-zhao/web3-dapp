@@ -55,14 +55,14 @@ const props = withDefaults(
     interval: 12000,
     scrollDurationMs: 12000,
     itemDelayMs: 500,
-    fontSizePx: 14,
-  },
+    fontSizePx: 14
+  }
 );
 const activeIndex = ref(0);
 const activeItem = computed(() => props.items[activeIndex.value]);
 const tickerStyle = computed(() => ({
   "--ticker-scroll-duration": `${props.scrollDurationMs}ms`,
-  "--ticker-font-size": `${props.fontSizePx}px`,
+  "--ticker-font-size": `${props.fontSizePx}px`
 }));
 let timer: ReturnType<typeof setInterval> | undefined;
 
@@ -73,7 +73,7 @@ function startTicker() {
     () => {
       activeIndex.value = (activeIndex.value + 1) % props.items.length;
     },
-    Math.max(1000, props.interval + props.itemDelayMs),
+    Math.max(1000, props.interval + props.itemDelayMs)
   );
 }
 

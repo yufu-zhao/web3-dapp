@@ -13,7 +13,9 @@
         <span class="settings-icon"><q-icon name="swap_horiz" /></span>
         <div>
           <h2>限价单执行设置</h2>
-          <p>滑点用于市价报价与最低到账量估算；限价单价格和最低到账量由用户输入后签名确认。</p>
+          <p
+            >滑点用于市价报价与最低到账量估算；限价单价格和最低到账量由用户输入后签名确认。</p
+          >
         </div>
       </header>
       <div v-if="loading" class="settings-loading">
@@ -35,7 +37,11 @@
               step="1"
               hint="1 至 500 bps（0.01% 至 5%）"
               :readonly="!canWrite"
-              :rules="[(value) => (Number.isInteger(value) && value >= 1 && value <= 500) || '请输入 1 至 500 的整数']"
+              :rules="[
+                value =>
+                  (Number.isInteger(value) && value >= 1 && value <= 500) ||
+                  '请输入 1 至 500 的整数'
+              ]"
             />
             <q-input
               :model-value="'30 分钟（固定）'"
@@ -47,7 +53,14 @@
             />
           </div>
           <div v-if="canWrite" class="settings-actions">
-            <q-btn color="primary" unelevated icon="save" label="保存滑点设置" type="submit" :loading="saving" />
+            <q-btn
+              color="primary"
+              unelevated
+              icon="save"
+              label="保存滑点设置"
+              type="submit"
+              :loading="saving"
+            />
           </div>
         </q-form>
       </template>
@@ -58,9 +71,20 @@
         <span class="settings-icon"><q-icon name="monitor_heart" /></span>
         <div>
           <h2>链上服务状态</h2>
-          <p>执行器只使用服务端环境变量中的专用钱包支付 Gas；私钥不会保存到数据库。</p>
+          <p
+            >执行器只使用服务端环境变量中的专用钱包支付
+            Gas；私钥不会保存到数据库。</p
+          >
         </div>
-        <q-btn flat round dense icon="refresh" aria-label="刷新限价单状态" :loading="refreshing" @click="load">
+        <q-btn
+          flat
+          round
+          dense
+          icon="refresh"
+          aria-label="刷新限价单状态"
+          :loading="refreshing"
+          @click="load"
+        >
           <q-tooltip>刷新状态</q-tooltip>
         </q-btn>
       </header>
@@ -68,20 +92,28 @@
         <article class="service-status">
           <span>自动执行器</span>
           <strong>{{ stateLabel(snapshot.executor?.state) }}</strong>
-          <small v-if="snapshot.executor?.native_balance">Gas 余额：{{ snapshot.executor.native_balance }} wei</small>
+          <small v-if="snapshot.executor?.native_balance"
+            >Gas 余额：{{ snapshot.executor.native_balance }} wei</small
+          >
           <small v-if="snapshot.executor?.last_attempt_at">
             最近执行：{{ formatTime(snapshot.executor.last_attempt_at) }}
           </small>
           <small v-if="snapshot.executor?.last_transaction_hash" class="mono">
             {{ snapshot.executor.last_transaction_hash }}
           </small>
-          <small v-if="snapshot.executor?.last_error" class="status-error">{{ snapshot.executor.last_error }}</small>
+          <small v-if="snapshot.executor?.last_error" class="status-error">{{
+            snapshot.executor.last_error
+          }}</small>
         </article>
         <article class="service-status">
           <span>行情索引器</span>
           <strong>{{ stateLabel(snapshot.indexer?.state) }}</strong>
-          <small v-if="snapshot.indexer?.last_block">已同步区块：{{ snapshot.indexer.last_block }}</small>
-          <small v-if="snapshot.indexer?.last_error" class="status-error">{{ snapshot.indexer.last_error }}</small>
+          <small v-if="snapshot.indexer?.last_block"
+            >已同步区块：{{ snapshot.indexer.last_block }}</small
+          >
+          <small v-if="snapshot.indexer?.last_error" class="status-error">{{
+            snapshot.indexer.last_error
+          }}</small>
         </article>
       </div>
       <q-banner v-if="!canWrite" rounded class="readonly-banner q-mt-md">
@@ -129,7 +161,8 @@ async function load() {
     snapshot.value = result;
     slippageBps.value = result.settings?.slippage_bps ?? 100;
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : "限价单状态读取失败。";
+    error.value =
+      reason instanceof Error ? reason.message : "限价单状态读取失败。";
   } finally {
     loading.value = false;
     refreshing.value = false;
@@ -140,16 +173,23 @@ async function save() {
   if (!canWrite.value) return;
   saving.value = true;
   try {
-    snapshot.value = await adminRequest<Snapshot>("/trading/limit-orders/slippage", {
-      method: "PUT",
-      body: JSON.stringify({ slippageBps: slippageBps.value }),
+    snapshot.value = await adminRequest<Snapshot>(
+      "/trading/limit-orders/slippage",
+      {
+        method: "PUT",
+        body: JSON.stringify({ slippageBps: slippageBps.value })
+      }
+    );
+    Notify.create({
+      type: "positive",
+      message: "限价单滑点设置已保存。",
+      position: "top"
     });
-    Notify.create({ type: "positive", message: "限价单滑点设置已保存。", position: "top" });
   } catch (reason) {
     Notify.create({
       type: "negative",
       message: reason instanceof Error ? reason.message : "滑点设置保存失败。",
-      position: "top",
+      position: "top"
     });
   } finally {
     saving.value = false;
@@ -158,8 +198,14 @@ async function save() {
 
 function stateLabel(state?: string) {
   return (
-    ({ disabled: "未启用", ready: "正常", degraded: "需处理", error: "异常" } as Record<string, string>)[state ?? ""] ??
-    "未知"
+    (
+      {
+        disabled: "未启用",
+        ready: "正常",
+        degraded: "需处理",
+        error: "异常"
+      } as Record<string, string>
+    )[state ?? ""] ?? "未知"
   );
 }
 
@@ -215,7 +261,11 @@ onMounted(() => void load());
   height: 42px;
   flex: 0 0 auto;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--admin-primary) 22%, var(--admin-surface));
+  background: color-mix(
+    in srgb,
+    var(--admin-primary) 22%,
+    var(--admin-surface)
+  );
   color: var(--admin-primary);
   font-size: 21px;
   place-items: center;

@@ -7,8 +7,17 @@
     :aria-busy="connecting"
     @click="openWalletView"
   >
-    <img v-if="connected && walletInfo?.icon" class="wallet-connect-button__icon" :src="walletInfo.icon" alt="" />
-    <span v-if="connecting" class="wallet-connect-button__spinner" aria-hidden="true"></span>
+    <img
+      v-if="connected && walletInfo?.icon"
+      class="wallet-connect-button__icon"
+      :src="walletInfo.icon"
+      alt=""
+    />
+    <span
+      v-if="connecting"
+      class="wallet-connect-button__spinner"
+      aria-hidden="true"
+    ></span>
     <span>{{ buttonLabel }}</span>
   </button>
 </template>
@@ -28,14 +37,16 @@ const props = withDefaults(
     label: "连接钱包",
     loadingLabel: "正在连接钱包…",
     size: "md",
-    disabled: false,
-  },
+    disabled: false
+  }
 );
 
 const account = useAppKitAccount({ namespace: "eip155" });
 const { open } = useAppKit();
 const { walletInfo } = useWalletInfo("eip155");
-const connected = computed(() => account.value.isConnected && !!account.value.address);
+const connected = computed(
+  () => account.value.isConnected && !!account.value.address
+);
 const connecting = computed(() => account.value.status === "connecting");
 const buttonLabel = computed(() => {
   if (connecting.value) return props.loadingLabel;

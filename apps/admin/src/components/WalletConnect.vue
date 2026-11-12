@@ -62,11 +62,11 @@ import {
   WalletConnectButton,
   useWalletConnection,
   walletKitReady,
-  type ConnectedWallet,
+  type ConnectedWallet
 } from "@chainforge/wallet-connect";
 
 const props = withDefaults(defineProps<{ confirmChanges?: boolean }>(), {
-  confirmChanges: true,
+  confirmChanges: true
 });
 const emit = defineEmits<{
   connected: [wallet: ConnectedWallet];
@@ -81,15 +81,15 @@ const {
   syncingWalletChange,
   changeError,
   syncWalletChange,
-  disconnect,
+  disconnect
 } = useWalletConnection({
   confirmChanges: toRef(props, "confirmChanges"),
   events: {
-    connected: (value) => emit("connected", value),
-    changed: (value) => emit("changed", value),
-    changePending: (value) => emit("changePending", value),
-    disconnected: () => emit("disconnected"),
-  },
+    connected: value => emit("connected", value),
+    changed: value => emit("changed", value),
+    changePending: value => emit("changePending", value),
+    disconnected: () => emit("disconnected")
+  }
 });
 </script>
 

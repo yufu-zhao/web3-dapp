@@ -10,7 +10,7 @@ import {
   optimism,
   polygon,
   sepolia,
-  type AppKitNetwork,
+  type AppKitNetwork
 } from "@reown/appkit/networks";
 import { ref } from "vue";
 
@@ -34,19 +34,24 @@ const networks: [AppKitNetwork, ...AppKitNetwork[]] = [
   optimism,
   polygon,
   base,
-  avalanche,
+  avalanche
 ];
 
 /** 每个前端独立调用一次，UI、主题和 AppKit 功能由调用端配置。 */
 export function initializeWalletKit(
   projectId?: string | null,
-  options?: WalletKitOptions,
+  options?: WalletKitOptions
 ) {
   const normalizedProjectId = projectId?.trim();
   if (!normalizedProjectId || initialized) return initialized;
   const appName = options?.appName ?? "ChainForge";
+  // Ethers 适配器固定对应 EVM 命名空间，显式补足 AppKit 要求的必填类型。
+  const adapter = Object.assign(new EthersAdapter(), {
+    namespace: "eip155" as const,
+    adapterType: "ethers"
+  });
   createAppKit({
-    adapters: [new EthersAdapter()],
+    adapters: [adapter],
     networks,
     defaultNetwork: bsc,
     projectId: normalizedProjectId,
@@ -54,15 +59,16 @@ export function initializeWalletKit(
       name: appName,
       description: options?.description ?? "ChainForge 应用",
       url: window.location.origin,
-      icons: [
-        `${window.location.origin}/brand/chainforge-mark-transparent.png`,
-      ],
+      icons: [`${window.location.origin}/brand/chainforge-mark-transparent.png`]
     },
     allowUnsupportedChain: true,
     enableReconnect: true,
     features: options?.features ?? { analytics: false },
     themeMode: options?.themeMode ?? "light",
-    themeVariables: options?.themeVariables,
+    // themeVariables: options?.themeVariables,
+    ...(options?.themeVariables
+      ? { themeVariables: options.themeVariables }
+      : {})
   });
   initialized = true;
   walletKitReady.value = true;

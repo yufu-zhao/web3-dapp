@@ -2,7 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  ServiceUnavailableException,
+  ServiceUnavailableException
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -50,8 +50,8 @@ const DEFAULT_SETTINGS: ContentSettings = {
   tickerSettings: {
     scrollDurationMs: 12000,
     itemDelayMs: 500,
-    fontSizePx: 14,
-  },
+    fontSizePx: 14
+  }
 };
 
 const MIME_EXTENSIONS = new Map([
@@ -60,7 +60,7 @@ const MIME_EXTENSIONS = new Map([
   ["image/webp", ".webp"],
   ["image/gif", ".gif"],
   ["video/mp4", ".mp4"],
-  ["video/webm", ".webm"],
+  ["video/webm", ".webm"]
 ]);
 
 @Injectable()
@@ -71,7 +71,7 @@ export class ContentManagementService {
     const result = await this.databaseService
       .getPool()
       .query<{ config_value: string }>(
-        "SELECT config_value FROM system_configs WHERE config_key = 'content_management'",
+        "SELECT config_value FROM system_configs WHERE config_key = 'content_management'"
       );
     const raw = result.rows[0]?.config_value;
     if (!raw) return structuredClone(DEFAULT_SETTINGS);
@@ -79,7 +79,7 @@ export class ContentManagementService {
       return this.validate(JSON.parse(raw) as unknown);
     } catch {
       throw new ServiceUnavailableException(
-        "首页内容配置格式无效，请联系管理员。",
+        "首页内容配置格式无效，请联系管理员。"
       );
     }
   }
@@ -88,9 +88,9 @@ export class ContentManagementService {
     const settings = await this.getSettings();
     return {
       carouselItems: settings.carouselItems
-        .filter((item) => item.isVisible)
+        .filter(item => item.isVisible)
         .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map((item) => ({
+        .map(item => ({
           id: item.id,
           title: item.title,
           desktopImageUrl: item.desktopImageUrl,
@@ -99,12 +99,12 @@ export class ContentManagementService {
           linkTarget: item.actionTarget,
           widthMode: item.widthMode,
           desktopHeight: item.desktopHeight,
-          mobileHeight: item.mobileHeight,
+          mobileHeight: item.mobileHeight
         })),
       announcements: settings.announcements
-        .filter((item) => item.isVisible)
-        .map((item) => item),
-      tickerSettings: settings.tickerSettings,
+        .filter(item => item.isVisible)
+        .map(item => item),
+      tickerSettings: settings.tickerSettings
     };
   }
 
@@ -121,7 +121,7 @@ export class ContentManagementService {
          SET config_value = EXCLUDED.config_value,
              description = EXCLUDED.description,
              updated_at = NOW()`,
-      [serialized],
+      [serialized]
     );
     return settings;
   }
@@ -153,8 +153,8 @@ export class ContentManagementService {
         content: await readFile(join(this.assetDirectory(), name)),
         contentType:
           [...MIME_EXTENSIONS.entries()].find(
-            ([, extension]) => extension === extname(name),
-          )?.[0] ?? "application/octet-stream",
+            ([, extension]) => extension === extname(name)
+          )?.[0] ?? "application/octet-stream"
       };
     } catch {
       throw new NotFoundException("文件不存在。");
@@ -163,7 +163,7 @@ export class ContentManagementService {
 
   private assetDirectory() {
     return resolve(
-      process.env.CONTENT_ASSET_DIR?.trim() || "data/content-assets",
+      process.env.CONTENT_ASSET_DIR?.trim() || "data/content-assets"
     );
   }
 
@@ -192,7 +192,7 @@ export class ContentManagementService {
       raw: unknown,
       label: string,
       max: number,
-      required = false,
+      required = false
     ) => {
       if (
         typeof raw !== "string" ||
@@ -211,7 +211,7 @@ export class ContentManagementService {
         raw > max
       ) {
         throw new BadRequestException(
-          `${label}必须为 ${min} 至 ${max} 的整数。`,
+          `${label}必须为 ${min} 至 ${max} 的整数。`
         );
       }
       return raw;
@@ -266,7 +266,7 @@ export class ContentManagementService {
         desktopHeight: integer(item.desktopHeight, "桌面端轮播高度", 0, 2000),
         mobileHeight: integer(item.mobileHeight, "手机端轮播高度", 0, 2000),
         sortOrder: integer(item.sortOrder, "轮播顺序", 0, 100000),
-        isVisible: flag(item.isVisible, "轮播显示状态"),
+        isVisible: flag(item.isVisible, "轮播显示状态")
       };
     });
     const announcements = announcementsRaw.map((raw, index): Announcement => {
@@ -283,7 +283,7 @@ export class ContentManagementService {
         body: text(item.body, "公告正文", 100000),
         mediaUrl: mediaUrl(item.mediaUrl, "公告媒体地址"),
         mediaMode: item.mediaMode as Announcement["mediaMode"],
-        isVisible: flag(item.isVisible, "公告显示状态"),
+        isVisible: flag(item.isVisible, "公告显示状态")
       };
     });
     return {
@@ -294,11 +294,11 @@ export class ContentManagementService {
           ticker.scrollDurationMs,
           "公告滚动时长",
           1000,
-          120000,
+          120000
         ),
         itemDelayMs: integer(ticker.itemDelayMs, "公告切换间隔", 0, 60000),
-        fontSizePx: integer(ticker.fontSizePx, "公告字号", 10, 48),
-      },
+        fontSizePx: integer(ticker.fontSizePx, "公告字号", 10, 48)
+      }
     };
   }
 

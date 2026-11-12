@@ -7,7 +7,7 @@ export class HealthController {
   init() {
     return {
       status: "ok",
-      service: "api",
+      service: "api"
     };
   }
 }

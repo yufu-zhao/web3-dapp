@@ -16,27 +16,42 @@
       />
     </div>
     <p class="section-copy">
-      直接读取 contracts/code 的部署计划和编译产物。每笔链上写入都按计划顺序等待钱包确认与成功回执。
+      直接读取 contracts/code
+      的部署计划和编译产物。每笔链上写入都按计划顺序等待钱包确认与成功回执。
     </p>
     <InstallerCard class="installation-identity-card q-px-md q-py-xs">
       <strong>已锁定的安装身份</strong>
-      <span>目标 ChainId {{ props.installation.chainId ?? "全部部署成功后锁定" }}</span>
+      <span
+        >目标 ChainId
+        {{ props.installation.chainId ?? "全部部署成功后锁定" }}</span
+      >
       <span>系统名称：{{ props.installation.systemName }}</span>
-      <span>链上代币：{{ props.installation.tokenName }}（{{ props.installation.tokenSymbol }}）</span>
+      <span
+        >链上代币：{{ props.installation.tokenName }}（{{
+          props.installation.tokenSymbol
+        }}）</span
+      >
     </InstallerCard>
 
     <q-banner v-if="packageError" class="notice-banner error-banner">
       <template #avatar><q-icon name="error_outline" /></template>
       {{ packageError }}
     </q-banner>
-    <q-banner v-if="packageInfo && !packageInfo.exists" class="notice-banner error-banner">
+    <q-banner
+      v-if="packageInfo && !packageInfo.exists"
+      class="notice-banner error-banner"
+    >
       <template #avatar><q-icon name="folder_off" /></template>
       合约不存在：未找到 contracts/code/config/deployment-plan.json。
     </q-banner>
-    <q-banner v-if="packageInfo?.exists && !packageInfo.artifactsReady" class="notice-banner warning-banner">
+    <q-banner
+      v-if="packageInfo?.exists && !packageInfo.artifactsReady"
+      class="notice-banner warning-banner"
+    >
       <template #avatar><q-icon name="build" /></template>
-      已找到合约包 {{ packageInfo.releaseVersion }}，但编译产物缺失。点击编译会在 contracts/code 目录运行 npm run
-      build。
+      已找到合约包
+      {{ packageInfo.releaseVersion }}，但编译产物缺失。点击编译会在
+      contracts/code 目录运行 npm run build。
       <q-btn
         class="banner-action"
         flat
@@ -46,15 +61,22 @@
         @click="compilePackage"
       />
     </q-banner>
-    <q-banner v-if="packageInfo?.exists && packageInfo.artifactsReady" class="notice-banner success-banner">
+    <q-banner
+      v-if="packageInfo?.exists && packageInfo.artifactsReady"
+      class="notice-banner success-banner"
+    >
       <template #avatar><q-icon name="inventory_2" /></template>
-      已加载 contracts/code · 版本 {{ packageInfo.releaseVersion }} · {{ transactionNodeCount }} 个链上部署节点 ·
+      已加载 contracts/code · 版本 {{ packageInfo.releaseVersion }} ·
+      {{ transactionNodeCount }} 个链上部署节点 ·
       {{ actionCount }} 个部署后配置步骤。
     </q-banner>
-    <q-banner v-if="wallet && wallet.chainId === 56" class="notice-banner warning-banner">
+    <q-banner
+      v-if="wallet && wallet.chainId === 56"
+      class="notice-banner warning-banner"
+    >
       <template #avatar><q-icon name="warning_amber" /></template>
-      当前为 BNB Smart Chain 主网。MockUSDT 是公开 mint 的测试币，主网禁止部署；请核对支付 Token、Router 与 Factory
-      地址。
+      当前为 BNB Smart Chain 主网。MockUSDT 是公开 mint
+      的测试币，主网禁止部署；请核对支付 Token、Router 与 Factory 地址。
     </q-banner>
 
     <div v-if="wallet && packageInfo?.exists" class="chain-summary">
@@ -99,7 +121,13 @@
               label="PancakeSwap V2 风格 Router"
               placeholder="0x…"
             />
-            <q-input v-model="externalAddresses.factory" outlined dense label="Factory" placeholder="0x…" />
+            <q-input
+              v-model="externalAddresses.factory"
+              outlined
+              dense
+              label="Factory"
+              placeholder="0x…"
+            />
             <q-btn
               outline
               dense
@@ -113,7 +141,10 @@
             <q-banner
               v-if="dexStatus"
               dense
-              :class="['inline-banner', dexVerified ? 'success-banner' : 'warning-banner']"
+              :class="[
+                'inline-banner',
+                dexVerified ? 'success-banner' : 'warning-banner'
+              ]"
             >
               {{ dexStatus }}
             </q-banner>
@@ -155,23 +186,37 @@
                 :loading="verifyingToken"
                 @click="verifyToken"
               />
-              <span v-if="tokenInfo">{{ tokenInfo.symbol }} · {{ tokenInfo.decimals }} 位小数</span>
+              <span v-if="tokenInfo"
+                >{{ tokenInfo.symbol }} · {{ tokenInfo.decimals }} 位小数</span
+              >
             </div>
             <q-banner
               v-if="tokenStatus"
               dense
-              :class="['inline-banner', tokenVerified ? 'success-banner' : 'warning-banner']"
+              :class="[
+                'inline-banner',
+                tokenVerified ? 'success-banner' : 'warning-banner'
+              ]"
             >
               {{ tokenStatus }}
             </q-banner>
             <q-banner v-if="mockStatus" dense class="inline-banner info-banner">
               {{ mockStatus }}
             </q-banner>
-            <q-banner v-if="mockError" dense class="inline-banner error-banner contextual-error">
+            <q-banner
+              v-if="mockError"
+              dense
+              class="inline-banner error-banner contextual-error"
+            >
               {{ mockError }}
             </q-banner>
-            <q-banner v-if="wallet.chainId !== 56" dense class="inline-banner warning-banner">
-              MockUSDT 为公开 mint 的测试币，只应在测试或自建链使用；部署者自行确认目标链。
+            <q-banner
+              v-if="wallet.chainId !== 56"
+              dense
+              class="inline-banner warning-banner"
+            >
+              MockUSDT 为公开 mint
+              的测试币，只应在测试或自建链使用；部署者自行确认目标链。
             </q-banner>
           </InstallerCard>
 
@@ -244,14 +289,23 @@
                 step="any"
                 label="最低支付 Token 储备量"
                 :hint="
-                  tokenInfo ? `按 ${tokenInfo.symbol} 的 ${tokenInfo.decimals} 位精度换算` : '核验 Token 后按其精度换算'
+                  tokenInfo
+                    ? `按 ${tokenInfo.symbol} 的 ${tokenInfo.decimals} 位精度换算`
+                    : '核验 Token 后按其精度换算'
                 "
               />
             </div>
-            <div class="raw-value">链上整数：{{ minimumReserveRaw || "核验 Token 并填写金额后显示" }}</div>
+            <div class="raw-value"
+              >链上整数：{{
+                minimumReserveRaw || "核验 Token 并填写金额后显示"
+              }}</div
+            >
           </InstallerCard>
 
-          <InstallerCard v-if="savedDeployments.length" class="config-card prior-runs-card">
+          <InstallerCard
+            v-if="savedDeployments.length"
+            class="config-card prior-runs-card"
+          >
             <div class="subsection-heading">
               <h3>同链已完成部署</h3>
               <span>只载入资料，不发起新交易</span>
@@ -265,7 +319,11 @@
                 @click="loadPrevious(record)"
               >
                 <span>
-                  <strong>{{ formatDate(record.completedAt) }} · v{{ record.releaseVersion }}</strong>
+                  <strong
+                    >{{ formatDate(record.completedAt) }} · v{{
+                      record.releaseVersion
+                    }}</strong
+                  >
                   <small>
                     {{ shortAddress(record.deployer) }} ·
                     {{ Object.keys(record.contracts ?? {}).length }}
@@ -283,8 +341,17 @@
           {{ preflightError }}
         </q-banner>
 
-        <div v-if="packageInfo?.exists && packageInfo.artifactsReady" class="deploy-actions">
-          <q-btn flat color="dark" icon="arrow_back" label="返回数据库配置" @click="router.push('/database')" />
+        <div
+          v-if="packageInfo?.exists && packageInfo.artifactsReady"
+          class="deploy-actions"
+        >
+          <q-btn
+            flat
+            color="dark"
+            icon="arrow_back"
+            label="返回数据库配置"
+            @click="router.push('/database')"
+          />
           <q-btn
             color="primary"
             unelevated
@@ -310,7 +377,9 @@
               个部署后写入步骤及最终核验。每笔成功回执后才会请求下一笔钱包确认。
             </p>
             <p>
-              合约地址和交易哈希会写入 contracts/deploy/{{ wallet?.chainId }}/，未完成进度只保留在该链的临时文件中。
+              合约地址和交易哈希会写入 contracts/deploy/{{
+                wallet?.chainId
+              }}/，未完成进度只保留在该链的临时文件中。
             </p>
           </q-card-section>
           <q-card-section align="right">
@@ -331,10 +400,13 @@
           <q-card-section>
             <div class="confirm-title">部署公开 mint 测试币</div>
             <p>
-              MockUSDT 任何人都可以 mint，不具备真实 USDT 价值。将使用连接钱包在 ChainId
+              MockUSDT 任何人都可以 mint，不具备真实 USDT 价值。将使用连接钱包在
+              ChainId
               {{ wallet?.chainId }} 上部署，精度固定为 18 位。
             </p>
-            <p v-if="wallet?.chainId === 56" class="critical-copy">主网 ChainId 56 禁止部署 MockUSDT。</p>
+            <p v-if="wallet?.chainId === 56" class="critical-copy"
+              >主网 ChainId 56 禁止部署 MockUSDT。</p
+            >
           </q-card-section>
           <q-card-section align="right">
             <q-btn v-close-popup flat label="取消" color="grey" />
@@ -353,12 +425,19 @@
         <q-card class="confirm-card">
           <q-card-section>
             <div class="confirm-title">确认清除无回执交易哈希？</div>
-            <p>安装器在链上找不到该交易及回执。确认钱包活动记录中该交易已丢弃后，才可清除本次哈希并重新请求签名。</p>
+            <p
+              >安装器在链上找不到该交易及回执。确认钱包活动记录中该交易已丢弃后，才可清除本次哈希并重新请求签名。</p
+            >
             <code>{{ stepToClear?.transactionHash }}</code>
           </q-card-section>
           <q-card-section align="right">
             <q-btn v-close-popup flat color="grey" label="返回检查" />
-            <q-btn color="negative" text-color="white" label="确认哈希无效并重试" @click="confirmClearHash" />
+            <q-btn
+              color="negative"
+              text-color="white"
+              label="确认哈希无效并重试"
+              @click="confirmClearHash"
+            />
           </q-card-section>
         </q-card>
       </q-dialog>
@@ -371,9 +450,12 @@
               {{ stepToRecover?.title }}
               时没有保存到交易哈希，无法判断钱包请求是否仍在等待。请先打开钱包检查：拒绝或关闭该请求，并确认钱包活动记录中没有这笔部署交易。
             </p>
-            <p>如果旧请求仍在钱包中，稍后批准它可能与重试产生重复部署。确认无待处理请求后，安装器才会重新请求签名。</p>
+            <p
+              >如果旧请求仍在钱包中，稍后批准它可能与重试产生重复部署。确认无待处理请求后，安装器才会重新请求签名。</p
+            >
             <p v-if="stepToRecover?.recoveryBlocked" class="critical-copy">
-              钱包的待处理 Nonce 已变化，可能已有交易提交。请先在钱包与区块浏览器查明相关
+              钱包的待处理 Nonce
+              已变化，可能已有交易提交。请先在钱包与区块浏览器查明相关
               Nonce；确认它与本部署无关后再继续。
             </p>
           </q-card-section>
@@ -383,7 +465,9 @@
               color="primary"
               unelevated
               :label="
-                stepToRecover?.recoveryBlocked ? '已查明该 Nonce 与部署无关，允许重试' : '已确认无待处理交易，重试此步'
+                stepToRecover?.recoveryBlocked
+                  ? '已查明该 Nonce 与部署无关，允许重试'
+                  : '已确认无待处理交易，重试此步'
               "
               @click="confirmUnknownRetry"
             />
@@ -404,25 +488,48 @@
             <q-spinner-dots color="primary" size="20px" />
             <span>{{ activeStepPhase }}</span>
           </div>
-          <q-banner v-if="stepFor(activeStep)?.walletRequestSlow" dense class="inline-banner warning-banner">
+          <q-banner
+            v-if="stepFor(activeStep)?.walletRequestSlow"
+            dense
+            class="inline-banner warning-banner"
+          >
             钱包请求等待超过 90
             秒，安装器尚未收到交易哈希。请检查钱包弹窗并确认或拒绝；此请求未结束前不会自动重试，以免重复部署。
           </q-banner>
-          <q-banner v-if="pendingChainMismatch !== null" dense class="inline-banner warning-banner">
+          <q-banner
+            v-if="pendingChainMismatch !== null"
+            dense
+            class="inline-banner warning-banner"
+          >
             <template #avatar><q-icon name="history" /></template>
             检测到 ChainId
             {{ pendingChainMismatch }}
             有未完成部署。请切换回该链并使用原部署钱包继续；完成前不能在其他链开始部署。
           </q-banner>
-          <q-banner v-if="pendingMismatch" dense class="inline-banner warning-banner">
-            <template #avatar><q-icon name="account_balance_wallet" /></template>
-            此链未完成部署属于钱包 {{ shortAddress(pendingMismatch) }}；请连接该钱包后继续。
+          <q-banner
+            v-if="pendingMismatch"
+            dense
+            class="inline-banner warning-banner"
+          >
+            <template #avatar
+              ><q-icon name="account_balance_wallet"
+            /></template>
+            此链未完成部署属于钱包
+            {{ shortAddress(pendingMismatch) }}；请连接该钱包后继续。
           </q-banner>
-          <q-banner v-else-if="pendingStale" dense class="inline-banner warning-banner">
+          <q-banner
+            v-else-if="pendingStale"
+            dense
+            class="inline-banner warning-banner"
+          >
             <template #avatar><q-icon name="history" /></template>
             当前链未完成部署使用了不同合约计划版本，已保留原记录并阻止覆盖。
           </q-banner>
-          <q-banner v-if="progressNotice" dense class="inline-banner error-banner contextual-error">
+          <q-banner
+            v-if="progressNotice"
+            dense
+            class="inline-banner error-banner contextual-error"
+          >
             <template #avatar><q-icon name="error_outline" /></template>
             {{ progressNotice }}
           </q-banner>
@@ -442,7 +549,10 @@
               :caption="item.kindLabel"
               :done="stepFor(item.id)?.status === 'success'"
               :error="stepFor(item.id)?.status === 'failed'"
-              :disable="stepFor(item.id)?.status === 'pending' && index > firstIncompleteIndex"
+              :disable="
+                stepFor(item.id)?.status === 'pending' &&
+                index > firstIncompleteIndex
+              "
             >
               <p class="step-description">{{ item.description }}</p>
               <div v-if="stepFor(item.id)?.transactionHash" class="step-tx">
@@ -457,7 +567,11 @@
                 结果：
                 <code>{{ stepFor(item.id)?.result }}</code>
               </div>
-              <q-banner v-if="stepFor(item.id)?.error" dense class="inline-banner error-banner">
+              <q-banner
+                v-if="stepFor(item.id)?.error"
+                dense
+                class="inline-banner error-banner"
+              >
                 {{ stepFor(item.id)?.error }}
               </q-banner>
               <div class="step-action-row">
@@ -488,7 +602,10 @@
                   @click="prepareUnknownRetry(item.id)"
                 />
                 <q-btn
-                  v-else-if="stepFor(item.id)?.status === 'failed' && stepFor(item.id)?.recoveryBlocked"
+                  v-else-if="
+                    stepFor(item.id)?.status === 'failed' &&
+                    stepFor(item.id)?.recoveryBlocked
+                  "
                   outline
                   color="negative"
                   icon="warning"
@@ -497,7 +614,11 @@
                   @click="prepareUnknownRetry(item.id)"
                 />
                 <q-btn
-                  v-if="stepFor(item.id)?.status === 'pending' && canStart && index === firstIncompleteIndex"
+                  v-if="
+                    stepFor(item.id)?.status === 'pending' &&
+                    canStart &&
+                    index === firstIncompleteIndex
+                  "
                   outline
                   color="primary"
                   icon="play_arrow"
@@ -527,7 +648,7 @@ import {
   type JsonFragment,
   type Signer,
   type TransactionRequest,
-  type TransactionResponse,
+  type TransactionResponse
 } from "ethers";
 import WalletConnect from "./WalletConnect.vue";
 import type { ConnectedWallet } from "@chainforge/wallet-connect";
@@ -540,9 +661,12 @@ import {
   type InstallationIdentity,
   type PendingDeploymentSummary,
   type SavedDeployment,
-  type SavedToken,
+  type SavedToken
 } from "../services/installer-api";
-import { errorMessage as describeError, installerFlow } from "../services/installer-flow";
+import {
+  errorMessage as describeError,
+  installerFlow
+} from "../services/installer-flow";
 
 interface DeploymentNode {
   id: string;
@@ -675,24 +799,24 @@ const compiling = ref(false);
 const externalAddresses = reactive({
   router: "",
   factory: "",
-  paymentToken: "",
+  paymentToken: ""
 });
 const roleWallets = reactive({
   operator: "",
   launch: "",
   batchRegistrar: "",
-  pauser: "",
+  pauser: ""
 });
 const assetWallets = reactive({
   ecosystemWallet: "",
   proceedsWallet: "",
   fundingWallet: "",
   feeWallet: "",
-  recoveryWallet: "",
+  recoveryWallet: ""
 });
 const oracle = reactive({
   samplePeriodSeconds: 300,
-  minimumPaymentReserve: "1000",
+  minimumPaymentReserve: "1000"
 });
 const tokenOptions = ref<string[]>([]);
 const tokenInfo = ref<{ symbol: string; decimals: number } | null>(null);
@@ -743,23 +867,24 @@ const roleFields: Array<{
   {
     key: "operator",
     label: "OPERATOR_ROLE 钱包",
-    description: "负责交易对与 Oracle 初始配置、销毁参数、生态钱包提议、预售排期、初始流动性和质押利率。",
+    description:
+      "负责交易对与 Oracle 初始配置、销毁参数、生态钱包提议、预售排期、初始流动性和质押利率。"
   },
   {
     key: "launch",
     label: "LAUNCH_ROLE 钱包",
-    description: "负责安排代币开盘时间和结算预售轮次。",
+    description: "负责安排代币开盘时间和结算预售轮次。"
   },
   {
     key: "batchRegistrar",
     label: "BATCH_REGISTRAR_ROLE 钱包",
-    description: "负责登记抽奖奖励批次；已登记批次不可覆盖。",
+    description: "负责登记抽奖奖励批次；已登记批次不可覆盖。"
   },
   {
     key: "pauser",
     label: "PAUSER_ROLE 钱包",
-    description: "负责紧急暂停或恢复抽奖领取和限价单。",
-  },
+    description: "负责紧急暂停或恢复抽奖领取和限价单。"
+  }
 ];
 const assetFields: Array<{
   key: keyof typeof assetWallets;
@@ -769,45 +894,55 @@ const assetFields: Array<{
   {
     key: "ecosystemWallet",
     label: "生态钱包",
-    description: "接收代币买卖产生的生态手续费。",
+    description: "接收代币买卖产生的生态手续费。"
   },
   {
     key: "proceedsWallet",
     label: "预售回款钱包",
-    description: "接收从预售合约提取的支付 Token 回款。",
+    description: "接收从预售合约提取的支付 Token 回款。"
   },
   {
     key: "fundingWallet",
     label: "流动性资金钱包",
-    description: "向战略流动性金库提供支付 Token，并由该地址发起流动性注入。",
+    description: "向战略流动性金库提供支付 Token，并由该地址发起流动性注入。"
   },
   {
     key: "feeWallet",
     label: "手续费钱包",
-    description: "接收质押本金提前退出时扣除的 5% 手续费。",
+    description: "接收质押本金提前退出时扣除的 5% 手续费。"
   },
   {
     key: "recoveryWallet",
     label: "恢复/多签钱包",
-    description: "接收抽奖奖励金库回收的过期或未预留资产，建议填写多签地址。",
-  },
+    description: "接收抽奖奖励金库回收的过期或未预留资产，建议填写多签地址。"
+  }
 ];
 const chainNames: Record<number, string> = {
   56: "BNB Smart Chain 主网",
-  97: "BNB Smart Chain 测试网",
+  97: "BNB Smart Chain 测试网"
 };
-const chainName = computed(() => chainNames[wallet.value?.chainId ?? 0] ?? "自定义网络");
-const transactionNodeCount = computed(
-  () => packageInfo.value?.plan.nodes.filter((node) => node.kind === "transaction").length ?? 0,
+const chainName = computed(
+  () => chainNames[wallet.value?.chainId ?? 0] ?? "自定义网络"
 );
-const actionCount = computed(() => packageInfo.value?.plan.postDeploymentActions.length ?? 0);
+const transactionNodeCount = computed(
+  () =>
+    packageInfo.value?.plan.nodes.filter(node => node.kind === "transaction")
+      .length ?? 0
+);
+const actionCount = computed(
+  () => packageInfo.value?.plan.postDeploymentActions.length ?? 0
+);
 function replaceTokenSymbol(value: string) {
   // 计划文案中的默认简称使用本次安装确认的符号显示。
   return value.replaceAll("TOKEN", props.installation.tokenSymbol);
 }
 const minimumReserveRaw = computed(() => {
   const decimals = tokenInfo.value?.decimals ?? 18;
-  if (!oracle.minimumPaymentReserve || !/^\d+(\.\d+)?$/.test(oracle.minimumPaymentReserve)) return "";
+  if (
+    !oracle.minimumPaymentReserve ||
+    !/^\d+(\.\d+)?$/.test(oracle.minimumPaymentReserve)
+  )
+    return "";
   try {
     return parseUnits(oracle.minimumPaymentReserve, decimals).toString();
   } catch {
@@ -818,7 +953,7 @@ const stepItems = computed(() => {
   const plan = packageInfo.value?.plan;
   if (!plan) return [];
   return [
-    ...plan.nodes.map((node) => ({
+    ...plan.nodes.map(node => ({
       id: node.id,
       title: node.contractName,
       description:
@@ -826,31 +961,37 @@ const stepItems = computed(() => {
           ? `部署 ${node.parentNodeId} 后自动读取 ${node.addressResolver?.function ?? "地址"}，此步骤不产生新交易。`
           : `${node.contractName} · 合约部署交易`,
       kindLabel: node.kind === "nested" ? "链上读取" : "部署交易",
-      kind: node.kind,
+      kind: node.kind
     })),
-    ...plan.postDeploymentActions.map((action) => ({
+    ...plan.postDeploymentActions.map(action => ({
       id: action.id,
       title: replaceTokenSymbol(action.title),
       description: replaceTokenSymbol(action.description),
       kindLabel: action.kind === "getOrCreatePair" ? "核验或交易" : "配置交易",
-      kind: action.kind,
+      kind: action.kind
     })),
     {
       id: "verify-deployment",
       title: "最终链上核验",
       description: "核验角色授权、模块绑定和交易对地址，并输出完整部署资料。",
       kindLabel: "只读核验",
-      kind: "verify",
-    },
+      kind: "verify"
+    }
   ];
 });
 const firstIncompleteIndex = computed(() => {
-  const index = stepItems.value.findIndex((item) => stepFor(item.id)?.status !== "success");
+  const index = stepItems.value.findIndex(
+    item => stepFor(item.id)?.status !== "success"
+  );
   return index < 0 ? stepItems.value.length : index;
 });
-const completedStepCount = computed(() => localSteps.value.filter((step) => step.status === "success").length);
+const completedStepCount = computed(
+  () => localSteps.value.filter(step => step.status === "success").length
+);
 const activeStepTitle = computed(
-  () => stepItems.value.find((item) => item.id === activeStep.value)?.title ?? "部署流程",
+  () =>
+    stepItems.value.find(item => item.id === activeStep.value)?.title ??
+    "部署流程"
 );
 const activeStepPhase = computed(() => {
   const messages: Record<DeploymentPhase, string> = {
@@ -858,7 +999,7 @@ const activeStepPhase = computed(() => {
     estimating: `正在估算链上 Gas：${activeStepTitle.value}`,
     awaiting_wallet: `请在钱包中确认：${activeStepTitle.value}`,
     waiting_receipt: `交易已提交，等待链上回执：${activeStepTitle.value}`,
-    recovery_required: `需要先核对钱包交易状态：${activeStepTitle.value}`,
+    recovery_required: `需要先核对钱包交易状态：${activeStepTitle.value}`
   };
   return messages[stepFor(activeStep.value)?.phase ?? "preparing"];
 });
@@ -868,13 +1009,14 @@ const canStart = computed(() =>
     !walletChangePending.value &&
     !loadingPackage.value &&
     !compiling.value &&
-    (props.installation.chainId === null || wallet.value.chainId === props.installation.chainId) &&
+    (props.installation.chainId === null ||
+      wallet.value.chainId === props.installation.chainId) &&
     packageInfo.value?.exists &&
     packageInfo.value.artifactsReady &&
     !pendingMismatch.value &&
     pendingChainMismatch.value === null &&
-    !pendingStale.value,
-  ),
+    !pendingStale.value
+  )
 );
 const canDeployMock = computed(() =>
   Boolean(
@@ -886,13 +1028,13 @@ const canDeployMock = computed(() =>
     !deployingMock.value &&
     pendingChainMismatch.value === null &&
     !pendingMismatch.value &&
-    !pendingStale.value,
-  ),
+    !pendingStale.value
+  )
 );
 
 watch(
   () => externalAddresses.paymentToken.toLowerCase(),
-  (address) => {
+  address => {
     if (address !== verifiedTokenAddress.value) {
       tokenVerified.value = false;
       tokenInfo.value = null;
@@ -900,29 +1042,30 @@ watch(
       mockStatus.value = "";
       mockError.value = "";
     }
-  },
+  }
 );
 watch(
-  () => `${externalAddresses.router.toLowerCase()}:${externalAddresses.factory.toLowerCase()}`,
-  (addresses) => {
+  () =>
+    `${externalAddresses.router.toLowerCase()}:${externalAddresses.factory.toLowerCase()}`,
+  addresses => {
     if (addresses !== verifiedDexAddresses.value) {
       dexVerified.value = false;
       dexStatus.value = "Router 或 Factory 地址已变化，请重新核验。";
     }
-  },
+  }
 );
 
 function stepFor(id: string) {
-  return localSteps.value.find((step) => step.id === id);
+  return localSteps.value.find(step => step.id === id);
 }
 function currentStepPhase(step: LocalStep): DeploymentPhase | undefined {
   return step.phase;
 }
 function createSteps() {
-  localSteps.value = stepItems.value.map((item) => ({
+  localSteps.value = stepItems.value.map(item => ({
     id: item.id,
     title: item.title,
-    status: "pending",
+    status: "pending"
   }));
   activeStep.value = stepItems.value[0]?.id ?? "";
 }
@@ -932,7 +1075,7 @@ function shortAddress(value: string) {
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("zh-CN", {
     dateStyle: "short",
-    timeStyle: "short",
+    timeStyle: "short"
   }).format(new Date(value));
 }
 
@@ -944,9 +1087,12 @@ function onWalletChanged(value: ConnectedWallet) {
   wallet.value = value;
   if (runningSequence.value) {
     stopSequence.value = true;
-    progressNotice.value = "钱包账户或网络已确认同步，本次部署将停止后续步骤；请先核对当前步骤的交易状态。";
+    progressNotice.value =
+      "钱包账户或网络已确认同步，本次部署将停止后续步骤；请先核对当前步骤的交易状态。";
   }
-  const activeChain = loadingPackage.value ? loadingChain.value : lastLoadedChain.value;
+  const activeChain = loadingPackage.value
+    ? loadingChain.value
+    : lastLoadedChain.value;
   if (value.chainId !== activeChain) {
     void prepareWalletChain(value);
   } else {
@@ -984,7 +1130,10 @@ function onWalletDisconnected() {
 
 async function prepareWalletChain(value: ConnectedWallet) {
   packageError.value = "";
-  if (props.installation.chainId !== null && value.chainId !== props.installation.chainId) {
+  if (
+    props.installation.chainId !== null &&
+    value.chainId !== props.installation.chainId
+  ) {
     packageInfo.value = null;
     lastLoadedChain.value = value.chainId;
     packageError.value = `当前钱包 ChainId ${value.chainId} 与安装时锁定的 ChainId ${props.installation.chainId} 不一致。请切换网络后重试。`;
@@ -998,7 +1147,10 @@ async function loadChainData(resetDefaults: boolean) {
   if (!wallet.value) return;
   const requestId = ++chainDataRequestId;
   const chainId = wallet.value.chainId;
-  if (props.installation.chainId !== null && chainId !== props.installation.chainId) {
+  if (
+    props.installation.chainId !== null &&
+    chainId !== props.installation.chainId
+  ) {
     packageInfo.value = null;
     savedDeployments.value = [];
     lastLoadedChain.value = null;
@@ -1013,31 +1165,52 @@ async function loadChainData(resetDefaults: boolean) {
   progressNotice.value = "";
   pendingLoaded.value = false;
   try {
-    const loaded = await installerRequest<ContractPackage>(`/contracts/package?chainId=${chainId}`);
+    const loaded = await installerRequest<ContractPackage>(
+      `/contracts/package?chainId=${chainId}`
+    );
     if (requestId !== chainDataRequestId) return;
     packageInfo.value = loaded;
     if (!loaded.exists) {
       packageError.value = "合约不存在：安装器未找到 contracts/code 部署计划。";
       return;
     }
-    if (resetDefaults || lastLoadedChain.value !== chainId) applyNetworkDefaults();
+    if (resetDefaults || lastLoadedChain.value !== chainId)
+      applyNetworkDefaults();
     const [tokens, runs, pending, pendingRuns] = await Promise.all([
-      installerRequest<{ tokens: SavedToken[] }>(`/contracts/tokens/${chainId}`),
-      installerRequest<{ deployments: SavedDeployment[] }>(`/contracts/deployments/${chainId}`),
-      installerRequest<PendingDeployment | null>(`/contracts/pending/${chainId}`),
-      installerRequest<{ pending: PendingDeploymentSummary[] }>("/contracts/pending"),
+      installerRequest<{ tokens: SavedToken[] }>(
+        `/contracts/tokens/${chainId}`
+      ),
+      installerRequest<{ deployments: SavedDeployment[] }>(
+        `/contracts/deployments/${chainId}`
+      ),
+      installerRequest<PendingDeployment | null>(
+        `/contracts/pending/${chainId}`
+      ),
+      installerRequest<{ pending: PendingDeploymentSummary[] }>(
+        "/contracts/pending"
+      )
     ]);
     if (requestId !== chainDataRequestId) return;
-    pendingChainMismatch.value = pendingRuns.pending.find((record) => record.chainId !== chainId)?.chainId ?? null;
-    tokenOptions.value = (tokens.tokens ?? []).map((token) => token.address);
-    if (externalAddresses.paymentToken && !tokenOptions.value.includes(externalAddresses.paymentToken))
+    pendingChainMismatch.value =
+      pendingRuns.pending.find(record => record.chainId !== chainId)?.chainId ??
+      null;
+    tokenOptions.value = (tokens.tokens ?? []).map(token => token.address);
+    if (
+      externalAddresses.paymentToken &&
+      !tokenOptions.value.includes(externalAddresses.paymentToken)
+    )
       tokenOptions.value.unshift(externalAddresses.paymentToken);
     savedDeployments.value = runs.deployments ?? [];
-    pendingStale.value = Boolean(pending && pending.releaseVersion !== loaded.releaseVersion);
+    pendingStale.value = Boolean(
+      pending && pending.releaseVersion !== loaded.releaseVersion
+    );
     if (pending?.releaseVersion === loaded.releaseVersion) {
       pendingDeployment.value = pending;
       pendingLoaded.value = true;
-      if (String(pending.deployer).toLowerCase() !== wallet.value.address.toLowerCase()) {
+      if (
+        String(pending.deployer).toLowerCase() !==
+        wallet.value.address.toLowerCase()
+      ) {
         pendingMismatch.value = String(pending.deployer);
       } else {
         pendingMismatch.value = "";
@@ -1045,10 +1218,11 @@ async function loadChainData(resetDefaults: boolean) {
         contracts.value = pending.contracts ?? {};
         pairAddress.value = String(pending.pairAddress ?? "");
         verifiedBlock.value =
-          typeof pending.verifiedBlockNumber === "number" && typeof pending.verifiedBlockHash === "string"
+          typeof pending.verifiedBlockNumber === "number" &&
+          typeof pending.verifiedBlockHash === "string"
             ? {
                 number: pending.verifiedBlockNumber,
-                hash: pending.verifiedBlockHash,
+                hash: pending.verifiedBlockHash
               }
             : null;
         restorePendingSteps(pending.steps ?? []);
@@ -1064,7 +1238,8 @@ async function loadChainData(resetDefaults: boolean) {
     }
     lastLoadedChain.value = chainId;
   } catch (error) {
-    if (requestId === chainDataRequestId) packageError.value = describeError(error);
+    if (requestId === chainDataRequestId)
+      packageError.value = describeError(error);
   } finally {
     if (requestId === chainDataRequestId) {
       loadingPackage.value = false;
@@ -1079,8 +1254,12 @@ async function refreshPendingForWallet() {
   const chainId = currentWallet.chainId;
   try {
     const [pending, pendingRuns] = await Promise.all([
-      installerRequest<PendingDeployment | null>(`/contracts/pending/${chainId}`),
-      installerRequest<{ pending: PendingDeploymentSummary[] }>("/contracts/pending"),
+      installerRequest<PendingDeployment | null>(
+        `/contracts/pending/${chainId}`
+      ),
+      installerRequest<{ pending: PendingDeploymentSummary[] }>(
+        "/contracts/pending"
+      )
     ]);
     if (
       !wallet.value ||
@@ -1088,13 +1267,20 @@ async function refreshPendingForWallet() {
       wallet.value.address.toLowerCase() !== currentWallet.address.toLowerCase()
     )
       return;
-    pendingChainMismatch.value = pendingRuns.pending.find((record) => record.chainId !== chainId)?.chainId ?? null;
-    const currentPending = pending?.releaseVersion === packageInfo.value?.releaseVersion ? pending : null;
+    pendingChainMismatch.value =
+      pendingRuns.pending.find(record => record.chainId !== chainId)?.chainId ??
+      null;
+    const currentPending =
+      pending?.releaseVersion === packageInfo.value?.releaseVersion
+        ? pending
+        : null;
     pendingStale.value = Boolean(pending && !currentPending);
     pendingLoaded.value = Boolean(currentPending);
     pendingDeployment.value = currentPending;
     pendingMismatch.value =
-      currentPending && String(currentPending.deployer).toLowerCase() !== wallet.value.address.toLowerCase()
+      currentPending &&
+      String(currentPending.deployer).toLowerCase() !==
+        wallet.value.address.toLowerCase()
         ? String(currentPending.deployer)
         : "";
   } catch (error) {
@@ -1111,21 +1297,39 @@ function applyNetworkDefaults() {
   externalAddresses.factory = String(external.factory ?? "");
   externalAddresses.paymentToken = String(external.paymentToken ?? "");
   const wallets = defaults.wallets ?? {};
-  for (const key of Object.keys(roleWallets) as Array<keyof typeof roleWallets>) {
+  for (const key of Object.keys(roleWallets) as Array<
+    keyof typeof roleWallets
+  >) {
     const value = String(wallets[key] ?? "");
-    roleWallets[key] = value === "DEPLOYER" ? (wallet.value?.address ?? "") : value.startsWith("SET_") ? "" : value;
+    roleWallets[key] =
+      value === "DEPLOYER"
+        ? (wallet.value?.address ?? "")
+        : value.startsWith("SET_")
+          ? ""
+          : value;
   }
-  for (const key of Object.keys(assetWallets) as Array<keyof typeof assetWallets>) {
+  for (const key of Object.keys(assetWallets) as Array<
+    keyof typeof assetWallets
+  >) {
     const value = String(wallets[key] ?? "");
-    assetWallets[key] = value === "DEPLOYER" ? (wallet.value?.address ?? "") : value.startsWith("SET_") ? "" : value;
+    assetWallets[key] =
+      value === "DEPLOYER"
+        ? (wallet.value?.address ?? "")
+        : value.startsWith("SET_")
+          ? ""
+          : value;
   }
-  const reserve = String(defaults.oracle?.minimumPaymentReserve ?? "1000000000000000000000");
+  const reserve = String(
+    defaults.oracle?.minimumPaymentReserve ?? "1000000000000000000000"
+  );
   try {
     oracle.minimumPaymentReserve = (BigInt(reserve) / 10n ** 18n).toString();
   } catch {
     oracle.minimumPaymentReserve = "1000";
   }
-  oracle.samplePeriodSeconds = Number(defaults.oracle?.samplePeriodSeconds ?? 300);
+  oracle.samplePeriodSeconds = Number(
+    defaults.oracle?.samplePeriodSeconds ?? 300
+  );
   tokenInfo.value = null;
   tokenVerified.value = false;
   verifiedTokenAddress.value = "";
@@ -1140,7 +1344,7 @@ function applyConfiguration(value: DeploymentConfiguration) {
   Object.assign(externalAddresses, {
     router: external.router ?? "",
     factory: external.factory ?? "",
-    paymentToken: external.paymentToken ?? "",
+    paymentToken: external.paymentToken ?? ""
   });
   Object.assign(roleWallets, value.roleWallets ?? {});
   Object.assign(assetWallets, value.assetWallets ?? {});
@@ -1158,21 +1362,28 @@ function restorePendingSteps(saved: LocalStep[]) {
       current.status = "failed";
       current.walletRequestSlow = false;
       current.recoveryRequired = !current.transactionHash;
-      current.phase = current.transactionHash ? "waiting_receipt" : "recovery_required";
+      current.phase = current.transactionHash
+        ? "waiting_receipt"
+        : "recovery_required";
       current.error = current.transactionHash
         ? "已恢复未完成的链上交易，将先核验该哈希及回执。"
         : "上次请求未保存交易哈希；请先核对钱包活动记录和待处理请求，再确认是否重试。";
     }
   }
   activeStep.value =
-    stepItems.value.find((item) => stepFor(item.id)?.status !== "success")?.id ?? stepItems.value.at(-1)?.id ?? "";
+    stepItems.value.find(item => stepFor(item.id)?.status !== "success")?.id ??
+    stepItems.value.at(-1)?.id ??
+    "";
 }
 
 async function compilePackage() {
   compiling.value = true;
   packageError.value = "";
   try {
-    await postJson<{ compiled: boolean; output: string }>("/contracts/compile", {});
+    await postJson<{ compiled: boolean; output: string }>(
+      "/contracts/compile",
+      {}
+    );
     await loadChainData(false);
   } catch (error) {
     packageError.value = describeError(error);
@@ -1191,22 +1402,30 @@ async function verifyDex() {
   dexStatus.value = "";
   dexVerified.value = false;
   try {
-    if (!isAddress(externalAddresses.router) || !isAddress(externalAddresses.factory))
+    if (
+      !isAddress(externalAddresses.router) ||
+      !isAddress(externalAddresses.factory)
+    )
       throw new Error("Router 和 Factory 都必须是有效地址。");
     const provider = browserProvider();
     const [routerCode, factoryCode] = await Promise.all([
       provider.getCode(externalAddresses.router),
-      provider.getCode(externalAddresses.factory),
+      provider.getCode(externalAddresses.factory)
     ]);
-    if (routerCode === "0x" || factoryCode === "0x") throw new Error("Router 或 Factory 地址上没有合约代码。");
+    if (routerCode === "0x" || factoryCode === "0x")
+      throw new Error("Router 或 Factory 地址上没有合约代码。");
     const router = new Contract(
       externalAddresses.router,
-      packageInfo.value?.externalAbis.PancakeV2Router ?? ["function factory() view returns(address)"],
-      provider,
+      packageInfo.value?.externalAbis.PancakeV2Router ?? [
+        "function factory() view returns(address)"
+      ],
+      provider
     );
     const actualFactory = String(await router.getFunction("factory")());
     if (actualFactory.toLowerCase() !== externalAddresses.factory.toLowerCase())
-      throw new Error(`Router.factory() 返回 ${actualFactory}，与输入 Factory 不一致。`);
+      throw new Error(
+        `Router.factory() 返回 ${actualFactory}，与输入 Factory 不一致。`
+      );
     dexVerified.value = true;
     verifiedDexAddresses.value = `${externalAddresses.router.toLowerCase()}:${externalAddresses.factory.toLowerCase()}`;
     dexStatus.value = `地址均有合约代码，且 Router.factory() = ${shortAddress(actualFactory)}。`;
@@ -1223,7 +1442,8 @@ async function verifyToken() {
   tokenStatus.value = "";
   tokenVerified.value = false;
   try {
-    if (!isAddress(externalAddresses.paymentToken)) throw new Error("请输入有效的支付 Token 地址。");
+    if (!isAddress(externalAddresses.paymentToken))
+      throw new Error("请输入有效的支付 Token 地址。");
     const provider = browserProvider();
     const code = await provider.getCode(externalAddresses.paymentToken);
     if (code === "0x") throw new Error("支付 Token 地址上没有合约代码。");
@@ -1231,14 +1451,18 @@ async function verifyToken() {
       externalAddresses.paymentToken,
       packageInfo.value?.externalAbis.PaymentToken ?? [
         "function decimals() view returns(uint8)",
-        "function symbol() view returns(string)",
+        "function symbol() view returns(string)"
       ],
-      provider,
+      provider
     );
-    const [decimals, symbol] = await Promise.all([token.getFunction("decimals")(), token.getFunction("symbol")()]);
+    const [decimals, symbol] = await Promise.all([
+      token.getFunction("decimals")(),
+      token.getFunction("symbol")()
+    ]);
     tokenInfo.value = { decimals: Number(decimals), symbol: String(symbol) };
     tokenVerified.value = Number(decimals) <= 36;
-    if (!tokenVerified.value) throw new Error("Token 精度超过 36，无法安全换算 Oracle 参数。");
+    if (!tokenVerified.value)
+      throw new Error("Token 精度超过 36，无法安全换算 Oracle 参数。");
     tokenStatus.value = `核验通过：${String(symbol)} · ${Number(decimals)} 位精度。`;
     verifiedTokenAddress.value = externalAddresses.paymentToken.toLowerCase();
   } catch (error) {
@@ -1273,7 +1497,10 @@ async function deployMockToken() {
     await assertWalletContext(deployWallet);
     const provider = browserProvider();
     const signer = await provider.getSigner();
-    const bytecode = typeof artifact.bytecode === "string" ? artifact.bytecode : artifact.bytecode.object;
+    const bytecode =
+      typeof artifact.bytecode === "string"
+        ? artifact.bytecode
+        : artifact.bytecode.object;
     const factory = new ContractFactory(artifact.abi, bytecode, signer);
     const contract = await factory.deploy(18);
     const transaction = contract.deploymentTransaction();
@@ -1281,7 +1508,8 @@ async function deployMockToken() {
     transactionHash = transaction.hash;
     mockStatus.value = `MockUSDT 交易已提交：${transactionHash}，等待链上回执…`;
     const receipt = await transaction.wait(1);
-    if (!receipt || receipt.status !== 1) throw new Error(`MockUSDT 部署未成功：${transactionHash}`);
+    if (!receipt || receipt.status !== 1)
+      throw new Error(`MockUSDT 部署未成功：${transactionHash}`);
     const address = await contract.getAddress();
     const token: SavedToken = {
       chainId: deployWallet.chainId,
@@ -1290,10 +1518,13 @@ async function deployMockToken() {
       decimals: 18,
       transactionHash,
       deployer: deployWallet.address,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
     };
-    const saved = await postJson<{ tokens: SavedToken[] }>(`/contracts/tokens/${deployWallet.chainId}`, token);
-    tokenOptions.value = saved.tokens.map((item) => item.address);
+    const saved = await postJson<{ tokens: SavedToken[] }>(
+      `/contracts/tokens/${deployWallet.chainId}`,
+      token
+    );
+    tokenOptions.value = saved.tokens.map(item => item.address);
     externalAddresses.paymentToken = address;
     tokenInfo.value = { symbol: token.symbol, decimals: token.decimals };
     tokenVerified.value = true;
@@ -1301,7 +1532,9 @@ async function deployMockToken() {
     tokenStatus.value = "MockUSDT 已部署并保存到当前 ChainId 的 tokens.json。";
     mockStatus.value = "";
   } catch (error) {
-    mockError.value = transactionHash ? `${describeError(error)} 交易哈希：${transactionHash}` : describeError(error);
+    mockError.value = transactionHash
+      ? `${describeError(error)} 交易哈希：${transactionHash}`
+      : describeError(error);
   } finally {
     deployingMock.value = false;
     mockStatus.value = "";
@@ -1319,16 +1552,24 @@ async function prepareDeployment() {
 }
 
 async function preflight() {
-  if (walletChangePending.value) throw new Error("检测到钱包账户或网络切换，请先在弹窗中确认同步。");
+  if (walletChangePending.value)
+    throw new Error("检测到钱包账户或网络切换，请先在弹窗中确认同步。");
   if (pendingChainMismatch.value !== null)
-    throw new Error(`ChainId ${pendingChainMismatch.value} 有未完成部署，请切回该链和原部署钱包继续。`);
+    throw new Error(
+      `ChainId ${pendingChainMismatch.value} 有未完成部署，请切回该链和原部署钱包继续。`
+    );
   if (pendingMismatch.value || pendingStale.value)
     throw new Error("当前链存在不能安全续跑的未完成部署，请先检查进度提示。");
-  if (loadingPackage.value || compiling.value) throw new Error("合约信息仍在加载或编译，请完成后再开始部署。");
-  if (!wallet.value || !packageInfo.value?.artifactsReady) throw new Error("请连接钱包并确保合约已编译。");
-  if (props.installation.chainId !== null && wallet.value.chainId !== props.installation.chainId)
+  if (loadingPackage.value || compiling.value)
+    throw new Error("合约信息仍在加载或编译，请完成后再开始部署。");
+  if (!wallet.value || !packageInfo.value?.artifactsReady)
+    throw new Error("请连接钱包并确保合约已编译。");
+  if (
+    props.installation.chainId !== null &&
+    wallet.value.chainId !== props.installation.chainId
+  )
     throw new Error(
-      `当前钱包 ChainId ${wallet.value.chainId} 与安装时锁定的 ChainId ${props.installation.chainId} 不一致。`,
+      `当前钱包 ChainId ${wallet.value.chainId} 与安装时锁定的 ChainId ${props.installation.chainId} 不一致。`
     );
   if (wallet.value.chainId === 56 && !externalAddresses.paymentToken)
     throw new Error("请填写 BSC 主网支付 Token 地址。");
@@ -1337,11 +1578,14 @@ async function preflight() {
     externalAddresses.factory,
     externalAddresses.paymentToken,
     ...Object.values(roleWallets),
-    ...Object.values(assetWallets),
+    ...Object.values(assetWallets)
   ];
-  if (requiredAddresses.some((address) => !isAddress(address)))
+  if (requiredAddresses.some(address => !isAddress(address)))
     throw new Error("请填写所有 Router、Factory、Token 与角色/资产钱包地址。");
-  if (!tokenVerified.value || verifiedTokenAddress.value !== externalAddresses.paymentToken.toLowerCase())
+  if (
+    !tokenVerified.value ||
+    verifiedTokenAddress.value !== externalAddresses.paymentToken.toLowerCase()
+  )
     throw new Error("请先核验当前支付 Token 地址并确认其精度。");
   if (
     !dexVerified.value ||
@@ -1349,8 +1593,12 @@ async function preflight() {
       `${externalAddresses.router.toLowerCase()}:${externalAddresses.factory.toLowerCase()}`
   )
     throw new Error("请先核验当前 Router.factory() 与 Factory 地址。");
-  if (!minimumReserveRaw.value) throw new Error("Oracle 最低储备量格式无效或超过 Token 精度。");
-  if (!Number.isSafeInteger(oracle.samplePeriodSeconds) || oracle.samplePeriodSeconds < 1)
+  if (!minimumReserveRaw.value)
+    throw new Error("Oracle 最低储备量格式无效或超过 Token 精度。");
+  if (
+    !Number.isSafeInteger(oracle.samplePeriodSeconds) ||
+    oracle.samplePeriodSeconds < 1
+  )
     throw new Error("Oracle 采样周期必须是正整数秒。");
   const snapshot = { ...wallet.value };
   await assertWalletContext(snapshot);
@@ -1368,7 +1616,10 @@ async function startDeployment() {
     const currentWallet = { ...wallet.value! };
     await assertWalletContext(currentWallet);
   } catch (error) {
-    preflightError.value = describeError(error);
+    const message = describeError(error);
+    preflightError.value = message;
+    // 续跑按钮位于进度区，前置检查失败时也要在原位置说明原因。
+    progressNotice.value = `继续前检查未通过：${message}`;
     return;
   }
   runningSequence.value = true;
@@ -1384,19 +1635,28 @@ async function startDeployment() {
     for (let index = 0; index < stepItems.value.length; index += 1) {
       const item = stepItems.value[index];
       if (!item) continue;
-      if (stopSequence.value) throw new Error("检测到账户或网络变化，后续写入已停止；已完成步骤和交易哈希已保存。");
+      if (stopSequence.value)
+        throw new Error(
+          "检测到账户或网络变化，后续写入已停止；已完成步骤和交易哈希已保存。"
+        );
       const step = stepFor(item.id);
       if (!step || step.status === "success") continue;
       activeStep.value = item.id;
       step.status = "running";
       step.phase = "preparing";
-      step.error = undefined;
+      // 精确可选属性类型下，通过删除属性清空可选值。
+      delete step.error;
       step.walletRequestSlow = false;
       step.recoveryRequired = false;
       step.recoveryBlocked = false;
       await persistPending(currentWallet, configuration);
       try {
-        const result = await executeStep(item.id, currentWallet, configuration, step);
+        const result = await executeStep(
+          item.id,
+          currentWallet,
+          configuration,
+          step
+        );
         step.status = "success";
         step.completedAt = new Date().toISOString();
         if (result.address) step.address = result.address;
@@ -1406,28 +1666,37 @@ async function startDeployment() {
         await persistPending(currentWallet, configuration);
       } catch (error) {
         failedInStep = true;
-        const walletResultUnknown = currentStepPhase(step) === "awaiting_wallet" && !step.transactionHash;
+        const walletResultUnknown =
+          currentStepPhase(step) === "awaiting_wallet" && !step.transactionHash;
         step.status = "failed";
-        step.phase = walletResultUnknown ? "recovery_required" : undefined;
+        if (walletResultUnknown) step.phase = "recovery_required";
+        else delete step.phase;
         step.walletRequestSlow = false;
         step.recoveryRequired = walletResultUnknown;
         step.error = walletResultUnknown
           ? `${describeError(error)} 钱包未返回交易哈希；请先核对钱包活动和待处理请求，再决定是否重试。`
           : describeError(error);
-        await persistPending(currentWallet, configuration).catch(() => undefined);
+        await persistPending(currentWallet, configuration).catch(
+          () => undefined
+        );
         throw error;
       }
       const walletChanged =
         !wallet.value ||
         wallet.value.chainId !== currentWallet.chainId ||
-        wallet.value.address.toLowerCase() !== currentWallet.address.toLowerCase();
+        wallet.value.address.toLowerCase() !==
+          currentWallet.address.toLowerCase();
       if (walletChanged) stopSequence.value = true;
       activeStep.value = stepItems.value[index + 1]?.id ?? item.id;
     }
-    if (stopSequence.value) throw new Error("钱包状态已变化，部署资料尚未完成归档；请切回本次部署的钱包后继续。");
+    if (stopSequence.value)
+      throw new Error(
+        "钱包状态已变化，部署资料尚未完成归档；请切回本次部署的钱包后继续。"
+      );
     await assertWalletContext(currentWallet);
     // 续跑旧版临时进度时没有区块证据，完成前重新执行最终只读核验。
-    if (!verifiedBlock.value) await verifyDeployment(browserProvider(), configuration);
+    if (!verifiedBlock.value)
+      await verifyDeployment(browserProvider(), configuration);
     await completeDeployment(currentWallet, configuration);
   } catch (error) {
     if (!failedInStep) progressNotice.value = describeError(error);
@@ -1451,7 +1720,7 @@ async function prepareUnknownRetry(stepId: string) {
       const currentNonce = await withTimeout(
         browserProvider().getTransactionCount(snapshot.address, "pending"),
         15_000,
-        "钱包 Nonce 查询超时，请检查 RPC 后重试。",
+        "钱包 Nonce 查询超时，请检查 RPC 后重试。"
       );
       if (currentNonce > step.startingNonce) {
         step.recoveryBlocked = true;
@@ -1471,9 +1740,9 @@ async function confirmUnknownRetry() {
   const step = stepToRecover.value;
   if (!step || !wallet.value || runningSequence.value) return;
   step.status = "pending";
-  step.phase = undefined;
-  step.error = undefined;
-  step.startingNonce = undefined;
+  delete step.phase;
+  delete step.error;
+  delete step.startingNonce;
   step.recoveryRequired = false;
   step.recoveryBlocked = false;
   unknownTransactionOpen.value = false;
@@ -1483,8 +1752,11 @@ async function confirmUnknownRetry() {
 
 function confirmClearHash() {
   if (stepToClear.value) {
-    stepToClear.value.attempts = [...(stepToClear.value.attempts ?? []), stepToClear.value.transactionHash ?? ""];
-    stepToClear.value.transactionHash = undefined;
+    stepToClear.value.attempts = [
+      ...(stepToClear.value.attempts ?? []),
+      stepToClear.value.transactionHash ?? ""
+    ];
+    delete stepToClear.value.transactionHash;
     stepToClear.value.status = "failed";
   }
   clearHashOpen.value = false;
@@ -1509,7 +1781,8 @@ async function assertWalletContext(snapshot: ConnectedWallet) {
   const address = await signer.getAddress();
   if (
     Number(network.chainId) !== snapshot.chainId ||
-    (props.installation.chainId !== null && snapshot.chainId !== props.installation.chainId) ||
+    (props.installation.chainId !== null &&
+      snapshot.chainId !== props.installation.chainId) ||
     address.toLowerCase() !== snapshot.address.toLowerCase()
   ) {
     stopSequence.value = true;
@@ -1517,7 +1790,9 @@ async function assertWalletContext(snapshot: ConnectedWallet) {
   }
 }
 
-function snapshotConfiguration(snapshot: ConnectedWallet): DeploymentConfiguration {
+function snapshotConfiguration(
+  snapshot: ConnectedWallet
+): DeploymentConfiguration {
   return {
     installation: { ...props.installation, chainId: snapshot.chainId },
     externalAddresses: { ...externalAddresses },
@@ -1527,24 +1802,33 @@ function snapshotConfiguration(snapshot: ConnectedWallet): DeploymentConfigurati
       samplePeriodSeconds: oracle.samplePeriodSeconds,
       minimumPaymentReserve: oracle.minimumPaymentReserve,
       minimumPaymentReserveRaw: minimumReserveRaw.value,
-      tokenDecimals: tokenInfo.value?.decimals ?? 18,
+      tokenDecimals: tokenInfo.value?.decimals ?? 18
     },
-    deployer: wallet.value?.address ?? "",
+    deployer: wallet.value?.address ?? ""
   };
 }
 
-async function persistPending(snapshot: ConnectedWallet, configuration: DeploymentConfiguration) {
+async function persistPending(
+  snapshot: ConnectedWallet,
+  configuration: DeploymentConfiguration
+) {
   const pending = {
-    status: "in_progress",
-    releaseVersion: packageInfo.value?.releaseVersion,
+    status: "in_progress" as const,
+    ...(packageInfo.value?.releaseVersion
+      ? { releaseVersion: packageInfo.value.releaseVersion }
+      : {}),
     chainId: snapshot.chainId,
     deployer: snapshot.address,
     configuration,
     contracts: contracts.value,
     pairAddress: pairAddress.value,
-    verifiedBlockNumber: verifiedBlock.value?.number,
-    verifiedBlockHash: verifiedBlock.value?.hash,
-    steps: localSteps.value,
+    ...(verifiedBlock.value
+      ? {
+          verifiedBlockNumber: verifiedBlock.value.number,
+          verifiedBlockHash: verifiedBlock.value.hash
+        }
+      : {}),
+    steps: localSteps.value
   };
   pendingDeployment.value = pending;
   pendingLoaded.value = true;
@@ -1555,21 +1839,30 @@ async function executeStep(
   id: string,
   snapshot: ConnectedWallet,
   configuration: DeploymentConfiguration,
-  step: LocalStep,
+  step: LocalStep
 ): Promise<StepResult> {
   await assertWalletContext(snapshot);
   const provider = browserProvider();
   const signer = await provider.getSigner();
   const plan = packageInfo.value!.plan;
-  const node = plan.nodes.find((candidate) => candidate.id === id);
-  const recovered = await resolveRecordedTransaction(id, snapshot, configuration, step, provider);
+  const node = plan.nodes.find(candidate => candidate.id === id);
+  const recovered = await resolveRecordedTransaction(
+    id,
+    snapshot,
+    configuration,
+    step,
+    provider
+  );
   if (recovered) return recovered;
   if (node?.kind === "nested") {
     const parent = contracts.value[node.parentNodeId ?? ""];
-    if (!parent?.address) throw new Error(`缺少父合约 ${node.parentNodeId} 的部署地址。`);
+    if (!parent?.address)
+      throw new Error(`缺少父合约 ${node.parentNodeId} 的部署地址。`);
     const artifact =
       packageInfo.value!.artifacts[
-        packageInfo.value!.plan.nodes.find((candidate) => candidate.id === node.parentNodeId)?.contractName ??
+        packageInfo.value!.plan.nodes.find(
+          candidate => candidate.id === node.parentNodeId
+        )?.contractName ??
           node.parentNodeId ??
           ""
       ];
@@ -1588,24 +1881,33 @@ async function executeStep(
         chainId: snapshot.chainId,
         deployer: snapshot.address,
         createdAt: new Date().toISOString(),
-        source: `${node.parentNodeId}.${getter}`,
-      },
+        source: `${node.parentNodeId}.${getter}`
+      }
     };
   }
   if (node?.kind === "transaction") {
     const artifact = packageInfo.value!.artifacts[node.contractName];
     if (!artifact) throw new Error(`找不到 ${node.contractName} 编译产物。`);
-    const args = (node.constructorArgs ?? []).map((argument) =>
-      resolveConstructorArgument(argument, configuration, snapshot),
+    const args = (node.constructorArgs ?? []).map(argument =>
+      resolveConstructorArgument(argument, configuration, snapshot)
     );
-    const bytecode = typeof artifact.bytecode === "string" ? artifact.bytecode : artifact.bytecode.object;
+    const bytecode =
+      typeof artifact.bytecode === "string"
+        ? artifact.bytecode
+        : artifact.bytecode.object;
     const factory = new ContractFactory(artifact.abi, bytecode, signer);
     const deploymentRequest = await factory.getDeployTransaction(...args);
-    const transaction = await estimateAndSend(deploymentRequest, signer, snapshot, configuration, step);
+    const transaction = await estimateAndSend(
+      deploymentRequest,
+      signer,
+      snapshot,
+      configuration,
+      step
+    );
     await captureAndWait(transaction, snapshot, configuration, step);
     const address = getCreateAddress({
       from: snapshot.address,
-      nonce: transaction.nonce,
+      nonce: transaction.nonce
     });
     const record = {
       contractName: node.contractName,
@@ -1614,17 +1916,27 @@ async function executeStep(
       transactionHash: transaction.hash,
       chainId: snapshot.chainId,
       deployer: snapshot.address,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
     };
     contracts.value[node.id] = record;
     return { address, record };
   }
-  const action = plan.postDeploymentActions.find((candidate) => candidate.id === id);
-  if (action) return executeAction(action, snapshot, configuration, step, provider, signer);
+  const action = plan.postDeploymentActions.find(
+    candidate => candidate.id === id
+  );
+  if (action)
+    return executeAction(
+      action,
+      snapshot,
+      configuration,
+      step,
+      provider,
+      signer
+    );
   if (id === "verify-deployment") {
     await verifyDeployment(provider, configuration);
     return {
-      result: `已核验 ${plan.verificationRules.length} 条部署计划规则与角色授权。`,
+      result: `已核验 ${plan.verificationRules.length} 条部署计划规则与角色授权。`
     };
   }
   throw new Error(`找不到部署步骤 ${id}。`);
@@ -1635,7 +1947,7 @@ async function resolveRecordedTransaction(
   snapshot: ConnectedWallet,
   configuration: DeploymentConfiguration,
   step: LocalStep,
-  provider: BrowserProvider,
+  provider: BrowserProvider
 ): Promise<StepResult | null> {
   if (!step.transactionHash) return null;
   let receipt = await provider.getTransactionReceipt(step.transactionHash);
@@ -1645,7 +1957,7 @@ async function resolveRecordedTransaction(
       stepToClear.value = step;
       clearHashOpen.value = true;
       throw new Error(
-        `链上暂时找不到交易 ${step.transactionHash}。请先核对钱包活动记录；确认交易已丢弃后，才能清除哈希并重新请求签名。`,
+        `链上暂时找不到交易 ${step.transactionHash}。请先核对钱包活动记录；确认交易已丢弃后，才能清除哈希并重新请求签名。`
       );
     }
     receipt = await provider.waitForTransaction(step.transactionHash, 1);
@@ -1653,14 +1965,19 @@ async function resolveRecordedTransaction(
   if (!receipt) throw new Error(`交易 ${step.transactionHash} 尚无确认回执。`);
   if (receipt.status === 0) {
     step.attempts = [...(step.attempts ?? []), step.transactionHash];
-    step.transactionHash = undefined;
+    delete step.transactionHash;
     await persistPending(snapshot, configuration);
     return null;
   }
-  const node = packageInfo.value!.plan.nodes.find((candidate) => candidate.id === id);
+  const node = packageInfo.value!.plan.nodes.find(
+    candidate => candidate.id === id
+  );
   if (node?.kind === "transaction") {
     const address = receipt.contractAddress;
-    if (!address) throw new Error(`已确认交易 ${step.transactionHash} 没有部署地址，无法安全恢复。`);
+    if (!address)
+      throw new Error(
+        `已确认交易 ${step.transactionHash} 没有部署地址，无法安全恢复。`
+      );
     const record = {
       contractName: node.contractName,
       nodeId: node.id,
@@ -1668,22 +1985,31 @@ async function resolveRecordedTransaction(
       transactionHash: step.transactionHash,
       chainId: snapshot.chainId,
       deployer: snapshot.address,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
     };
     contracts.value[id] = record;
     return { address, record };
   }
-  const action = packageInfo.value!.plan.postDeploymentActions.find((candidate) => candidate.id === id);
+  const action = packageInfo.value!.plan.postDeploymentActions.find(
+    candidate => candidate.id === id
+  );
   if (action?.kind === "getOrCreatePair") {
     const factory = new Contract(
       String(configuration.externalAddresses.factory),
-      packageInfo.value!.externalAbis.PancakeV2Factory ?? ["function getPair(address,address) view returns(address)"],
-      provider,
+      packageInfo.value!.externalAbis.PancakeV2Factory ?? [
+        "function getPair(address,address) view returns(address)"
+      ],
+      provider
     );
     const tokenA = String(contracts.value.ProjectToken?.address ?? "");
     const tokenB = String(configuration.externalAddresses.paymentToken);
-    pairAddress.value = String(await factory.getFunction("getPair")(tokenA, tokenB));
-    if (!isAddress(pairAddress.value) || pairAddress.value === "0x0000000000000000000000000000000000000000")
+    pairAddress.value = String(
+      await factory.getFunction("getPair")(tokenA, tokenB)
+    );
+    if (
+      !isAddress(pairAddress.value) ||
+      pairAddress.value === "0x0000000000000000000000000000000000000000"
+    )
       throw new Error("已确认创建交易，但 Factory 尚未返回交易对地址。");
     await verifyPairAddress(pairAddress.value, tokenA, tokenB, provider);
     return { pairAddress: pairAddress.value, result: pairAddress.value };
@@ -1694,13 +2020,16 @@ async function resolveRecordedTransaction(
 function resolveConstructorArgument(
   argument: NonNullable<DeploymentNode["constructorArgs"]>[number],
   configuration: DeploymentConfiguration,
-  snapshot: ConnectedWallet,
+  snapshot: ConnectedWallet
 ): string | bigint {
   let value: string | undefined;
-  if (argument.source === "deployedAddress") value = String(contracts.value[argument.nodeId ?? ""]?.address ?? "");
+  if (argument.source === "deployedAddress")
+    value = String(contracts.value[argument.nodeId ?? ""]?.address ?? "");
   else if (argument.source === "deployer") value = snapshot.address;
-  else if (argument.key === "installation.tokenName") value = configuration.installation.tokenName;
-  else if (argument.key === "installation.tokenSymbol") value = configuration.installation.tokenSymbol;
+  else if (argument.key === "installation.tokenName")
+    value = configuration.installation.tokenName;
+  else if (argument.key === "installation.tokenSymbol")
+    value = configuration.installation.tokenSymbol;
   else if (argument.key?.startsWith("externalAddresses.")) {
     const key = argument.key.split(".")[1];
     value =
@@ -1718,12 +2047,15 @@ function resolveConstructorArgument(
   } else if (argument.source === "adminInput" && argument.key) {
     const wallets: Record<string, string> = {
       ...configuration.roleWallets,
-      ...configuration.assetWallets,
+      ...configuration.assetWallets
     };
     value = wallets[argument.key] ?? "";
   }
   if (!value) throw new Error(`无法解析构造参数 ${argument.name ?? ""}。`);
-  if (argument.key === "oracle.samplePeriodSeconds" || argument.key === "oracle.minimumPaymentReserve")
+  if (
+    argument.key === "oracle.samplePeriodSeconds" ||
+    argument.key === "oracle.minimumPaymentReserve"
+  )
     return BigInt(value);
   return value;
 }
@@ -1732,14 +2064,16 @@ async function captureAndWait(
   transaction: TransactionResponse,
   snapshot: ConnectedWallet,
   configuration: DeploymentConfiguration,
-  step: LocalStep,
+  step: LocalStep
 ) {
   step.phase = "waiting_receipt";
   step.transactionHash = transaction.hash;
-  if (step.attempts?.at(-1) !== transaction.hash) step.attempts = [...(step.attempts ?? []), transaction.hash];
+  if (step.attempts?.at(-1) !== transaction.hash)
+    step.attempts = [...(step.attempts ?? []), transaction.hash];
   await persistPending(snapshot, configuration);
   const receipt = await transaction.wait(1);
-  if (!receipt || receipt.status !== 1) throw new Error(`交易回滚或未确认：${transaction.hash}`);
+  if (!receipt || receipt.status !== 1)
+    throw new Error(`交易回滚或未确认：${transaction.hash}`);
   step.transactionHash = transaction.hash;
 }
 
@@ -1748,7 +2082,7 @@ async function estimateAndSend(
   signer: Signer,
   snapshot: ConnectedWallet,
   configuration: DeploymentConfiguration,
-  step: LocalStep,
+  step: LocalStep
 ): Promise<TransactionResponse> {
   const provider = browserProvider();
   step.phase = "estimating";
@@ -1758,12 +2092,12 @@ async function estimateAndSend(
   const estimatedGas = await withTimeout(
     provider.estimateGas({ ...request, from: snapshot.address }),
     45_000,
-    "链上 Gas 估算超过 45 秒，尚未请求钱包签名。请检查 RPC 网络后重试。",
+    "链上 Gas 估算超过 45 秒，尚未请求钱包签名。请检查 RPC 网络后重试。"
   );
   const startingNonce = await withTimeout(
     provider.getTransactionCount(snapshot.address, "pending"),
     15_000,
-    "钱包 Nonce 查询超时，尚未请求钱包签名。请检查 RPC 网络后重试。",
+    "钱包 Nonce 查询超时，尚未请求钱包签名。请检查 RPC 网络后重试。"
   );
   await assertWalletContext(snapshot);
   step.startingNonce = startingNonce;
@@ -1781,20 +2115,22 @@ async function estimateAndSend(
   const warningTimer = window.setTimeout(() => {
     if (step.status !== "running" || step.phase !== "awaiting_wallet") return;
     step.walletRequestSlow = true;
-    step.error = "钱包尚未返回结果。请在钱包中确认或拒绝本请求；在它结束前不要再次发起。";
+    step.error =
+      "钱包尚未返回结果。请在钱包中确认或拒绝本请求；在它结束前不要再次发起。";
     void persistPending(snapshot, configuration).catch(() => undefined);
   }, 90_000);
   try {
     const transaction = await signer.sendTransaction({
       ...request,
       from: snapshot.address,
-      gasLimit: (estimatedGas * 120n + 99n) / 100n,
+      gasLimit: (estimatedGas * 120n + 99n) / 100n
     });
     step.phase = "waiting_receipt";
     step.transactionHash = transaction.hash;
-    if (step.attempts?.at(-1) !== transaction.hash) step.attempts = [...(step.attempts ?? []), transaction.hash];
+    if (step.attempts?.at(-1) !== transaction.hash)
+      step.attempts = [...(step.attempts ?? []), transaction.hash];
     step.walletRequestSlow = false;
-    step.error = undefined;
+    delete step.error;
     await persistPending(snapshot, configuration);
     return transaction;
   } finally {
@@ -1802,14 +2138,21 @@ async function estimateAndSend(
   }
 }
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  message: string
+): Promise<T> {
   let timeoutId = 0;
   try {
     return await Promise.race([
       promise,
       new Promise<T>((_, reject) => {
-        timeoutId = window.setTimeout(() => reject(new Error(message)), timeoutMs);
-      }),
+        timeoutId = window.setTimeout(
+          () => reject(new Error(message)),
+          timeoutMs
+        );
+      })
     ]);
   } finally {
     window.clearTimeout(timeoutId);
@@ -1822,24 +2165,34 @@ async function executeAction(
   configuration: DeploymentConfiguration,
   step: LocalStep,
   provider: BrowserProvider,
-  signer: Signer,
+  signer: Signer
 ): Promise<StepResult> {
   if (action.kind === "getOrCreatePair") {
     const factoryAddress = String(configuration.externalAddresses.factory);
-    const tokenA = String(contracts.value[action.tokenA?.nodeId ?? ""]?.address ?? "");
+    const tokenA = String(
+      contracts.value[action.tokenA?.nodeId ?? ""]?.address ?? ""
+    );
     const tokenB = configuration.externalAddresses.paymentToken;
     const factory = new Contract(
       factoryAddress,
       packageInfo.value!.externalAbis.PancakeV2Factory ?? [
         "function getPair(address,address) view returns(address)",
-        "function createPair(address,address) returns(address)",
+        "function createPair(address,address) returns(address)"
       ],
-      signer,
+      signer
     );
     let pair = String(await factory.getFunction("getPair")(tokenA, tokenB));
     if (pair === "0x0000000000000000000000000000000000000000") {
-      const request = await factory.getFunction("createPair").populateTransaction(tokenA, tokenB);
-      const transaction = await estimateAndSend(request, signer, snapshot, configuration, step);
+      const request = await factory
+        .getFunction("createPair")
+        .populateTransaction(tokenA, tokenB);
+      const transaction = await estimateAndSend(
+        request,
+        signer,
+        snapshot,
+        configuration,
+        step
+      );
       await captureAndWait(transaction, snapshot, configuration, step);
       pair = String(await factory.getFunction("getPair")(tokenA, tokenB));
     } else {
@@ -1853,58 +2206,83 @@ async function executeAction(
   }
 
   const target = contracts.value[action.targetNodeId ?? ""];
-  const node = packageInfo.value!.plan.nodes.find((candidate) => candidate.id === action.targetNodeId);
+  const node = packageInfo.value!.plan.nodes.find(
+    candidate => candidate.id === action.targetNodeId
+  );
   const artifact = packageInfo.value!.artifacts[node?.contractName ?? ""];
-  if (!target?.address || !artifact || !action.functionName) throw new Error(`${action.title} 缺少目标合约或 ABI。`);
-  const args = (action.arguments ?? []).map((argument) => {
-    if (argument.source === "deployedAddress") return contracts.value[argument.nodeId ?? ""]?.address;
+  if (!target?.address || !artifact || !action.functionName)
+    throw new Error(`${action.title} 缺少目标合约或 ABI。`);
+  const args = (action.arguments ?? []).map(argument => {
+    if (argument.source === "deployedAddress")
+      return contracts.value[argument.nodeId ?? ""]?.address;
     if (argument.source === "actionResult") return pairAddress.value;
     throw new Error(`${action.title} 存在不支持的参数来源。`);
   });
-  if (args.some((argument) => !argument)) throw new Error(`${action.title} 依赖的合约地址尚未生成。`);
+  if (args.some(argument => !argument))
+    throw new Error(`${action.title} 依赖的合约地址尚未生成。`);
   const contract = new Contract(target.address, artifact.abi, signer);
   const request = await contract
     .getFunction(action.functionName)
-    .populateTransaction(...args.map((argument) => String(argument)));
-  const transaction = await estimateAndSend(request, signer, snapshot, configuration, step);
+    .populateTransaction(...args.map(argument => String(argument)));
+  const transaction = await estimateAndSend(
+    request,
+    signer,
+    snapshot,
+    configuration,
+    step
+  );
   await captureAndWait(transaction, snapshot, configuration, step);
   return { result: `交易已确认：${transaction.hash}` };
 }
 
-async function verifyPairAddress(pair: string, tokenA: string, tokenB: string, provider: BrowserProvider) {
+async function verifyPairAddress(
+  pair: string,
+  tokenA: string,
+  tokenB: string,
+  provider: BrowserProvider
+) {
   const pairContract = new Contract(
     pair,
     packageInfo.value!.externalAbis.PancakeV2Pair ?? [
       "function token0() view returns(address)",
       "function token1() view returns(address)",
-      "function factory() view returns(address)",
+      "function factory() view returns(address)"
     ],
-    provider,
+    provider
   );
   const [actualToken0, actualToken1, actualFactory] = await Promise.all([
     pairContract.getFunction("token0")(),
     pairContract.getFunction("token1")(),
-    pairContract.getFunction("factory")(),
+    pairContract.getFunction("factory")()
   ]);
-  const [expectedToken0, expectedToken1] = [tokenA, tokenB].sort((left, right) =>
-    left.toLowerCase().localeCompare(right.toLowerCase()),
+  const [expectedToken0, expectedToken1] = [tokenA, tokenB].sort(
+    (left, right) => left.toLowerCase().localeCompare(right.toLowerCase())
   );
   if (
-    String(actualFactory).toLowerCase() !== externalAddresses.factory.toLowerCase() ||
+    String(actualFactory).toLowerCase() !==
+      externalAddresses.factory.toLowerCase() ||
     String(actualToken0).toLowerCase() !== expectedToken0?.toLowerCase() ||
     String(actualToken1).toLowerCase() !== expectedToken1?.toLowerCase()
   ) {
-    throw new Error("Factory 返回的交易对 Token 顺序或 Factory 地址不匹配，已停止后续部署写入。");
+    throw new Error(
+      "Factory 返回的交易对 Token 顺序或 Factory 地址不匹配，已停止后续部署写入。"
+    );
   }
 }
 
-async function verifyDeployment(provider: BrowserProvider, configuration: DeploymentConfiguration) {
+async function verifyDeployment(
+  provider: BrowserProvider,
+  configuration: DeploymentConfiguration
+) {
   const rules = packageInfo.value!.plan.verificationRules;
   for (const rule of rules) {
     const target = contracts.value[String(rule.targetNodeId)];
-    const node = packageInfo.value!.plan.nodes.find((candidate) => candidate.id === rule.targetNodeId);
+    const node = packageInfo.value!.plan.nodes.find(
+      candidate => candidate.id === rule.targetNodeId
+    );
     const artifact = packageInfo.value!.artifacts[node?.contractName ?? ""];
-    if (!target?.address || !artifact) throw new Error(`核验 ${String(rule.id)} 时缺少目标合约。`);
+    if (!target?.address || !artifact)
+      throw new Error(`核验 ${String(rule.id)} 时缺少目标合约。`);
     const contract = new Contract(target.address, artifact.abi, provider);
     const actual = String(await contract.getFunction(String(rule.getter))());
     // factoryPair 规则读取已核验的 ref.value，避免将 Vue Ref 转成 [object Object]。
@@ -1913,38 +2291,59 @@ async function verifyDeployment(provider: BrowserProvider, configuration: Deploy
         ? pairAddress.value
         : contracts.value[String(rule.expected?.nodeId)]?.address;
     if (!expected || actual.toLowerCase() !== String(expected).toLowerCase())
-      throw new Error(`${String(rule.id)} 核验失败：实际 ${actual}，预期 ${String(expected)}。`);
+      throw new Error(
+        `${String(rule.id)} 核验失败：实际 ${actual}，预期 ${String(expected)}。`
+      );
   }
   const main = contracts.value.ProjectToken;
-  const mainNode = packageInfo.value!.plan.nodes.find((candidate) => candidate.id === "ProjectToken");
-  const mainArtifact = packageInfo.value!.artifacts[mainNode?.contractName ?? ""];
+  const mainNode = packageInfo.value!.plan.nodes.find(
+    candidate => candidate.id === "ProjectToken"
+  );
+  const mainArtifact =
+    packageInfo.value!.artifacts[mainNode?.contractName ?? ""];
   if (main?.address && mainArtifact) {
     const contract = new Contract(main.address, mainArtifact.abi, provider);
     const [tokenName, tokenSymbol] = await Promise.all([
       contract.getFunction("name")(),
-      contract.getFunction("symbol")(),
+      contract.getFunction("symbol")()
     ]);
     if (
       String(tokenName) !== configuration.installation.tokenName ||
       String(tokenSymbol) !== configuration.installation.tokenSymbol
     ) {
       throw new Error(
-        `代币名称核验失败：实际为 ${String(tokenName)}（${String(tokenSymbol)}），预期为 ${configuration.installation.tokenName}（${configuration.installation.tokenSymbol}）。`,
+        `代币名称核验失败：实际为 ${String(tokenName)}（${String(tokenSymbol)}），预期为 ${configuration.installation.tokenName}（${configuration.installation.tokenSymbol}）。`
       );
     }
-    for (const [roleGetter, walletKey] of [
+    const roleChecks: Array<
+      [
+        (
+          | "OPERATOR_ROLE"
+          | "LAUNCH_ROLE"
+          | "BATCH_REGISTRAR_ROLE"
+          | "PAUSER_ROLE"
+          | "DEFAULT_ADMIN_ROLE"
+        ),
+        keyof DeploymentConfiguration["roleWallets"] | "deployer"
+      ]
+    > = [
       ["OPERATOR_ROLE", "operator"],
       ["LAUNCH_ROLE", "launch"],
       ["BATCH_REGISTRAR_ROLE", "batchRegistrar"],
       ["PAUSER_ROLE", "pauser"],
-      ["DEFAULT_ADMIN_ROLE", "deployer"],
-    ]) {
+      ["DEFAULT_ADMIN_ROLE", "deployer"]
+    ];
+    for (const [roleGetter, walletKey] of roleChecks) {
       const role = String(await contract.getFunction(roleGetter)());
-      const configuredRoles: Record<string, string> = configuration.roleWallets;
       const address =
-        walletKey === "deployer" ? String(configuration.deployer) : String(configuredRoles[walletKey] ?? "");
-      const granted = Boolean(await contract.getFunction("hasRole")(role, address));
-      if (!granted) throw new Error(`${roleGetter} 未授予预期钱包 ${address}。`);
+        walletKey === "deployer"
+          ? configuration.deployer
+          : configuration.roleWallets[walletKey];
+      const granted = Boolean(
+        await contract.getFunction("hasRole")(role, address)
+      );
+      if (!granted)
+        throw new Error(`${roleGetter} 未授予预期钱包 ${address}。`);
     }
   }
   const block = await provider.getBlock("latest");
@@ -1952,7 +2351,10 @@ async function verifyDeployment(provider: BrowserProvider, configuration: Deploy
   verifiedBlock.value = { number: block.number, hash: block.hash };
 }
 
-async function completeDeployment(snapshot: ConnectedWallet, configuration: DeploymentConfiguration) {
+async function completeDeployment(
+  snapshot: ConnectedWallet,
+  configuration: DeploymentConfiguration
+) {
   const record = {
     status: "complete",
     chainId: snapshot.chainId,
@@ -1963,7 +2365,7 @@ async function completeDeployment(snapshot: ConnectedWallet, configuration: Depl
     steps: localSteps.value,
     pairAddress: pairAddress.value,
     verifiedBlockNumber: verifiedBlock.value?.number,
-    verifiedBlockHash: verifiedBlock.value?.hash,
+    verifiedBlockHash: verifiedBlock.value?.hash
   };
   const result = await postJson<{
     deployment: SavedDeployment;
@@ -1980,7 +2382,7 @@ function loadPrevious(deployment: SavedDeployment) {
   installerFlow.selectedDeployment = deployment;
   void router.push({
     path: `/complete/${deployment.deploymentId}`,
-    query: { chainId: String(deployment.chainId) },
+    query: { chainId: String(deployment.chainId) }
   });
 }
 </script>

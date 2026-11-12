@@ -87,7 +87,7 @@ function scrollTabs(direction: -1 | 1) {
   if (!viewport) return;
   viewport.scrollBy({
     left: direction * Math.max(180, viewport.clientWidth * 0.7),
-    behavior: "smooth",
+    behavior: "smooth"
   });
 }
 
@@ -101,12 +101,12 @@ function ensureActiveTabVisible() {
   if (tabRect.left < viewportRect.left) {
     viewport.scrollBy({
       left: tabRect.left - viewportRect.left,
-      behavior: "smooth",
+      behavior: "smooth"
     });
   } else if (tabRect.right > viewportRect.right) {
     viewport.scrollBy({
       left: tabRect.right - viewportRect.right,
-      behavior: "smooth",
+      behavior: "smooth"
     });
   }
 }
@@ -120,7 +120,7 @@ watch(
       ensureActiveTabVisible();
     });
   },
-  { deep: true },
+  { deep: true }
 );
 onMounted(() => {
   window.addEventListener("resize", updateTabsScrollState);

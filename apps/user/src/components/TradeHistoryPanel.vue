@@ -33,7 +33,7 @@ export interface TradeHistoryItem {
 }
 
 withDefaults(defineProps<{ items?: TradeHistoryItem[] }>(), {
-  items: () => [],
+  items: () => []
 });
 </script>
 

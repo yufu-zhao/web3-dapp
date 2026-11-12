@@ -28,7 +28,7 @@ const iconObj = computed(() => {
     return {
       icon: props.icon,
       color: "primary",
-      textColor: "white",
+      textColor: "white"
     };
   } else {
     return props.icon;

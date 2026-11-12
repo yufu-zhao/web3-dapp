@@ -5,6 +5,6 @@ import { InstallerService } from "./installer.service.js";
 
 @Module({
   controllers: [HealthController, InstallerController],
-  providers: [InstallerService],
+  providers: [InstallerService]
 })
 export class AppModule {}

@@ -5,7 +5,7 @@ import {
   Header,
   Param,
   Post,
-  Res,
+  Res
 } from "@nestjs/common";
 import type { FastifyReply } from "fastify";
 import { ContentManagementService } from "./content-management.service.js";
@@ -19,7 +19,7 @@ export class PublicConfigController {
     private readonly publicConfigService: PublicConfigService,
     private readonly contentManagementService: ContentManagementService,
     private readonly presaleRecordsService: PresaleRecordsService,
-    private readonly userLanguagesService: UserLanguagesService,
+    private readonly userLanguagesService: UserLanguagesService
   ) {}
 
   @Get("content-management")
@@ -75,7 +75,7 @@ export class PublicConfigController {
   @Header("Cache-Control", "no-store")
   mockUsdtConfiguration() {
     return {
-      enabled: process.env.ENABLE_MOCKUSDT?.trim().toLowerCase() === "true",
+      enabled: process.env.ENABLE_MOCKUSDT?.trim().toLowerCase() === "true"
     };
   }
 

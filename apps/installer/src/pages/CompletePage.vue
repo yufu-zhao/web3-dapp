@@ -13,7 +13,9 @@
         <div class="complete-check"><q-icon name="check" size="34px" /></div>
         <p class="content-kicker">步骤 04 · 安装完成</p>
         <h2>部署资料已准备完成</h2>
-        <p>本页包含数据库、首位管理员、钱包网络、链上部署结果和资料输出位置。</p>
+        <p
+          >本页包含数据库、首位管理员、钱包网络、链上部署结果和资料输出位置。</p
+        >
       </div>
       <div class="summary-grid">
         <InstallerCard tag="article" class="summary-card">
@@ -22,13 +24,18 @@
             <small>数据库</small>
             <strong>{{ summary.database || "PostgreSQL" }}</strong>
             <span>
-              {{ summary.databaseConnection?.host ?? "本机配置" }}:{{ summary.databaseConnection?.port ?? "" }} · 用户
+              {{ summary.databaseConnection?.host ?? "本机配置" }}:{{
+                summary.databaseConnection?.port ?? ""
+              }}
+              · 用户
               {{ summary.databaseConnection?.username ?? "—" }}
             </span>
           </div>
         </InstallerCard>
         <InstallerCard tag="article" class="summary-card">
-          <span class="summary-icon"><q-icon name="admin_panel_settings" /></span>
+          <span class="summary-icon"
+            ><q-icon name="admin_panel_settings"
+          /></span>
           <div>
             <small>首位管理员</small>
             <strong>{{ summary.administrator || "已初始化" }}</strong>
@@ -39,12 +46,16 @@
           <span class="summary-icon"><q-icon name="qr_code_2" /></span>
           <div>
             <small>Reown AppKit</small>
-            <strong>{{ summary.walletConnectConfigured ? "已配置" : "未配置" }}</strong>
+            <strong>{{
+              summary.walletConnectConfigured ? "已配置" : "未配置"
+            }}</strong>
             <span>Project ID 从根目录 .env 加载，供三个前端共享</span>
           </div>
         </InstallerCard>
         <InstallerCard tag="article" class="summary-card">
-          <span class="summary-icon"><q-icon name="account_balance_wallet" /></span>
+          <span class="summary-icon"
+            ><q-icon name="account_balance_wallet"
+          /></span>
           <div>
             <small>部署网络</small>
             <strong>ChainId {{ deployment.chainId }}</strong>
@@ -65,7 +76,8 @@
             <small>系统与代币身份</small>
             <strong>{{ deploymentIdentity.systemName || "链构" }}</strong>
             <span>
-              {{ deploymentIdentity.tokenName || "项目代币" }} · {{ deploymentIdentity.tokenSymbol || "TOKEN" }}
+              {{ deploymentIdentity.tokenName || "项目代币" }} ·
+              {{ deploymentIdentity.tokenSymbol || "TOKEN" }}
             </span>
           </div>
         </InstallerCard>
@@ -74,7 +86,10 @@
           <div>
             <small>安装运行环境</small>
             <strong>Node.js {{ environment?.nodeVersion ?? "—" }}</strong>
-            <span>{{ environment?.platform ?? "" }} · {{ environment?.architecture ?? "" }}</span>
+            <span
+              >{{ environment?.platform ?? "" }} ·
+              {{ environment?.architecture ?? "" }}</span
+            >
           </div>
         </InstallerCard>
       </div>
@@ -93,7 +108,11 @@
           <strong>本次部署参数</strong>
           <small>与完整部署资料 JSON 一致</small>
         </div>
-        <div v-for="item in configurationRows" :key="item.label" class="configuration-row">
+        <div
+          v-for="item in configurationRows"
+          :key="item.label"
+          class="configuration-row"
+        >
           <strong>{{ item.label }}</strong>
           <code>{{ item.value }}</code>
         </div>
@@ -102,16 +121,27 @@
       <InstallerCard class="contract-summary">
         <div class="section-title">
           <strong>本次链上部署与配置</strong>
-          <small>{{ deployment.steps.filter((step) => step.status === "success").length }} 步均已成功</small>
+          <small
+            >{{
+              deployment.steps.filter(step => step.status === "success").length
+            }}
+            步均已成功</small
+          >
         </div>
-        <article v-for="entry in contractEntries" :key="entry.nodeId" class="contract-row">
+        <article
+          v-for="entry in contractEntries"
+          :key="entry.nodeId"
+          class="contract-row"
+        >
           <div>
             <strong>{{ entry.contractName }}</strong>
             <small>{{ entry.source ?? "链上部署" }}</small>
           </div>
           <div class="contract-meta">
             <code>地址 {{ entry.address }}</code>
-            <code v-if="entry.transactionHash">交易 {{ entry.transactionHash }}</code>
+            <code v-if="entry.transactionHash"
+              >交易 {{ entry.transactionHash }}</code
+            >
             <span v-else>由 {{ entry.source }} 读取，无单独部署交易</span>
           </div>
         </article>
@@ -132,10 +162,15 @@
           <br />
           <code>{{ deployment.outputPath }}</code>
           <br />
-          同链支付 Token 列表：contracts/deploy/{{ deployment.chainId }}/tokens.json
+          同链支付 Token 列表：contracts/deploy/{{
+            deployment.chainId
+          }}/tokens.json
         </div>
       </q-banner>
-      <q-banner v-if="summary.settingsSaved" class="message-banner success-message">
+      <q-banner
+        v-if="summary.settingsSaved"
+        class="message-banner success-message"
+      >
         <template #avatar><q-icon name="save" /></template>
         数据库连接信息已写入 workspace 的 .env 文件。
       </q-banner>
@@ -144,9 +179,21 @@
         数据库已初始化，但 .env 未能保存连接信息。请检查安装服务的文件写入权限。
       </q-banner>
       <div class="actions-row">
-        <q-btn flat color="dark" icon="arrow_back" label="返回部署摘要" @click="router.push('/deploy')" />
+        <q-btn
+          flat
+          color="dark"
+          icon="arrow_back"
+          label="返回部署摘要"
+          @click="router.push('/deploy')"
+        />
         <div class="complete-actions">
-          <q-btn outline color="dark" icon="download" label="导出部署 JSON" @click="downloadDeployment" />
+          <q-btn
+            outline
+            color="dark"
+            icon="download"
+            label="导出部署 JSON"
+            @click="downloadDeployment"
+          />
           <q-btn
             color="primary"
             unelevated
@@ -159,8 +206,8 @@
       </div>
       <q-banner v-if="finished" class="message-banner success-message">
         <template #avatar><q-icon name="task_alt" /></template>
-        安装摘要已确认，ChainId、部署 ID 和合约地址已写入 runtime_contract_binding。部署资料保存在上述 contracts/deploy
-        目录中。
+        安装摘要已确认，ChainId、部署 ID 和合约地址已写入
+        runtime_contract_binding。部署资料保存在上述 contracts/deploy 目录中。
       </q-banner>
       <q-banner v-if="finishError" class="message-banner error-message">
         <template #avatar><q-icon name="error_outline" /></template>
@@ -173,8 +220,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { installerRequest, type SavedDeployment } from "../services/installer-api";
-import { errorMessage, installerFlow, type InstallerEnvironment } from "../services/installer-flow";
+import {
+  installerRequest,
+  type SavedDeployment
+} from "../services/installer-api";
+import {
+  errorMessage,
+  installerFlow,
+  type InstallerEnvironment
+} from "../services/installer-flow";
 import InstallerCard from "../components/InstallerCard.vue";
 
 const route = useRoute();
@@ -190,11 +244,13 @@ const finishError = ref("");
 const summary = computed(() => flow.summary);
 const contractEntries = computed(() =>
   Object.values(deployment.value?.contracts ?? {}).sort((left, right) =>
-    String(left.nodeId).localeCompare(String(right.nodeId)),
-  ),
+    String(left.nodeId).localeCompare(String(right.nodeId))
+  )
 );
 const actionSteps = computed(() =>
-  (deployment.value?.steps ?? []).filter((step) => !deployment.value?.contracts?.[step.id]),
+  (deployment.value?.steps ?? []).filter(
+    step => !deployment.value?.contracts?.[step.id]
+  )
 );
 const configurationRows = computed(() => {
   const configuration = deployment.value?.configuration ?? {};
@@ -207,7 +263,7 @@ const configurationRows = computed(() => {
     { label: "系统名称", value: identity.systemName },
     {
       label: "代币全称 / 简称",
-      value: `${identity.tokenName ?? "—"} / ${identity.tokenSymbol ?? "—"}`,
+      value: `${identity.tokenName ?? "—"} / ${identity.tokenSymbol ?? "—"}`
     },
     { label: "安装目标 ChainId", value: identity.chainId },
     { label: "Router", value: external.router },
@@ -217,21 +273,23 @@ const configurationRows = computed(() => {
       label: "角色钱包",
       value: Object.entries(roles)
         .map(([key, value]) => `${key}: ${String(value)}`)
-        .join(" · "),
+        .join(" · ")
     },
     {
       label: "资产钱包",
       value: Object.entries(assets)
         .map(([key, value]) => `${key}: ${String(value)}`)
-        .join(" · "),
+        .join(" · ")
     },
     {
       label: "Oracle 参数",
-      value: `采样 ${String(oracle.samplePeriodSeconds ?? "—")} 秒 · 最低支付储备 ${String(oracle.minimumPaymentReserve ?? "—")} Token 单位（${String(oracle.minimumPaymentReserveRaw ?? "—")} 链上整数）`,
-    },
-  ].map((item) => ({ label: item.label, value: String(item.value ?? "—") }));
+      value: `采样 ${String(oracle.samplePeriodSeconds ?? "—")} 秒 · 最低支付储备 ${String(oracle.minimumPaymentReserve ?? "—")} Token 单位（${String(oracle.minimumPaymentReserveRaw ?? "—")} 链上整数）`
+    }
+  ].map(item => ({ label: item.label, value: String(item.value ?? "—") }));
 });
-const deploymentIdentity = computed(() => readObject(deployment.value?.configuration?.installation));
+const deploymentIdentity = computed(() =>
+  readObject(deployment.value?.configuration?.installation)
+);
 const policyLabels = computed(() => {
   const policy = summary.value.passwordPolicy;
   if (!policy) return "大写、小写、数字、特殊字符";
@@ -240,7 +298,7 @@ const policyLabels = computed(() => {
       [policy.requireUppercase, "大写字母"],
       [policy.requireLowercase, "小写字母"],
       [policy.requireNumber, "数字"],
-      [policy.requireSymbol, "特殊字符"],
+      [policy.requireSymbol, "特殊字符"]
     ]
       .filter(([enabled]) => enabled)
       .map(([, label]) => label)
@@ -252,13 +310,15 @@ function formatDate(value?: string) {
   return value
     ? new Intl.DateTimeFormat("zh-CN", {
         dateStyle: "medium",
-        timeStyle: "short",
+        timeStyle: "short"
       }).format(new Date(value))
     : "—";
 }
 
 function readObject(value: unknown) {
-  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 async function loadDeployment() {
@@ -266,16 +326,19 @@ async function loadDeployment() {
   loadError.value = "";
   try {
     const id = String(route.params.deploymentId ?? "");
-    if (flow.selectedDeployment?.deploymentId === id) deployment.value = flow.selectedDeployment;
+    if (flow.selectedDeployment?.deploymentId === id)
+      deployment.value = flow.selectedDeployment;
     else {
       const chainId = Number(route.query.chainId);
-      if (!Number.isSafeInteger(chainId) || chainId <= 0) throw new Error("部署资料缺少 ChainId。");
+      if (!Number.isSafeInteger(chainId) || chainId <= 0)
+        throw new Error("部署资料缺少 ChainId。");
       deployment.value = await installerRequest<SavedDeployment>(
-        `/contracts/deployments/${chainId}/${encodeURIComponent(id)}`,
+        `/contracts/deployments/${chainId}/${encodeURIComponent(id)}`
       );
       flow.selectedDeployment = deployment.value;
     }
-    environment.value ??= await installerRequest<InstallerEnvironment>("/environment");
+    environment.value ??=
+      await installerRequest<InstallerEnvironment>("/environment");
   } catch (error) {
     loadError.value = errorMessage(error);
   } finally {
@@ -286,7 +349,7 @@ async function loadDeployment() {
 function downloadDeployment() {
   if (!deployment.value) return;
   const blob = new Blob([JSON.stringify(deployment.value, null, 2)], {
-    type: "application/json",
+    type: "application/json"
   });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -303,7 +366,7 @@ async function completeInstallation() {
   try {
     await installerRequest(
       `/contracts/deployments/${deployment.value.chainId}/${encodeURIComponent(deployment.value.deploymentId)}/activate`,
-      { method: "POST", body: "{}" },
+      { method: "POST", body: "{}" }
     );
     finished.value = true;
   } catch (error) {

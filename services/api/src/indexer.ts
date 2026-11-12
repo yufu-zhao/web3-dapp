@@ -16,7 +16,8 @@ async function loadWorkspaceEnvironment() {
         return;
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-          if ((error as NodeJS.ErrnoException).code === "ERR_INVALID_ARG_VALUE") return;
+          if ((error as NodeJS.ErrnoException).code === "ERR_INVALID_ARG_VALUE")
+            return;
           throw error;
         }
         directory = dirname(directory);
@@ -32,7 +33,7 @@ async function runIndexer() {
   // 执行钱包只由 API 执行器服务读取，不允许索引进程使用该私钥。
   process.env.LIMIT_ORDER_EXECUTOR_PRIVATE_KEY = "";
   const app = await NestFactory.createApplicationContext(AppModule, {
-    logger: ["error", "warn", "log"],
+    logger: ["error", "warn", "log"]
   });
   app.enableShutdownHooks();
   console.info("链上行情索引服务已启动。");

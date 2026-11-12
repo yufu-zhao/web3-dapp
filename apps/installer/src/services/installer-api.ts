@@ -146,8 +146,8 @@ export async function installerRequest<T>(path: string, init?: RequestInit) {
       ...init,
       headers: {
         "content-type": "application/json",
-        ...init?.headers,
-      },
+        ...init?.headers
+      }
     });
   } catch {
     throw new Error("无法连接安装器服务，请检查服务是否已在 3611 端口启动。");
@@ -164,7 +164,7 @@ export async function installerRequest<T>(path: string, init?: RequestInit) {
         ? message.join("；")
         : typeof message === "string"
           ? message
-          : `安装器服务返回 HTTP ${response.status}`,
+          : `安装器服务返回 HTTP ${response.status}`
     );
   }
   return payload as T;
@@ -173,6 +173,6 @@ export async function installerRequest<T>(path: string, init?: RequestInit) {
 export function postJson<T>(path: string, body: unknown) {
   return installerRequest<T>(path, {
     method: "POST",
-    body: JSON.stringify(body),
+    body: JSON.stringify(body)
   });
 }

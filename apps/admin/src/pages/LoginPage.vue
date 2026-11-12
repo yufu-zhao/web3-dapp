@@ -38,7 +38,7 @@
                 autocomplete="username"
                 label="管理员账号"
                 placeholder="请输入管理员账号"
-                :rules="[(value) => Boolean(value) || '请输入管理员账号']"
+                :rules="[value => Boolean(value) || '请输入管理员账号']"
               >
                 <template #prepend><q-icon name="person_outline" /></template>
               </q-input>
@@ -49,7 +49,7 @@
                 :type="showPassword ? 'text' : 'password'"
                 label="登录密码"
                 placeholder="请输入登录密码"
-                :rules="[(value) => Boolean(value) || '请输入登录密码']"
+                :rules="[value => Boolean(value) || '请输入登录密码']"
                 @keyup.enter="submitLogin"
               >
                 <template #prepend><q-icon name="key" /></template>
@@ -108,7 +108,7 @@ watch(
   () => {
     document.title = `登录 · ${systemName.value}管理后台`;
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 onMounted(async () => {
@@ -130,8 +130,8 @@ async function submitLogin() {
       method: "POST",
       body: JSON.stringify({
         username: username.value,
-        password: password.value,
-      }),
+        password: password.value
+      })
     });
     saveAdminSession(session);
     const requestedPath = route.query.redirect;

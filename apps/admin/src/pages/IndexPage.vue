@@ -132,18 +132,20 @@ import { computed, onMounted, ref, watch } from "vue";
 import {
   loadAdminInitializationStatus,
   type AdminInitializationStatus,
-  type PublicInstallationConfig,
+  type PublicInstallationConfig
 } from "@chainforge/shared-types";
 
 type InitializationState =
-  AdminInitializationStatus["state"] | "loading" | "error";
+  | AdminInitializationStatus["state"]
+  | "loading"
+  | "error";
 
 const state = ref<InitializationState>("loading");
 const identity = ref<PublicInstallationConfig | null>(null);
 const checking = ref(false);
 const configError = ref("");
 const installationStatus = computed(
-  () => identity.value?.installationStatus ?? null,
+  () => identity.value?.installationStatus ?? null
 );
 const systemName = computed(() => identity.value?.systemName || "链构");
 // 管理台品牌标记跟随安装配置中的系统名称首字。
@@ -153,15 +155,15 @@ const tokenSymbol = computed(() => identity.value?.tokenSymbol || "TOKEN");
 const chainLabel = computed(() =>
   installationStatus.value === "ready" && identity.value?.chainId
     ? `ChainId ${identity.value.chainId}`
-    : "目标链将在首次完整部署后锁定",
+    : "目标链将在首次完整部署后锁定"
 );
 
 watch(
   systemName,
-  (value) => {
+  value => {
     document.title = `${value} 管理后台`;
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 // 按初始化状态选择管理端首屏；API 或数据库故障单独显示重试提示。

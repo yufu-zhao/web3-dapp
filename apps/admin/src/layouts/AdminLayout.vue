@@ -127,7 +127,7 @@ import { adminSession, clearAdminSession } from "../services/admin-session";
 import {
   loadAdminPageTabs,
   saveAdminPageTabs,
-  type AdminPageTab,
+  type AdminPageTab
 } from "../services/admin-tabs";
 
 const auth = adminSession;
@@ -139,24 +139,24 @@ const logoutError = ref("");
 const openTabs = ref<AdminPageTab[]>([{ path: "/", title: "概览" }]);
 let tabsUserId: string | null = null;
 const tabItems = computed(() =>
-  openTabs.value.map((tab) => ({
+  openTabs.value.map(tab => ({
     ...tab,
     icon: iconForTab(tab),
-    active: isActiveTab(tab),
-  })),
+    active: isActiveTab(tab)
+  }))
 );
 const pageTitle = computed(() =>
-  typeof route.meta.title === "string" ? route.meta.title : "管理后台",
+  typeof route.meta.title === "string" ? route.meta.title : "管理后台"
 );
 const cachedComponentNames = computed(() => {
   const names = openTabs.value
-    .map((tab) => router.resolve(tab.path).meta.keepAliveName)
+    .map(tab => router.resolve(tab.path).meta.keepAliveName)
     .filter((name): name is string => typeof name === "string");
   return [...new Set(names)];
 });
 
 function pageTabForCurrentRoute(): AdminPageTab | null {
-  if (!route.matched.some((record) => record.meta.requiresAuth)) return null;
+  if (!route.matched.some(record => record.meta.requiresAuth)) return null;
   if (typeof route.meta.title !== "string") return null;
 
   return { path: route.fullPath, title: route.meta.title };
@@ -164,8 +164,7 @@ function pageTabForCurrentRoute(): AdminPageTab | null {
 
 function isAuthorizedPageTab(tab: AdminPageTab) {
   const resolved = router.resolve(tab.path);
-  if (!resolved.matched.some((record) => record.meta.requiresAuth))
-    return false;
+  if (!resolved.matched.some(record => record.meta.requiresAuth)) return false;
 
   const permission = resolved.meta.permission;
   return (
@@ -198,7 +197,7 @@ function addCurrentRouteTab() {
   if (!currentTab || !isAuthorizedPageTab(currentTab)) return;
 
   const existingIndex = openTabs.value.findIndex(
-    (tab) => router.resolve(tab.path).path === route.path,
+    tab => router.resolve(tab.path).path === route.path
   );
   if (existingIndex >= 0) {
     openTabs.value[existingIndex] = currentTab;
@@ -242,7 +241,7 @@ function closeTab(index: number) {
     const fallback = openTabs.value[index - 1] ??
       openTabs.value[index] ?? {
         path: "/",
-        title: "概览",
+        title: "概览"
       };
     void router.push(fallback.path);
   }
@@ -260,7 +259,7 @@ watch(
   ([system, title]) => {
     document.title = `${title} · ${system}管理后台`;
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 onMounted(async () => {
@@ -280,15 +279,15 @@ onUnmounted(() => {
 
 watch(
   () => auth.user?.id,
-  (userId) => {
+  userId => {
     if (userId && userId !== tabsUserId) restoreOpenTabs(userId);
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 watch(
   () => route.fullPath,
-  () => addCurrentRouteTab(),
+  () => addCurrentRouteTab()
 );
 
 async function logout() {

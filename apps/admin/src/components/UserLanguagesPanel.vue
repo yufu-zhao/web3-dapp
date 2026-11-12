@@ -474,16 +474,16 @@ const aiTranslationProgress = ref("");
 const pendingTranslationRows = computed(() =>
   selectedLanguage.value?.isDefault
     ? []
-    : translationRows.value.filter(isPendingTranslation),
+    : translationRows.value.filter(isPendingTranslation)
 );
 const visibleTranslations = computed(() => {
   const search = translationSearch.value.toLowerCase();
   return translationRows.value.filter(
-    (item) =>
+    item =>
       (!onlyPendingTranslations.value || isPendingTranslation(item)) &&
       (!search ||
         item.key.toLowerCase().includes(search) ||
-        item.value.toLowerCase().includes(search)),
+        item.value.toLowerCase().includes(search))
   );
 });
 const translationSearch = ref("");
@@ -505,7 +505,7 @@ const commonLanguageOptions = [
   { label: "Deutsch · de-DE", value: "de-DE", name: "Deutsch" },
   { label: "Português · pt-BR", value: "pt-BR", name: "Português" },
   { label: "Русский · ru-RU", value: "ru-RU", name: "Русский" },
-  { label: "العربية · ar-SA", value: "ar-SA", name: "العربية" },
+  { label: "العربية · ar-SA", value: "ar-SA", name: "العربية" }
 ];
 const languageOptions = ref([...commonLanguageOptions]);
 const availableLanguageOptions = ref([...commonLanguageOptions]);
@@ -514,33 +514,33 @@ const languageColumns = [
     name: "locale",
     label: "语言代码",
     field: "locale",
-    align: "left" as const,
+    align: "left" as const
   },
   { name: "name", label: "显示名称", field: "name", align: "left" as const },
   {
     name: "enabled",
     label: "启用",
     field: "isEnabled",
-    align: "center" as const,
+    align: "center" as const
   },
   {
     name: "default",
     label: "默认语言",
     field: "isDefault",
-    align: "center" as const,
+    align: "center" as const
   },
   {
     name: "translationCount",
     label: "词条数",
     field: "translationCount",
-    align: "right" as const,
+    align: "right" as const
   },
-  { name: "actions", label: "操作", field: "id", align: "right" as const },
+  { name: "actions", label: "操作", field: "id", align: "right" as const }
 ];
 const translationColumns = [
   { name: "key", label: "词条键", field: "key", align: "left" as const },
   { name: "value", label: "翻译文本", field: "value", align: "left" as const },
-  { name: "actions", label: "操作", field: "key", align: "right" as const },
+  { name: "actions", label: "操作", field: "key", align: "right" as const }
 ];
 
 async function loadLanguages() {
@@ -551,7 +551,7 @@ async function loadLanguages() {
     languages.value = result.items;
     if (selectedLanguage.value) {
       selectedLanguage.value =
-        result.items.find((item) => item.id === selectedLanguage.value?.id) ??
+        result.items.find(item => item.id === selectedLanguage.value?.id) ??
         null;
     }
   } catch (error) {
@@ -566,8 +566,8 @@ function openCreateDialog() {
   editingLanguage.value = null;
   languageDraft.value = { locale: "", name: "" };
   availableLanguageOptions.value = commonLanguageOptions.filter(
-    (option) =>
-      !languages.value.some((language) => language.locale === option.value),
+    option =>
+      !languages.value.some(language => language.locale === option.value)
   );
   languageOptions.value = [...availableLanguageOptions.value];
   languageDialog.value = true;
@@ -577,9 +577,9 @@ function openEditDialog(language: LanguageRow) {
   editingLanguage.value = language;
   languageDraft.value = { locale: language.locale, name: language.name };
   availableLanguageOptions.value = commonLanguageOptions.filter(
-    (option) =>
+    option =>
       option.value === language.locale ||
-      !languages.value.some((item) => item.locale === option.value),
+      !languages.value.some(item => item.locale === option.value)
   );
   languageOptions.value = [...availableLanguageOptions.value];
   languageDialog.value = true;
@@ -587,21 +587,21 @@ function openEditDialog(language: LanguageRow) {
 
 function filterLanguageOptions(
   value: string,
-  update: (callback: () => void) => void,
+  update: (callback: () => void) => void
 ) {
   update(() => {
     const query = value.trim().toLocaleLowerCase();
     languageOptions.value = availableLanguageOptions.value.filter(
-      (option) =>
+      option =>
         option.value.toLocaleLowerCase().includes(query) ||
-        option.name.toLocaleLowerCase().includes(query),
+        option.name.toLocaleLowerCase().includes(query)
     );
   });
 }
 
 function syncLanguageName(locale: string) {
   const selected = commonLanguageOptions.find(
-    (option) => option.value === locale,
+    option => option.value === locale
   );
   if (selected) languageDraft.value.name = selected.name;
 }
@@ -610,15 +610,15 @@ async function saveLanguage() {
   if (!canWrite.value) return;
   if (
     languages.value.some(
-      (language) =>
+      language =>
         language.locale === languageDraft.value.locale &&
-        language.id !== editingLanguage.value?.id,
+        language.id !== editingLanguage.value?.id
     )
   ) {
     Notify.create({
       type: "negative",
       message: "该语言代码已存在，请选择其他语言。",
-      position: "top",
+      position: "top"
     });
     return;
   }
@@ -629,16 +629,16 @@ async function saveLanguage() {
         method: "PATCH",
         body: JSON.stringify({
           locale: languageDraft.value.locale,
-          name: languageDraft.value.name,
-        }),
+          name: languageDraft.value.name
+        })
       });
     } else {
       const result = await adminRequest<{ language: LanguageRow }>(
         "/languages",
         {
           method: "POST",
-          body: JSON.stringify(languageDraft.value),
-        },
+          body: JSON.stringify(languageDraft.value)
+        }
       );
       selectedLanguage.value = result.language;
     }
@@ -648,13 +648,13 @@ async function saveLanguage() {
     Notify.create({
       type: "positive",
       message: "语言已保存。",
-      position: "top",
+      position: "top"
     });
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "保存语言失败。",
-      position: "top",
+      position: "top"
     });
   } finally {
     savingLanguage.value = false;
@@ -665,14 +665,14 @@ async function setLanguageEnabled(language: LanguageRow, isEnabled: boolean) {
   try {
     await adminRequest(`/languages/${language.id}`, {
       method: "PATCH",
-      body: JSON.stringify({ isEnabled }),
+      body: JSON.stringify({ isEnabled })
     });
     await loadLanguages();
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "更新语言状态失败。",
-      position: "top",
+      position: "top"
     });
     await loadLanguages();
   }
@@ -682,19 +682,19 @@ async function setDefaultLanguage(language: LanguageRow) {
   try {
     await adminRequest(`/languages/${language.id}`, {
       method: "PATCH",
-      body: JSON.stringify({ isDefault: true }),
+      body: JSON.stringify({ isDefault: true })
     });
     await loadLanguages();
     Notify.create({
       type: "positive",
       message: `${language.name}已设为默认语言。`,
-      position: "top",
+      position: "top"
     });
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "设置默认语言失败。",
-      position: "top",
+      position: "top"
     });
   }
 }
@@ -704,7 +704,7 @@ async function deleteLanguage() {
   deletingLanguage.value = true;
   try {
     await adminRequest(`/languages/${pendingDeleteLanguage.value.id}`, {
-      method: "DELETE",
+      method: "DELETE"
     });
     if (selectedLanguage.value?.id === pendingDeleteLanguage.value.id) {
       selectedLanguage.value = null;
@@ -715,13 +715,13 @@ async function deleteLanguage() {
     Notify.create({
       type: "positive",
       message: "语言已删除。",
-      position: "top",
+      position: "top"
     });
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "删除语言失败。",
-      position: "top",
+      position: "top"
     });
   } finally {
     deletingLanguage.value = false;
@@ -734,16 +734,16 @@ async function openTranslations(language: LanguageRow) {
   translationSearch.value = "";
   try {
     const result = await adminRequest<{ items: TranslationRow[] }>(
-      `/languages/${language.id}/translations`,
+      `/languages/${language.id}/translations`
     );
-    translationRows.value = result.items.map((item) => ({ ...item }));
+    translationRows.value = result.items.map(item => ({ ...item }));
     selectedTranslationRows.value = [];
     onlyPendingTranslations.value = false;
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "读取翻译词条失败。",
-      position: "top",
+      position: "top"
     });
   } finally {
     loadingTranslations.value = false;
@@ -752,18 +752,18 @@ async function openTranslations(language: LanguageRow) {
 
 function addTranslation() {
   const key = translationDraft.value.key.trim();
-  if (!key || translationRows.value.some((item) => item.key === key)) {
+  if (!key || translationRows.value.some(item => item.key === key)) {
     Notify.create({
       type: "negative",
       message: key ? "词条键已存在。" : "请输入词条键。",
-      position: "top",
+      position: "top"
     });
     return;
   }
   translationRows.value.push({
     key,
     value: translationDraft.value.value,
-    sourceValue: null,
+    sourceValue: null
   });
   translationDraft.value = { key: "", value: "" };
   translationDialog.value = false;
@@ -794,17 +794,17 @@ function selectPendingTranslations() {
             Notify.create({
               type: "positive",
               message: `已选择全部 ${candidates.length} 条待翻译词条。`,
-              position: "top",
+              position: "top"
             });
-          },
-        },
-      ],
+          }
+        }
+      ]
     });
   } else if (!candidates.length) {
     Notify.create({
       type: "info",
       message: "当前筛选结果没有待翻译词条。",
-      position: "top",
+      position: "top"
     });
   }
 }
@@ -829,7 +829,7 @@ async function generateAiTranslationPreview() {
           items: AiPreviewRow[];
         }>(`/languages/${selectedLanguage.value.id}/translations/ai-preview`, {
           method: "POST",
-          body: JSON.stringify({ keys: batch.map((item) => item.key) }),
+          body: JSON.stringify({ keys: batch.map(item => item.key) })
         });
         translatedRows.push(...result.items);
       } catch (error) {
@@ -837,7 +837,7 @@ async function generateAiTranslationPreview() {
         break;
       }
     }
-    aiPreviewRows.value = translatedRows.map((item) => ({ ...item }));
+    aiPreviewRows.value = translatedRows.map(item => ({ ...item }));
     aiPreviewPartial.value = Boolean(failedBatch && translatedRows.length);
     aiPreviewDialog.value = aiPreviewRows.value.length > 0;
     if (failedBatch && translatedRows.length) {
@@ -845,7 +845,7 @@ async function generateAiTranslationPreview() {
         type: "warning",
         message: `已生成前 ${translatedRows.length} 条预览，后续批次失败；可先保存这部分译文。`,
         position: "top",
-        timeout: 0,
+        timeout: 0
       });
     } else if (failedBatch) {
       throw failedBatch;
@@ -854,14 +854,14 @@ async function generateAiTranslationPreview() {
       Notify.create({
         type: "info",
         message: "没有可翻译的词条，请检查目标语言是否仍有待翻译内容。",
-        position: "top",
+        position: "top"
       });
     }
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "AI 翻译失败。",
-      position: "top",
+      position: "top"
     });
   } finally {
     generatingTranslations.value = false;
@@ -879,14 +879,14 @@ async function saveAiPreviewTranslations() {
       {
         method: "PUT",
         body: JSON.stringify({
-          items: aiPreviewRows.value.map((item) => ({
+          items: aiPreviewRows.value.map(item => ({
             key: item.key,
-            value: item.translatedValue,
-          })),
-        }),
-      },
+            value: item.translatedValue
+          }))
+        })
+      }
     );
-    translationRows.value = result.items.map((item) => ({ ...item }));
+    translationRows.value = result.items.map(item => ({ ...item }));
     selectedTranslationRows.value = [];
     aiPreviewDialog.value = false;
     aiPreviewRows.value = [];
@@ -895,13 +895,13 @@ async function saveAiPreviewTranslations() {
     Notify.create({
       type: "positive",
       message: "审核后的 AI 译文已保存。",
-      position: "top",
+      position: "top"
     });
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "保存 AI 译文失败。",
-      position: "top",
+      position: "top"
     });
   } finally {
     applyingAiTranslations.value = false;
@@ -916,21 +916,21 @@ async function saveTranslations() {
       `/languages/${selectedLanguage.value.id}/translations`,
       {
         method: "PUT",
-        body: JSON.stringify({ items: translationRows.value }),
-      },
+        body: JSON.stringify({ items: translationRows.value })
+      }
     );
-    translationRows.value = result.items.map((item) => ({ ...item }));
+    translationRows.value = result.items.map(item => ({ ...item }));
     await loadLanguages();
     Notify.create({
       type: "positive",
       message: "翻译内容已保存，用户端刷新后生效。",
-      position: "top",
+      position: "top"
     });
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "保存翻译内容失败。",
-      position: "top",
+      position: "top"
     });
   } finally {
     savingTranslations.value = false;
@@ -944,10 +944,10 @@ async function deleteTranslation() {
   try {
     await adminRequest(
       `/languages/${selectedLanguage.value.id}/translations/${encodeURIComponent(key)}`,
-      { method: "DELETE" },
+      { method: "DELETE" }
     );
     translationRows.value = translationRows.value.filter(
-      (item) => item.key !== key,
+      item => item.key !== key
     );
     pendingDeleteKey.value = null;
     await loadLanguages();
@@ -955,7 +955,7 @@ async function deleteTranslation() {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "删除翻译词条失败。",
-      position: "top",
+      position: "top"
     });
   } finally {
     deletingTranslation.value = false;

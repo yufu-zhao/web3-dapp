@@ -7,9 +7,7 @@
       class="feature-card panel"
     >
       <span class="icon-box"><q-icon :name="feature.icon" /></span>
-      <span
-        ><strong>{{ feature.title }}</strong></span
-      >
+      <span><strong>{{ feature.title }}</strong></span>
       <q-icon class="arrow" name="chevron_right" />
     </RouterLink>
   </nav>

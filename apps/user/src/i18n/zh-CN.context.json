@@ -1,4 +1,14 @@
 {
+  "user_account_disabled_title": {
+    "usage": ["layouts/RegistrationGateLayout.vue"],
+    "placeholders": [],
+    "notes": "用户钱包已连接且后台将对应账户设为禁用时，在用户端门禁页显示的标题。"
+  },
+  "user_account_disabled_message": {
+    "usage": ["layouts/RegistrationGateLayout.vue"],
+    "placeholders": [],
+    "notes": "告知被管理员禁用的账户无法进入用户端，并提示联系管理员。"
+  },
   "text_dfdc8c69a25b": {
     "usage": ["components/WalletConnect.vue"],
     "placeholders": [],
@@ -35,7 +45,11 @@
     "notes": "使用场景：首页公告。"
   },
   "text_eefb2470b9a8": {
-    "usage": ["components/MobileServiceGrid.vue", "components/DesktopServiceMenu.vue", "pages/IndexPage.vue"],
+    "usage": [
+      "components/MobileServiceGrid.vue",
+      "components/DesktopServiceMenu.vue",
+      "pages/IndexPage.vue"
+    ],
     "placeholders": [],
     "notes": "使用场景：手机端我的服务导航、桌面端我的服务导航、用户端页面及导航。"
   },
@@ -1424,10 +1438,30 @@
     "placeholders": [],
     "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
   },
+  "trading_balance_loading": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端交易表单切换买入卖出或订单类型时，从已连接钱包读取相应的USDT或代币余额。"
+  },
+  "trading_balance_error": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端钱包余额读取失败时提示用户点击旁边的刷新图标重试。"
+  },
+  "trading_quote_error": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：市价交易表单向后端请求链上报价失败时显示，提示用户报价成功前不要提交交易。"
+  },
   "trading_estimated_receive": {
     "usage": ["components/TradePanel.vue"],
     "placeholders": [],
     "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_estimated_pay": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端限价买入，根据代币数量和输入限价计算预估需要支付的USDT，不代表最终成交金额。"
   },
   "trading_validity": {
     "usage": ["components/TradePanel.vue"],
@@ -1458,6 +1492,121 @@
     "usage": ["components/TradePanel.vue"],
     "placeholders": [],
     "notes": "使用场景：用户端现货市价交易、签名限价单、历史K线和订单状态。"
+  },
+  "trading_my_market_buys": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端显示当前钱包发起的市价买入尝试和每一步链上状态。"
+  },
+  "trading_no_market_buys": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户钱包尚无市价买入尝试记录时显示的空状态。"
+  },
+  "trading_market_buys_error": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：用户端读取市价买入记录失败时显示，并允许刷新重试。"
+  },
+  "trading_record_sync_error": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：授权或成交已广播后，前端暂时无法把哈希同步到市价买入记录时提示哈希已在本地暂存，并会在刷新或重新进入时自动补传。"
+  },
+  "trading_approval_hash": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：市价买入记录中标识 USDT 授权交易哈希。"
+  },
+  "trading_swap_hash": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：市价买入记录中标识实际路由成交交易哈希。"
+  },
+  "trading_buy_awaiting_approval": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：买入记录已创建，等待钱包确认 USDT 授权或买入交易。"
+  },
+  "trading_buy_approval_pending": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：USDT 授权交易已经广播，等待链上回执。"
+  },
+  "trading_buy_approval_confirmed": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：USDT 授权已成功，等待用户确认实际市价买入。"
+  },
+  "trading_buy_swap_pending": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：市价买入交易已广播，等待链上回执确认成交或回滚。"
+  },
+  "trading_buy_succeeded": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：买入回执成功且包含已绑定交易对的 Swap 事件时显示。"
+  },
+  "trading_buy_approval_recovered": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：服务端发现支付代币对交易路由器的授权额度已足够，但前端未能同步原授权哈希。继续操作会刷新报价并由用户确认成交，不会自动发起交易。"
+  },
+  "trading_continue_buy": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "使用场景：市价买入记录处于授权成功、成交尚未提交时的恢复操作按钮。点击后重新计算报价，并打开钱包交易确认。"
+  },
+  "trading_error_short": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "交易列表和提示中显示的简短失败信息。"
+  },
+  "trading_transfer_failed": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "路由器支付代币转账失败时的提示。"
+  },
+  "trading_amount_mismatch": {
+    "usage": ["components/TradePanel.vue"],
+    "placeholders": [],
+    "notes": "提交数量与数据库买入记录不一致时的阻止提示。"
+  },
+  "trading_record_details": {
+    "usage": ["components/TradePanel.vue", "pages/TradeRecordPage.vue"],
+    "placeholders": [],
+    "notes": "市价买入记录详情链接和页面标题。"
+  },
+  "trading_back_to_trade": {
+    "usage": ["pages/TradeRecordPage.vue"],
+    "placeholders": [],
+    "notes": "交易记录详情页返回交易栏目。"
+  },
+  "trading_record_missing": {
+    "usage": ["pages/TradeRecordPage.vue"],
+    "placeholders": [],
+    "notes": "当前钱包没有匹配记录时的提示。"
+  },
+  "trading_buy_status": {
+    "usage": ["pages/TradeRecordPage.vue"],
+    "placeholders": [],
+    "notes": "市价买入详情中的状态标题。"
+  },
+  "trading_record_time": {
+    "usage": ["pages/TradeRecordPage.vue"],
+    "placeholders": [],
+    "notes": "市价买入记录创建时间。"
+  },
+  "trading_error_code": {
+    "usage": ["pages/TradeRecordPage.vue"],
+    "placeholders": [],
+    "notes": "交易失败的错误代码标题。"
+  },
+  "trading_error_details": {
+    "usage": ["pages/TradeRecordPage.vue"],
+    "placeholders": [],
+    "notes": "市价买入记录中保存的错误信息标题。"
   },
   "trading_cancel": {
     "usage": ["components/TradePanel.vue"],
@@ -1573,5 +1722,90 @@
     "usage": ["components/TradePanel.vue"],
     "placeholders": [],
     "notes": "使用场景：用户端交易页在代币尚未开放交易时的市场状态提示。"
+  },
+  "registration_lookup_failed": {
+    "usage": ["layouts/UserLayout.vue"],
+    "placeholders": [],
+    "notes": "连接钱包后查询账户注册状态或获取注册挑战失败时提示；不代表链上交易失败。"
+  },
+  "registration_failed": {
+    "usage": ["layouts/UserLayout.vue", "pages/InvitationPage.vue"],
+    "placeholders": [],
+    "notes": "钱包签名验证或账户创建失败时的通用提示，接口可能返回具体原因。"
+  },
+  "referral_register_title": {
+    "usage": ["pages/InvitationPage.vue"],
+    "placeholders": [],
+    "notes": "邀请码必填时新钱包进入的注册落地页标题。"
+  },
+  "referral_register_hint": {
+    "usage": ["pages/InvitationPage.vue"],
+    "placeholders": [],
+    "notes": "说明注册使用钱包消息签名验证所有权，不会触发链上交易。"
+  },
+  "referral_invite_code": {
+    "usage": ["pages/InvitationPage.vue"],
+    "placeholders": [],
+    "notes": "注册表单的邀请码输入字段标签。"
+  },
+  "referral_register_button": {
+    "usage": ["pages/InvitationPage.vue"],
+    "placeholders": [],
+    "notes": "提交邀请码并请求钱包签名验证、创建用户账户。"
+  },
+  "referral_invite_title": {
+    "usage": ["components/ReferralDashboard.vue"],
+    "placeholders": [],
+    "notes": "推广页展示二维码、邀请码与推广链接的卡片标题。"
+  },
+  "referral_qr_alt": {
+    "usage": ["components/ReferralDashboard.vue"],
+    "placeholders": [],
+    "notes": "推广二维码的无障碍替代文本，二维码指向带邀请码的注册页。"
+  },
+  "referral_copy_code": {
+    "usage": ["components/ReferralDashboard.vue"],
+    "placeholders": [],
+    "notes": "复制专属邀请码按钮。"
+  },
+  "referral_copy_link": {
+    "usage": ["components/ReferralDashboard.vue"],
+    "placeholders": [],
+    "notes": "复制附带当前用户邀请码的推广链接按钮。"
+  },
+  "referral_direct_title": {
+    "usage": ["components/ReferralDashboard.vue"],
+    "placeholders": [],
+    "notes": "展示直推注册用户数量与列表的标题。"
+  },
+  "referral_direct_empty": {
+    "usage": ["components/ReferralDashboard.vue"],
+    "placeholders": [],
+    "notes": "直推列表无记录时显示的空状态。"
+  },
+  "referral_load_failed": {
+    "usage": ["components/ReferralDashboard.vue"],
+    "placeholders": [],
+    "notes": "推广信息请求失败且服务端未提供可读详情时显示。"
+  },
+  "referral_copied": {
+    "usage": ["components/ReferralDashboard.vue"],
+    "placeholders": [],
+    "notes": "邀请码或推广链接复制成功后的轻提示。"
+  },
+  "referral_copy_failed": {
+    "usage": ["components/ReferralDashboard.vue"],
+    "placeholders": [],
+    "notes": "浏览器剪贴板写入失败时的提示。"
+  },
+  "referral_connect_wallet": {
+    "usage": ["components/ReferralDashboard.vue"],
+    "placeholders": [],
+    "notes": "未连接钱包访问推广页时的状态标题。"
+  },
+  "referral_connect_wallet_hint": {
+    "usage": ["components/ReferralDashboard.vue", "pages/InvitationPage.vue"],
+    "placeholders": [],
+    "notes": "说明先连接钱包；注册时需签名验证钱包所有权。"
   }
 }

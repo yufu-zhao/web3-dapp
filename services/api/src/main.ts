@@ -6,7 +6,7 @@ import { NestFactory } from "@nestjs/core";
 import multipart from "@fastify/multipart";
 import {
   FastifyAdapter,
-  NestFastifyApplication,
+  NestFastifyApplication
 } from "@nestjs/platform-fastify";
 import { AppModule } from "./app.module.js";
 
@@ -42,12 +42,18 @@ async function loadWorkspaceEnvironment() {
 
 async function bootstrap() {
   await loadWorkspaceEnvironment();
+  // 只信任显式配置的代理跳数；默认不采信客户端可伪造的转发头。
+  const trustProxyHops = Number(process.env.API_TRUST_PROXY_HOPS ?? 0);
+  if (!Number.isSafeInteger(trustProxyHops) || trustProxyHops < 0) {
+    throw new Error("API_TRUST_PROXY_HOPS 须为非负整数。");
+  }
+  const trustProxy = (_address: string, hop: number) => hop < trustProxyHops;
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ logger: true }),
+    new FastifyAdapter({ logger: true, trustProxy })
   );
   await app.register(multipart, {
-    limits: { fileSize: 100 * 1024 * 1024, files: 1 },
+    limits: { fileSize: 100 * 1024 * 1024, files: 1 }
   });
   // 服务专用变量适配根目录配置，同时保留 PORT 和 HOST 的单服务回退方式。
   const port = Number(process.env.API_PORT ?? process.env.PORT ?? 3610);
@@ -59,11 +65,11 @@ async function bootstrap() {
     "http://127.0.0.1:5677",
     "http://localhost:5675",
     "http://localhost:5676",
-    "http://localhost:5677",
+    "http://localhost:5677"
   ];
   const corsOrigins = (process.env.CORS_ORIGINS ?? defaultCorsOrigins.join(","))
     .split(",")
-    .map((origin) => origin.trim())
+    .map(origin => origin.trim())
     .filter(Boolean);
 
   // 仅放行环境变量中列出的前端来源。

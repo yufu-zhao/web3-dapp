@@ -50,30 +50,37 @@ const shortcuts = computed(() =>
       description: "管理后台登录账号与所属角色。",
       path: "/administrators",
       icon: "admin_panel_settings",
-      permission: "admins:read",
+      permission: "admins:read"
     },
     {
       title: "权限菜单",
       description: "维护管理后台的多级导航菜单。",
       path: "/menus",
       icon: "account_tree",
-      permission: "menus:read",
+      permission: "menus:read"
+    },
+    {
+      title: "代币发行 / 开盘",
+      description: "检查私募结算、初始流动性及开盘准备状态。",
+      path: "/launch",
+      icon: "rocket_launch",
+      permission: "launch:read"
     },
     {
       title: "角色",
       description: "配置角色权限与账号访问范围。",
       path: "/roles",
       icon: "badge",
-      permission: "roles:read",
+      permission: "roles:read"
     },
     {
       title: "系统设置",
       description: "维护安装身份、管理员密码策略和界面主题。",
       path: "/settings",
       icon: "tune",
-      permission: "settings:read",
-    },
-  ].filter((shortcut) => canAccess(shortcut.permission)),
+      permission: "settings:read"
+    }
+  ].filter(shortcut => canAccess(shortcut.permission))
 );
 </script>
 

@@ -22,7 +22,7 @@ export function loadAdminPageTabs(userId: string): AdminPageTab[] {
         typeof item.path === "string" &&
         item.path.startsWith("/") &&
         "title" in item &&
-        typeof item.title === "string",
+        typeof item.title === "string"
     );
   } catch {
     // 隐私模式或浏览器存储不可用时，标签仍可在当前页面正常使用。

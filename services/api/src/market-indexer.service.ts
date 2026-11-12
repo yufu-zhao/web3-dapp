@@ -1,21 +1,29 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
-import { Contract, Interface, formatUnits, getAddress } from "ethers";
+import {
+  Contract,
+  FetchRequest,
+  Interface,
+  JsonRpcProvider,
+  formatUnits,
+  getAddress,
+  type Log
+} from "ethers";
 import type { PoolClient } from "pg";
-import { getBoundRpcProvider } from "./chain-rpc.js";
+import { getBoundRpcProvider, resolveRpcConfiguration } from "./chain-rpc.js";
 import { DatabaseService } from "./database.service.js";
 
 const pairInterface = new Interface([
   "function token0() view returns(address)",
   "function token1() view returns(address)",
-  "event Swap(address indexed sender,uint256 amount0In,uint256 amount1In,uint256 amount0Out,uint256 amount1Out,address indexed to)",
+  "event Swap(address indexed sender,uint256 amount0In,uint256 amount1In,uint256 amount0Out,uint256 amount1Out,address indexed to)"
 ]);
 const orderEventsInterface = new Interface([
   "event OrderExecuted(bytes32 indexed orderHash,address indexed owner,bool buy,uint256 amountIn,uint256 amountOut)",
-  "event OrderCancelled(bytes32 indexed orderHash,address indexed owner)",
+  "event OrderCancelled(bytes32 indexed orderHash,address indexed owner)"
 ]);
 const tokenInterface = new Interface([
   "function paymentToken() view returns(address)",
-  "function decimals() view returns(uint8)",
+  "function decimals() view returns(uint8)"
 ]);
 
 interface IndexBinding {
@@ -32,6 +40,7 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
   private timer?: NodeJS.Timeout;
   private busy = false;
   private stopped = false;
+  private preferredLogRpcUrl: string | null = null;
 
   constructor(private readonly databaseService: DatabaseService) {}
 
@@ -53,14 +62,14 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
   private async setState(
     state: "disabled" | "ready" | "degraded" | "error",
     block: number | null,
-    message: string | null,
+    message: string | null
   ) {
     try {
       await this.databaseService.getPool().query(
         `UPDATE market_indexer_heartbeat
             SET state = $1, last_block = COALESCE($2, last_block),
                 last_error = $3, updated_at = NOW() WHERE singleton = TRUE`,
-        [state, block, message],
+        [state, block, message]
       );
     } catch {
       // 待迁移环境不影响 API 服务启动。
@@ -68,37 +77,55 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async tick() {
-    if (this.busy || this.stopped || process.env.DEX_INDEXER_ENABLED?.trim().toLowerCase() !== "true") return;
+    if (
+      this.busy ||
+      this.stopped ||
+      process.env.DEX_INDEXER_ENABLED?.trim().toLowerCase() !== "true"
+    )
+      return;
     this.busy = true;
     let provider: Awaited<ReturnType<typeof getBoundRpcProvider>> | undefined;
     let client: PoolClient | undefined;
     try {
       client = await this.databaseService.getPool().connect();
-      const lock = await client.query<{ locked: boolean }>("SELECT pg_try_advisory_lock(1398030675) AS locked");
+      const lock = await client.query<{ locked: boolean }>(
+        "SELECT pg_try_advisory_lock(1398030675) AS locked"
+      );
       if (!lock.rows[0]?.locked) return;
       const binding = await this.getBinding();
       provider = await getBoundRpcProvider(
         binding.chainId,
-        [binding.token, binding.pair, ...(binding.limitOrders ? [binding.limitOrders] : [])],
-        this.databaseService.getPool(),
+        [
+          binding.token,
+          binding.pair,
+          ...(binding.limitOrders ? [binding.limitOrders] : [])
+        ],
+        this.databaseService.getPool()
       );
       const network = await provider.getNetwork();
-      if (network.chainId !== BigInt(binding.chainId)) throw new Error("RPC 网络与安装链不匹配。");
+      if (network.chainId !== BigInt(binding.chainId))
+        throw new Error("RPC 网络与安装链不匹配。");
       const token = new Contract(binding.token, tokenInterface, provider);
       const [paymentToken, tokenDecimals] = await Promise.all([
         token.getFunction("paymentToken")() as Promise<string>,
-        token.getFunction("decimals")() as Promise<number>,
+        token.getFunction("decimals")() as Promise<number>
       ]);
       const payment = new Contract(paymentToken, tokenInterface, provider);
-      const paymentDecimals = (await payment.getFunction("decimals")()) as number;
+      const paymentDecimals = (await payment.getFunction(
+        "decimals"
+      )()) as number;
       const pair = new Contract(binding.pair, pairInterface, provider);
       const [token0, token1] = await Promise.all([
         pair.getFunction("token0")() as Promise<string>,
-        pair.getFunction("token1")() as Promise<string>,
+        pair.getFunction("token1")() as Promise<string>
       ]);
       if (
-        ![token0.toLowerCase(), token1.toLowerCase()].includes(binding.token.toLowerCase()) ||
-        ![token0.toLowerCase(), token1.toLowerCase()].includes(paymentToken.toLowerCase())
+        ![token0.toLowerCase(), token1.toLowerCase()].includes(
+          binding.token.toLowerCase()
+        ) ||
+        ![token0.toLowerCase(), token1.toLowerCase()].includes(
+          paymentToken.toLowerCase()
+        )
       ) {
         throw new Error("已绑定交易对与项目代币/支付币不匹配。");
       }
@@ -107,21 +134,26 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
       let lastBlock = cursor.last_block;
       if (cursor.last_block_hash) {
         const block = await provider.getBlock(lastBlock);
-        if (!block || block.hash?.toLowerCase() !== cursor.last_block_hash.toLowerCase()) {
+        if (
+          !block ||
+          block.hash?.toLowerCase() !== cursor.last_block_hash.toLowerCase()
+        ) {
           // 回退 12 个区块后重新索引，避免短链重组留下错误成交记录。
           lastBlock = Math.max(binding.verifiedBlock, lastBlock - 12);
           const ancestor = await provider.getBlock(lastBlock);
           await this.databaseService
             .getPool()
-            .query("DELETE FROM dex_trade_events WHERE chain_id = $1 AND pair_address = $2 AND block_number > $3", [
-              binding.chainId,
-              binding.pair.toLowerCase(),
-              lastBlock,
-            ]);
+            .query(
+              "DELETE FROM dex_trade_events WHERE chain_id = $1 AND pair_address = $2 AND block_number > $3",
+              [binding.chainId, binding.pair.toLowerCase(), lastBlock]
+            );
           await this.saveCursor(binding, lastBlock, ancestor?.hash ?? null);
         }
       }
-      const latest = Math.max(binding.verifiedBlock, (await provider.getBlockNumber()) - 3);
+      const latest = Math.max(
+        binding.verifiedBlock,
+        (await provider.getBlockNumber()) - 3
+      );
       if (lastBlock >= latest) {
         await this.setState("ready", lastBlock, null);
         return;
@@ -129,12 +161,14 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
       const fromBlock = Math.max(binding.verifiedBlock, lastBlock + 1);
       const toBlock = Math.min(latest, fromBlock + 499);
       const swapTopic = pairInterface.getEvent("Swap")!.topicHash;
-      const logs = await provider.getLogs({
-        address: binding.pair,
-        topics: [swapTopic],
+      const logs = await this.getLogsWithRangeFallback(
+        provider,
+        binding.chainId,
+        binding.pair,
+        [swapTopic],
         fromBlock,
-        toBlock,
-      });
+        toBlock
+      );
       const blockTimes = new Map<number, number>();
       for (const log of logs) {
         const event = pairInterface.parseLog(log);
@@ -151,11 +185,16 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
         const amount0Out = BigInt(event.args.amount0Out);
         const amount1Out = BigInt(event.args.amount1Out);
         const tokenIs0 = token0.toLowerCase() === binding.token.toLowerCase();
-        const tokenVolume = tokenIs0 ? amount0In + amount0Out : amount1In + amount1Out;
-        const paymentVolume = tokenIs0 ? amount1In + amount1Out : amount0In + amount0Out;
+        const tokenVolume = tokenIs0
+          ? amount0In + amount0Out
+          : amount1In + amount1Out;
+        const paymentVolume = tokenIs0
+          ? amount1In + amount1Out
+          : amount0In + amount0Out;
         if (tokenVolume === 0n || paymentVolume === 0n) continue;
         const scaledPrice =
-          (paymentVolume * 10n ** (BigInt(tokenDecimals) + 18n)) / (tokenVolume * 10n ** BigInt(paymentDecimals));
+          (paymentVolume * 10n ** (BigInt(tokenDecimals) + 18n)) /
+          (tokenVolume * 10n ** BigInt(paymentDecimals));
         const price = formatUnits(scaledPrice, 18);
         await this.databaseService.getPool().query(
           `INSERT INTO dex_trade_events (
@@ -179,8 +218,8 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
             amount1Out.toString(),
             tokenVolume.toString(),
             paymentVolume.toString(),
-            price,
-          ],
+            price
+          ]
         );
       }
       const lastBlockHash = (await provider.getBlock(toBlock))?.hash ?? null;
@@ -190,7 +229,11 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
       }
       await this.setState("ready", toBlock, null);
     } catch (error) {
-      await this.setState("error", null, error instanceof Error ? error.message.slice(0, 1000) : "行情索引失败。");
+      await this.setState(
+        "error",
+        null,
+        error instanceof Error ? error.message.slice(0, 1000) : "行情索引失败。"
+      );
     } finally {
       provider?.destroy();
       if (client) {
@@ -205,6 +248,134 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private async getLogsWithRangeFallback(
+    provider: Awaited<ReturnType<typeof getBoundRpcProvider>>,
+    chainId: number,
+    address: string,
+    topics: Array<string | string[]>,
+    fromBlock: number,
+    toBlock: number
+  ): Promise<Log[]> {
+    try {
+      return await provider.getLogs({ address, topics, fromBlock, toBlock });
+    } catch (error) {
+      if (!this.isRpcLogLimitError(error)) throw error;
+      const fallbackLogs = await this.getLogsFromAlternateRpc(
+        chainId,
+        address,
+        topics,
+        fromBlock,
+        toBlock
+      );
+      if (fallbackLogs) return fallbackLogs;
+      if (fromBlock >= toBlock) throw error;
+
+      // RPC 对单次日志范围有限制时，顺序拆分区块区间，避免请求超限后索引器停滞。
+      const middleBlock = Math.floor((fromBlock + toBlock) / 2);
+      const first = await this.getLogsWithRangeFallback(
+        provider,
+        chainId,
+        address,
+        topics,
+        fromBlock,
+        middleBlock
+      );
+      const second = await this.getLogsWithRangeFallback(
+        provider,
+        chainId,
+        address,
+        topics,
+        middleBlock + 1,
+        toBlock
+      );
+      return [...first, ...second];
+    }
+  }
+
+  private async getLogsFromAlternateRpc(
+    chainId: number,
+    address: string,
+    topics: Array<string | string[]>,
+    fromBlock: number,
+    toBlock: number
+  ) {
+    const settings = await this.databaseService
+      .getPool()
+      .query<{ config_key: string; config_value: string }>(
+        "SELECT config_key, config_value FROM system_configs WHERE config_key = ANY($1::text[])",
+        [["rpc_nodes", "rpc_node_metrics"]]
+      );
+    const saved = new Map(
+      settings.rows.map(row => [row.config_key, row.config_value])
+    );
+    const configuration = await resolveRpcConfiguration(
+      chainId,
+      saved.get("rpc_nodes"),
+      saved.get("rpc_node_metrics")
+    );
+    const candidates = configuration.nodes.filter(
+      url => url !== configuration.activeUrl
+    );
+    candidates.sort((left, right) => {
+      if (left === this.preferredLogRpcUrl) return -1;
+      if (right === this.preferredLogRpcUrl) return 1;
+      const latency = (url: string) => {
+        const metric = configuration.metrics[url];
+        return metric?.status === "success" && metric.latencyMs !== null
+          ? metric.latencyMs
+          : Number.MAX_SAFE_INTEGER;
+      };
+      return latency(left) - latency(right);
+    });
+
+    // 最多探测 6 个备用节点，限制失败 RPC 的额外耗时和请求量。
+    for (const url of candidates.slice(0, 6)) {
+      const request = new FetchRequest(url);
+      request.timeout = 3000;
+      const alternate = new JsonRpcProvider(request, undefined, {
+        batchMaxCount: 1
+      });
+      try {
+        const network = await alternate.getNetwork();
+        if (
+          network.chainId !== BigInt(chainId) ||
+          (await alternate.getCode(address)) === "0x"
+        )
+          continue;
+        const logs = await alternate.getLogs({
+          address,
+          topics,
+          fromBlock,
+          toBlock
+        });
+        this.preferredLogRpcUrl = url;
+        return logs;
+      } catch {
+        // 备用节点不可用或也限制日志查询时，继续尝试下一个节点。
+      } finally {
+        alternate.destroy();
+      }
+    }
+    return null;
+  }
+
+  private isRpcLogLimitError(error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    const code = (
+      error as { code?: unknown; info?: { error?: { code?: unknown } } } | null
+    )?.code;
+    const nestedCode = (
+      error as { info?: { error?: { code?: unknown } } } | null
+    )?.info?.error?.code;
+    return (
+      code === -32005 ||
+      nestedCode === -32005 ||
+      /limit exceeded|too many (?:results|logs)|query returned more than|response size exceeded/i.test(
+        message
+      )
+    );
+  }
+
   private async getBinding(): Promise<IndexBinding> {
     const result = await this.databaseService.getPool().query<{
       chain_id: string;
@@ -215,19 +386,23 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
     }>(
       `SELECT chain_id::text, deployment_id, pair_address,
               verified_block::text, contracts
-         FROM runtime_contract_binding WHERE singleton = TRUE`,
+         FROM runtime_contract_binding WHERE singleton = TRUE`
     );
     const row = result.rows[0];
     const tokenAddress = row?.contracts?.ProjectToken?.address;
     const limitOrdersAddress = row?.contracts?.TokenLimitOrders?.address;
-    if (!row || typeof tokenAddress !== "string") throw new Error("系统尚未绑定交易合约。");
+    if (!row || typeof tokenAddress !== "string")
+      throw new Error("系统尚未绑定交易合约。");
     return {
       chainId: Number(row.chain_id),
       deploymentId: row.deployment_id,
       pair: getAddress(row.pair_address),
       token: getAddress(tokenAddress),
-      limitOrders: typeof limitOrdersAddress === "string" ? getAddress(limitOrdersAddress) : null,
-      verifiedBlock: Number(row.verified_block),
+      limitOrders:
+        typeof limitOrdersAddress === "string"
+          ? getAddress(limitOrdersAddress)
+          : null,
+      verifiedBlock: Number(row.verified_block)
     };
   }
 
@@ -239,7 +414,11 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
       `INSERT INTO dex_index_cursors (chain_id, pair_address, last_block, last_block_hash)
        VALUES ($1, $2, $3, NULL)
        ON CONFLICT (chain_id, pair_address) DO NOTHING`,
-      [binding.chainId, binding.pair.toLowerCase(), Math.max(0, binding.verifiedBlock - 1)],
+      [
+        binding.chainId,
+        binding.pair.toLowerCase(),
+        Math.max(0, binding.verifiedBlock - 1)
+      ]
     );
     void result;
     const cursor = await this.databaseService.getPool().query<{
@@ -247,12 +426,18 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
       last_block_hash: string | null;
     }>("SELECT last_block::text, last_block_hash FROM dex_index_cursors WHERE chain_id = $1 AND pair_address = $2", [binding.chainId, binding.pair.toLowerCase()]);
     return {
-      last_block: Number(cursor.rows[0]?.last_block ?? Math.max(0, binding.verifiedBlock - 1)),
-      last_block_hash: cursor.rows[0]?.last_block_hash ?? null,
+      last_block: Number(
+        cursor.rows[0]?.last_block ?? Math.max(0, binding.verifiedBlock - 1)
+      ),
+      last_block_hash: cursor.rows[0]?.last_block_hash ?? null
     };
   }
 
-  private async saveCursor(binding: IndexBinding, block: number, hash: string | null) {
+  private async saveCursor(
+    binding: IndexBinding,
+    block: number,
+    hash: string | null
+  ) {
     await this.databaseService.getPool().query(
       `INSERT INTO dex_index_cursors (chain_id, pair_address, last_block, last_block_hash, updated_at)
        VALUES ($1,$2,$3,$4,NOW())
@@ -260,20 +445,29 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
          SET last_block = EXCLUDED.last_block,
              last_block_hash = EXCLUDED.last_block_hash,
              updated_at = NOW()`,
-      [binding.chainId, binding.pair.toLowerCase(), block, hash?.toLowerCase() ?? null],
+      [
+        binding.chainId,
+        binding.pair.toLowerCase(),
+        block,
+        hash?.toLowerCase() ?? null
+      ]
     );
   }
 
   private async indexLimitOrderEvents(
     binding: IndexBinding,
     provider: Awaited<ReturnType<typeof getBoundRpcProvider>>,
-    latest: number,
+    latest: number
   ) {
     const contractAddress = binding.limitOrders!;
     await this.databaseService.getPool().query(
       `INSERT INTO limit_order_event_cursors (chain_id, contract_address, last_block)
        VALUES ($1,$2,$3) ON CONFLICT (chain_id, contract_address) DO NOTHING`,
-      [binding.chainId, contractAddress.toLowerCase(), Math.max(0, binding.verifiedBlock - 1)],
+      [
+        binding.chainId,
+        contractAddress.toLowerCase(),
+        Math.max(0, binding.verifiedBlock - 1)
+      ]
     );
     const cursorResult = await this.databaseService.getPool().query<{
       last_block: string;
@@ -281,9 +475,11 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
     }>(
       `SELECT last_block::text, last_block_hash FROM limit_order_event_cursors
         WHERE chain_id = $1 AND contract_address = $2`,
-      [binding.chainId, contractAddress.toLowerCase()],
+      [binding.chainId, contractAddress.toLowerCase()]
     );
-    let cursor = Number(cursorResult.rows[0]?.last_block ?? Math.max(0, binding.verifiedBlock - 1));
+    let cursor = Number(
+      cursorResult.rows[0]?.last_block ?? Math.max(0, binding.verifiedBlock - 1)
+    );
     const cursorHash = cursorResult.rows[0]?.last_block_hash;
     if (cursorHash) {
       const block = await provider.getBlock(cursor);
@@ -294,13 +490,18 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
           `UPDATE limit_orders SET status = 'pending', transaction_hash = NULL,
                   block_number = NULL, block_hash = NULL, updated_at = NOW()
             WHERE chain_id = $1 AND contract_address = $2 AND block_number > $3`,
-          [binding.chainId, contractAddress.toLowerCase(), cursor],
+          [binding.chainId, contractAddress.toLowerCase(), cursor]
         );
         await this.databaseService.getPool().query(
           `UPDATE limit_order_event_cursors SET last_block = $3,
                   last_block_hash = $4, updated_at = NOW()
             WHERE chain_id = $1 AND contract_address = $2`,
-          [binding.chainId, contractAddress.toLowerCase(), cursor, ancestor?.hash ?? null],
+          [
+            binding.chainId,
+            contractAddress.toLowerCase(),
+            cursor,
+            ancestor?.hash ?? null
+          ]
         );
       }
     }
@@ -309,14 +510,16 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
     const toBlock = Math.min(latest, fromBlock + 499);
     const topics = [
       orderEventsInterface.getEvent("OrderExecuted")!.topicHash,
-      orderEventsInterface.getEvent("OrderCancelled")!.topicHash,
+      orderEventsInterface.getEvent("OrderCancelled")!.topicHash
     ];
-    const logs = await provider.getLogs({
-      address: contractAddress,
-      topics: [topics],
+    const logs = await this.getLogsWithRangeFallback(
+      provider,
+      binding.chainId,
+      contractAddress,
+      [topics],
       fromBlock,
-      toBlock,
-    });
+      toBlock
+    );
     for (const log of logs) {
       const event = orderEventsInterface.parseLog(log);
       if (!event) continue;
@@ -332,8 +535,8 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
           log.blockHash.toLowerCase(),
           binding.chainId,
           contractAddress.toLowerCase(),
-          String(event.args.orderHash).toLowerCase(),
-        ],
+          String(event.args.orderHash).toLowerCase()
+        ]
       );
     }
     const hash = (await provider.getBlock(toBlock))?.hash ?? null;
@@ -341,7 +544,7 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
       `UPDATE limit_order_event_cursors SET last_block = $3,
               last_block_hash = $4, updated_at = NOW()
         WHERE chain_id = $1 AND contract_address = $2`,
-      [binding.chainId, contractAddress.toLowerCase(), toBlock, hash],
+      [binding.chainId, contractAddress.toLowerCase(), toBlock, hash]
     );
   }
 }

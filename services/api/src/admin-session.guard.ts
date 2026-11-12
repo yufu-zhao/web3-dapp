@@ -2,7 +2,7 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
-  UnauthorizedException,
+  UnauthorizedException
 } from "@nestjs/common";
 import type { AdminRequest } from "./admin.types.js";
 import { AdminAuthService } from "./admin-auth.service.js";

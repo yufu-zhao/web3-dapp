@@ -20,6 +20,21 @@ export interface AdminRole extends Record<string, unknown> {
   createdAt: string;
 }
 
+export interface UserAccountRecord extends Record<string, unknown> {
+  id: string;
+  walletAddress: string;
+  name: string;
+  remark: string;
+  avatarUrl: string;
+  invitationCode: string;
+  inviterWalletAddress: string | null;
+  invitedCount: string;
+  createdAt: string;
+  registrationIp: string | null;
+  lastLoginIp: string | null;
+  isActive: boolean;
+}
+
 export interface AdminMenu extends Record<string, unknown> {
   id: string;
   code: string;
@@ -74,6 +89,9 @@ export interface AdminSettings {
   tokenName: string;
   tokenSymbol: string;
   passwordPolicy: AdminPasswordPolicy;
+  userAccess: {
+    requireInvitationForRegistration: boolean;
+  };
   installationChainId: number | null;
   themePalettes: ThemePalettes;
   rpcConfiguration: {
@@ -139,7 +157,7 @@ export interface UploadedContentAsset {
 export class AdminApiError extends Error {
   constructor(
     message: string,
-    readonly status: number,
+    readonly status: number
   ) {
     super(message);
     this.name = "AdminApiError";
@@ -149,7 +167,7 @@ export class AdminApiError extends Error {
 // 管理端请求统一走同源代理，并携带 HttpOnly 会话 Cookie。
 export async function adminRequest<T>(
   path: string,
-  init: RequestInit = {},
+  init: RequestInit = {}
 ): Promise<T> {
   let response: Response;
   try {
@@ -161,8 +179,8 @@ export async function adminRequest<T>(
         ...(init.body && !(init.body instanceof FormData)
           ? { "content-type": "application/json" }
           : {}),
-        ...init.headers,
-      },
+        ...init.headers
+      }
     });
   } catch {
     throw new AdminApiError("无法连接业务 API，请检查服务后重试。", 0);
@@ -184,7 +202,7 @@ export async function adminRequest<T>(
         : typeof message === "string"
           ? message
           : `业务 API 返回 HTTP ${response.status}。`,
-      response.status,
+      response.status
     );
   }
   return payload as T;
@@ -195,12 +213,12 @@ export function getPage<T>(
   page: number,
   pageSize: number,
   search: string,
-  filters: Record<string, string | boolean> = {},
+  filters: Record<string, string | boolean> = {}
 ) {
   const query = new URLSearchParams({
     page: String(page),
     pageSize: String(pageSize),
-    search,
+    search
   });
   for (const [key, value] of Object.entries(filters)) {
     if (String(value).trim()) query.set(key, String(value));
@@ -211,23 +229,23 @@ export function getPage<T>(
 export function createRecord<T>(resource: "users" | "roles", value: unknown) {
   return adminRequest<T>(`/${resource}`, {
     method: "POST",
-    body: JSON.stringify(value),
+    body: JSON.stringify(value)
   });
 }
 
 export function updateRecord<T>(
   resource: "users" | "roles" | "menus",
   id: string,
-  value: unknown,
+  value: unknown
 ) {
   return adminRequest<T>(`/${resource}/${encodeURIComponent(id)}`, {
     method: "PATCH",
-    body: JSON.stringify(value),
+    body: JSON.stringify(value)
   });
 }
 
 export function deleteRecord(resource: "users" | "roles", id: string) {
   return adminRequest<void>(`/${resource}/${encodeURIComponent(id)}`, {
-    method: "DELETE",
+    method: "DELETE"
   });
 }

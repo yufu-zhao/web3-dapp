@@ -82,7 +82,7 @@ const search = ref("");
 // 图库检索使用字体类名，搜索结果限制渲染数量以保持弹窗流畅。
 const filtered = computed(() => {
   const query = (search.value ?? "").toLowerCase();
-  return icons.filter((icon) => icon.toLowerCase().includes(query));
+  return icons.filter(icon => icon.toLowerCase().includes(query));
 });
 function choose(icon: string) {
   emit("update:modelValue", icon);

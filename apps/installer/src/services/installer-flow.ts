@@ -8,7 +8,7 @@ import {
   type DeploymentRecord,
   type InstallationSummary,
   type InstallationIdentityInput,
-  type SavedDeployment,
+  type SavedDeployment
 } from "./installer-api";
 
 export interface InstallerEnvironment {
@@ -27,7 +27,7 @@ const defaultPasswordPolicy: AdminPasswordPolicy = {
   requireUppercase: true,
   requireLowercase: true,
   requireNumber: true,
-  requireSymbol: true,
+  requireSymbol: true
 };
 
 export const installerFlow = reactive({
@@ -42,7 +42,7 @@ export const installerFlow = reactive({
     database: "chainforge",
     username: "postgres",
     password: "",
-    ssl: false,
+    ssl: false
   } as DatabaseSettings,
   databaseCheck: null as DatabaseCheck | null,
   databaseError: "",
@@ -51,18 +51,18 @@ export const installerFlow = reactive({
   databaseSettingsSaved: false,
   administrator: {
     username: "admin",
-    password: "",
+    password: ""
   },
   walletConnectConfigured: false,
   installation: {
     systemName: "我的 DApp",
     tokenName: "项目代币",
-    tokenSymbol: "TOKEN",
+    tokenSymbol: "TOKEN"
   } as InstallationIdentityInput,
   passwordPolicy: { ...defaultPasswordPolicy } as AdminPasswordPolicy,
   summary: {} as InstallationSummary,
   deploymentRecords: [] as DeploymentRecord[],
-  selectedDeployment: null as SavedDeployment | null,
+  selectedDeployment: null as SavedDeployment | null
 });
 
 let bootstrapPromise: Promise<void> | undefined;
@@ -101,7 +101,7 @@ export async function bootstrapInstallerFlow() {
           passwordPolicy?: AdminPasswordPolicy;
           installation?: InstallationIdentity | null;
         }>("/config"),
-        installerRequest<InstallationSummary>("/summary"),
+        installerRequest<InstallationSummary>("/summary")
       ]);
       installerFlow.walletConnectConfigured = config.walletConnectConfigured;
       if (config.installation) {
@@ -111,7 +111,7 @@ export async function bootstrapInstallerFlow() {
       }
       installerFlow.passwordPolicy = {
         ...defaultPasswordPolicy,
-        ...config.passwordPolicy,
+        ...config.passwordPolicy
       };
       installerFlow.summary = summary;
       if (summary.databaseConnection) {
@@ -121,11 +121,11 @@ export async function bootstrapInstallerFlow() {
           host: summary.databaseConnection.host,
           port: summary.databaseConnection.port,
           database: summary.databaseConnection.database,
-          username: summary.databaseConnection.username,
+          username: summary.databaseConnection.username
         };
       }
       installerFlow.databaseReady = Boolean(
-        summary.installed || config.installed,
+        summary.installed || config.installed
       );
       installerFlow.databaseSettingsSaved = Boolean(summary.settingsSaved);
       installerFlow.deploymentRecords = summary.deployments ?? [];

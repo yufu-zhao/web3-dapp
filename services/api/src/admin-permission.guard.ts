@@ -2,7 +2,7 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
-  Injectable,
+  Injectable
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { ADMIN_PERMISSION_METADATA } from "./admin-permission.decorator.js";
@@ -15,7 +15,7 @@ export class AdminPermissionGuard implements CanActivate {
   canActivate(context: ExecutionContext) {
     const required = this.reflector.getAllAndOverride<AdminPermission>(
       ADMIN_PERMISSION_METADATA,
-      [context.getHandler(), context.getClass()],
+      [context.getHandler(), context.getClass()]
     );
     if (!required) return true;
 

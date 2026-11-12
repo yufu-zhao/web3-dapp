@@ -8,10 +8,10 @@ export default defineRouter(() => {
   const router = createRouter({
     scrollBehavior: () => ({ left: 0, top: 0 }),
     routes,
-    history: createWebHistory("/"),
+    history: createWebHistory("/")
   });
 
-  router.beforeEach(async (to) => {
+  router.beforeEach(async to => {
     let ready: boolean;
     try {
       ready = (await loadAdminInitializationStatus()).state === "ready";

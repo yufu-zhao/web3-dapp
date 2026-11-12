@@ -67,7 +67,7 @@ const props = withDefaults(
     items?: CarouselItem[];
     isMobile?: boolean;
   }>(),
-  { items: () => [], isMobile: false },
+  { items: () => [], isMobile: false }
 );
 
 const activeIndex = ref(0);
@@ -106,7 +106,7 @@ const heroStyle = computed(() => ({
   width: activeItem.value?.widthMode === "full" ? "100vw" : "100%",
   marginLeft:
     activeItem.value?.widthMode === "full" ? "calc(50% - 50vw)" : undefined,
-  maxWidth: activeItem.value?.widthMode === "default" ? "1180px" : "none",
+  maxWidth: activeItem.value?.widthMode === "default" ? "1180px" : "none"
 }));
 </script>
 

@@ -1,8 +1,8 @@
 {
   "name": "@chainforge/components",
   "version": "1.0.0",
-  "description": "",
   "private": true,
+  "description": "",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

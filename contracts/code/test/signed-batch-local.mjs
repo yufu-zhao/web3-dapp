@@ -1,7 +1,7 @@
 // 仅连接独立本地 Hardhat 链，覆盖签名批量限价单的核心边界。
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { BrowserProvider, ContractFactory, parseEther } from "../../../apps/user/node_modules/ethers/lib.esm/index.js";
+import { BrowserProvider, ContractFactory, parseEther } from "../../../node_modules/ethers/lib.esm/index.js";
 
 const rpc = "http://127.0.0.1:18545";
 const provider = new BrowserProvider({

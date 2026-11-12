@@ -6,14 +6,14 @@ import {
   Post,
   Req,
   Res,
-  UseGuards,
+  UseGuards
 } from "@nestjs/common";
 import type { FastifyReply } from "fastify";
 import { AdminAuthService } from "./admin-auth.service.js";
 import {
   adminSessionClearCookie,
   adminSessionSetCookie,
-  readAdminSessionCookie,
+  readAdminSessionCookie
 } from "./admin-cookie.js";
 import { AdminSessionGuard } from "./admin-session.guard.js";
 import type { AdminRequest } from "./admin.types.js";
@@ -27,7 +27,7 @@ export class AdminAuthController {
   async login(
     @Body() body: unknown,
     @Req() request: AdminRequest,
-    @Res({ passthrough: true }) response: FastifyReply,
+    @Res({ passthrough: true }) response: FastifyReply
   ) {
     const result = await this.adminAuthService.login(body, request.ip);
     response.header("set-cookie", adminSessionSetCookie(result.token));
@@ -45,11 +45,11 @@ export class AdminAuthController {
   @Header("Cache-Control", "no-store")
   async logout(
     @Req() request: AdminRequest,
-    @Res({ passthrough: true }) response: FastifyReply,
+    @Res({ passthrough: true }) response: FastifyReply
   ) {
     response.header("set-cookie", adminSessionClearCookie());
     await this.adminAuthService.logout(
-      readAdminSessionCookie(request.headers.cookie),
+      readAdminSessionCookie(request.headers.cookie)
     );
     return { ok: true };
   }

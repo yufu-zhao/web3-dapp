@@ -17,9 +17,18 @@ import { LimitOrdersController } from "./limit-orders.controller.js";
 import { LimitOrdersService } from "./limit-orders.service.js";
 import { LimitOrderExecutorService } from "./limit-order-executor.service.js";
 import { MarketIndexerService } from "./market-indexer.service.js";
+import { UserReferralsController } from "./user-referrals.controller.js";
+import { UserReferralsService } from "./user-referrals.service.js";
 
 @Module({
-  controllers: [HealthController, PublicConfigController, AdminAuthController, AdminController, LimitOrdersController],
+  controllers: [
+    HealthController,
+    PublicConfigController,
+    AdminAuthController,
+    AdminController,
+    LimitOrdersController,
+    UserReferralsController
+  ],
   providers: [
     DatabaseService,
     PublicConfigService,
@@ -34,6 +43,7 @@ import { MarketIndexerService } from "./market-indexer.service.js";
     AdminService,
     AdminSessionGuard,
     AdminPermissionGuard,
-  ],
+    UserReferralsService
+  ]
 })
 export class AppModule {}

@@ -5,8 +5,15 @@
       kicker="步骤 01 · ENVIRONMENT CHECK"
       :icon="{ icon: 'monitor_heart', color: 'blue-1', textColor: 'blue-9' }"
     />
-    <p class="content-description">确认安装服务和 Node.js 运行环境可用，然后进入数据库初始化。</p>
-    <q-linear-progress v-if="flow.bootstrapping" indeterminate color="primary" class="loading-bar" />
+    <p class="content-description"
+      >确认安装服务和 Node.js 运行环境可用，然后进入数据库初始化。</p
+    >
+    <q-linear-progress
+      v-if="flow.bootstrapping"
+      indeterminate
+      color="primary"
+      class="loading-bar"
+    />
     <div v-if="flow.environment" class="check-list">
       <div v-for="item in checks" :key="item.label" class="check-row">
         <div class="check-symbol" :class="item.ok ? 'passed' : 'failed'">
@@ -16,14 +23,19 @@
           <strong>{{ item.label }}</strong>
           <span>{{ item.detail }}</span>
         </div>
-        <span class="check-status" :class="item.ok ? 'passed' : 'failed'">{{ item.ok ? "通过" : "未通过" }}</span>
+        <span class="check-status" :class="item.ok ? 'passed' : 'failed'">{{
+          item.ok ? "通过" : "未通过"
+        }}</span>
       </div>
     </div>
     <q-banner v-else class="message-banner error-message">
       <template #avatar><q-icon name="error_outline" /></template>
       {{ flow.environmentError || "正在读取安装环境…" }}
     </q-banner>
-    <q-banner v-if="flow.environmentError && flow.environment" class="message-banner error-message">
+    <q-banner
+      v-if="flow.environmentError && flow.environment"
+      class="message-banner error-message"
+    >
       <template #avatar><q-icon name="error_outline" /></template>
       {{ flow.environmentError }}
     </q-banner>
@@ -54,7 +66,11 @@ import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { installerRequest } from "../services/installer-api";
 import ContentHeading from "../components/ContentHeading.vue";
-import { errorMessage, installerFlow, type InstallerEnvironment } from "../services/installer-flow";
+import {
+  errorMessage,
+  installerFlow,
+  type InstallerEnvironment
+} from "../services/installer-flow";
 
 const router = useRouter();
 const flow = installerFlow;
@@ -66,25 +82,25 @@ const checks = computed(() => {
     {
       label: "安装服务",
       detail: `${environment.service} 服务已响应`,
-      ok: environment.status === "ok",
+      ok: environment.status === "ok"
     },
     {
       label: "Node.js 版本",
       detail: `当前 ${environment.nodeVersion} · 要求 ${environment.requiredNode}`,
-      ok: environment.nodeSupported,
+      ok: environment.nodeSupported
     },
     {
       label: "Reown AppKit Project ID",
       detail: environment.walletConnectConfigured
         ? "已从根目录 .env 读取"
         : "请在根目录 .env 设置 WALLETCONNECT_PROJECT_ID 并重启服务",
-      ok: environment.walletConnectConfigured,
+      ok: environment.walletConnectConfigured
     },
     {
       label: "运行平台",
       detail: `${environment.platform} · ${environment.architecture}`,
-      ok: true,
-    },
+      ok: true
+    }
   ];
 });
 
@@ -92,9 +108,12 @@ async function checkEnvironment() {
   checking.value = true;
   flow.environmentError = "";
   try {
-    flow.environment = await installerRequest<InstallerEnvironment>("/environment");
+    flow.environment =
+      await installerRequest<InstallerEnvironment>("/environment");
     flow.environmentReady =
-      flow.environment.status === "ok" && flow.environment.nodeSupported && flow.environment.walletConnectConfigured;
+      flow.environment.status === "ok" &&
+      flow.environment.nodeSupported &&
+      flow.environment.walletConnectConfigured;
     if (!flow.environmentReady)
       flow.environmentError = flow.environment.walletConnectConfigured
         ? "运行环境版本不符合安装要求。"

@@ -203,90 +203,90 @@ const providers = [
     id: "openai",
     name: "OpenAI",
     adapter: "openai-compatible",
-    baseUrl: "https://api.openai.com/v1",
+    baseUrl: "https://api.openai.com/v1"
   },
   {
     id: "anthropic",
     name: "Anthropic Claude",
     adapter: "anthropic",
-    baseUrl: "https://api.anthropic.com/v1",
+    baseUrl: "https://api.anthropic.com/v1"
   },
   {
     id: "google",
     name: "Google Gemini",
     adapter: "google",
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta"
   },
   {
     id: "deepseek",
     name: "DeepSeek",
     adapter: "openai-compatible",
-    baseUrl: "https://api.deepseek.com/v1",
+    baseUrl: "https://api.deepseek.com/v1"
   },
   {
     id: "qwen",
     name: "通义千问（DashScope）",
     adapter: "openai-compatible",
-    baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1"
   },
   {
     id: "moonshot",
     name: "Moonshot（月之暗面）",
     adapter: "openai-compatible",
-    baseUrl: "https://api.moonshot.cn/v1",
+    baseUrl: "https://api.moonshot.cn/v1"
   },
   {
     id: "zhipu",
     name: "智谱 AI",
     adapter: "openai-compatible",
-    baseUrl: "https://open.bigmodel.cn/api/paas/v4",
+    baseUrl: "https://open.bigmodel.cn/api/paas/v4"
   },
   {
     id: "siliconflow",
     name: "硅基流动",
     adapter: "openai-compatible",
-    baseUrl: "https://api.siliconflow.cn/v1",
+    baseUrl: "https://api.siliconflow.cn/v1"
   },
   {
     id: "openrouter",
     name: "OpenRouter",
     adapter: "openai-compatible",
-    baseUrl: "https://openrouter.ai/api/v1",
+    baseUrl: "https://openrouter.ai/api/v1"
   },
   {
     id: "groq",
     name: "Groq",
     adapter: "openai-compatible",
-    baseUrl: "https://api.groq.com/openai/v1",
+    baseUrl: "https://api.groq.com/openai/v1"
   },
   {
     id: "together",
     name: "Together AI",
     adapter: "openai-compatible",
-    baseUrl: "https://api.together.xyz/v1",
+    baseUrl: "https://api.together.xyz/v1"
   },
   {
     id: "nvidia",
     name: "NVIDIA NIM",
     adapter: "openai-compatible",
-    baseUrl: "https://integrate.api.nvidia.com/v1",
+    baseUrl: "https://integrate.api.nvidia.com/v1"
   },
   {
     id: "ollama",
     name: "Ollama（本机）",
     adapter: "openai-compatible",
-    baseUrl: "http://127.0.0.1:11434/v1",
+    baseUrl: "http://127.0.0.1:11434/v1"
   },
   {
     id: "openai-compatible",
     name: "自定义 OpenAI 兼容服务",
     adapter: "openai-compatible",
-    baseUrl: "",
-  },
+    baseUrl: ""
+  }
 ];
 const providerOptions = providers.map(({ id, name }) => ({
   label: name,
-  value: id,
+  value: id
 }));
 const canWrite = computed(() => canAccess("settings:update"));
 const loading = ref(true);
@@ -308,7 +308,7 @@ const configuration = ref<ModelConfiguration>({
   model: "",
   enabled: false,
   hasApiKey: false,
-  encryptionKeyReady: false,
+  encryptionKeyReady: false
 });
 const form = ref({
   adapter: "openai-compatible" as ModelConfiguration["adapter"],
@@ -317,11 +317,11 @@ const form = ref({
   baseUrl: "https://api.openai.com/v1",
   model: "",
   enabled: false,
-  apiKey: "",
+  apiKey: ""
 });
 
 function applyProviderPreset(providerId: string) {
-  const provider = providers.find((item) => item.id === providerId);
+  const provider = providers.find(item => item.id === providerId);
   if (!provider) return;
   form.value.providerName = provider.name;
   form.value.adapter = provider.adapter as ModelConfiguration["adapter"];
@@ -343,7 +343,7 @@ function applyConfiguration(value: ModelConfiguration) {
     baseUrl: value.baseUrl,
     model: value.model,
     enabled: value.enabled,
-    apiKey: "",
+    apiKey: ""
   };
 }
 
@@ -357,7 +357,7 @@ async function loadModels() {
     providerId: form.value.providerId,
     adapter: form.value.adapter,
     baseUrl: form.value.baseUrl.trim(),
-    apiKey: form.value.apiKey.trim() || "saved-key",
+    apiKey: form.value.apiKey.trim() || "saved-key"
   });
   if (requestFingerprint === lastModelsRequest) return;
 
@@ -367,8 +367,8 @@ async function loadModels() {
       "/settings/ai-model/models",
       {
         method: "POST",
-        body: JSON.stringify(form.value),
-      },
+        body: JSON.stringify(form.value)
+      }
     );
     modelOptions.value = result.models;
     filteredModelOptions.value = result.models;
@@ -376,13 +376,13 @@ async function loadModels() {
     Notify.create({
       type: "positive",
       message: `已获取 ${result.models.length} 个模型 ID。`,
-      position: "top",
+      position: "top"
     });
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "获取模型列表失败。",
-      position: "top",
+      position: "top"
     });
   } finally {
     loadingModels.value = false;
@@ -393,8 +393,8 @@ function filterModels(value: string, update: (callback: () => void) => void) {
   update(() => {
     const query = value.trim().toLocaleLowerCase();
     filteredModelOptions.value = query
-      ? modelOptions.value.filter((model) =>
-          model.toLocaleLowerCase().includes(query),
+      ? modelOptions.value.filter(model =>
+          model.toLocaleLowerCase().includes(query)
         )
       : modelOptions.value;
   });
@@ -405,7 +405,7 @@ async function loadConfiguration() {
   errorMessage.value = "";
   try {
     const result = await adminRequest<{ configuration: ModelConfiguration }>(
-      "/settings/ai-model",
+      "/settings/ai-model"
     );
     applyConfiguration(result.configuration);
   } catch (error) {
@@ -424,8 +424,8 @@ async function saveConfiguration() {
       "/settings/ai-model",
       {
         method: "PUT",
-        body: JSON.stringify(form.value),
-      },
+        body: JSON.stringify(form.value)
+      }
     );
     applyConfiguration(result.configuration);
     testMessage.value = "模型配置已保存。";
@@ -433,13 +433,13 @@ async function saveConfiguration() {
     Notify.create({
       type: "positive",
       message: "模型配置已保存。",
-      position: "top",
+      position: "top"
     });
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "保存模型配置失败。",
-      position: "top",
+      position: "top"
     });
   } finally {
     saving.value = false;
@@ -459,13 +459,13 @@ async function testConnection() {
       response: string;
     }>("/settings/ai-model/test", {
       method: "POST",
-      body: JSON.stringify(form.value),
+      body: JSON.stringify(form.value)
     });
     testMessage.value = `${result.providerName} / ${result.model} 连接成功：${result.response}`;
     Notify.create({
       type: "positive",
       message: "模型连接成功。",
-      position: "top",
+      position: "top"
     });
   } catch (error) {
     testFailed.value = true;
@@ -474,7 +474,7 @@ async function testConnection() {
     Notify.create({
       type: "negative",
       message: testMessage.value,
-      position: "top",
+      position: "top"
     });
   } finally {
     testing.value = false;
@@ -492,21 +492,21 @@ async function clearSavedApiKey() {
           ...form.value,
           apiKey: "",
           clearApiKey: true,
-          enabled: false,
-        }),
-      },
+          enabled: false
+        })
+      }
     );
     applyConfiguration(result.configuration);
     Notify.create({
       type: "positive",
       message: "已清除模型 API 密钥，并停用模型。",
-      position: "top",
+      position: "top"
     });
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "清除模型密钥失败。",
-      position: "top",
+      position: "top"
     });
   } finally {
     saving.value = false;

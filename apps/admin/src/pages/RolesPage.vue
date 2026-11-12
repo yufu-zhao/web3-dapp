@@ -102,9 +102,9 @@
               maxlength="64"
               :disable="form.code === 'super_admin'"
               :rules="[
-                (value) =>
+                value =>
                   /^[a-z][a-z0-9_-]{1,63}$/.test(value) ||
-                  '使用小写字母、数字、下划线或连字符',
+                  '使用小写字母、数字、下划线或连字符'
               ]"
             />
             <q-input
@@ -114,7 +114,7 @@
               label="角色名称"
               maxlength="128"
               :disable="form.code === 'super_admin'"
-              :rules="[(value) => Boolean(value) || '请输入角色名称']"
+              :rules="[value => Boolean(value) || '请输入角色名称']"
             />
             <q-input
               v-model.trim="form.description"
@@ -217,7 +217,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import AdminDataTable, {
-  type AdminTableColumn,
+  type AdminTableColumn
 } from "../components/AdminDataTable.vue";
 import {
   getPermissionTree,
@@ -225,7 +225,7 @@ import {
   deleteRecord,
   updateRecord,
   type AdminMenu,
-  type AdminRole,
+  type AdminRole
 } from "../services/admin-api";
 import { useAdminPage } from "../services/use-admin-page";
 import { adminSession, canAccess } from "../services/admin-session";
@@ -235,10 +235,10 @@ defineOptions({ name: "RolesPage" });
 const { state, load, setSearch, setPage, setPageSize } =
   useAdminPage<AdminRole>("roles");
 const canCreate = computed(
-  () => canAccess("roles:create") && permissionTreeLoaded.value,
+  () => canAccess("roles:create") && permissionTreeLoaded.value
 );
 const canUpdate = computed(
-  () => canAccess("roles:update") && permissionTreeLoaded.value,
+  () => canAccess("roles:update") && permissionTreeLoaded.value
 );
 const canDelete = computed(() => canAccess("roles:delete"));
 const successMessage = ref("");
@@ -256,14 +256,14 @@ const permissionTree = ref<AdminMenu[]>([]);
 const activeFilter = ref<boolean | null>(null);
 const statusOptions = [
   { label: "已启用", value: true },
-  { label: "已停用", value: false },
+  { label: "已停用", value: false }
 ];
 const form = ref({
   code: "",
   name: "",
   description: "",
   permissions: [] as string[],
-  isActive: true,
+  isActive: true
 });
 const permissionOptions = computed(() => {
   const options: Array<{ value: string; label: string; depth: number }> = [];
@@ -274,7 +274,7 @@ const permissionOptions = computed(() => {
         options.push({
           value: node.permissionCode,
           label: `${kind}：${node.name}`,
-          depth,
+          depth
         });
       }
       visit(node.children ?? [], depth + 1);
@@ -288,7 +288,7 @@ const permissionOptions = computed(() => {
 const treeNodes = computed(() => {
   const own = adminSession.user?.permissions ?? [];
   const build = (nodes: AdminMenu[]): object[] =>
-    nodes.map((node) => {
+    nodes.map(node => {
       const allowed =
         node.permissionCode &&
         (own.includes("*") || own.includes(node.permissionCode));
@@ -299,10 +299,10 @@ const treeNodes = computed(() => {
           (node.permissionCode && !allowed ? "（超出自身权限）" : ""),
         icon: node.type === "button" ? "lock_outline" : node.icon || "folder",
         tickable: Boolean(
-          node.permissionCode && (allowed || form.value.code === "super_admin"),
+          node.permissionCode && (allowed || form.value.code === "super_admin")
         ),
         disabled: form.value.code === "super_admin",
-        children: build(node.children ?? []),
+        children: build(node.children ?? [])
       };
     });
   return build(permissionTree.value);
@@ -315,20 +315,20 @@ const columns: AdminTableColumn[] = [
     name: "permissions",
     label: "权限范围",
     field: "permissions",
-    format: (value) => {
+    format: value => {
       const permissions = Array.isArray(value) ? value : [];
       if (permissions.includes("*")) return "全部权限";
       return `${permissions.length} 项权限`;
-    },
+    }
   },
   {
     name: "isActive",
     label: "状态",
     field: "isActive",
-    format: (value) => (value ? "启用" : "停用"),
+    format: value => (value ? "启用" : "停用")
   },
   { name: "createdAt", label: "创建时间", field: "createdAt" },
-  { name: "actions", label: "操作", field: "id", align: "right" },
+  { name: "actions", label: "操作", field: "id", align: "right" }
 ];
 
 function applyFilters() {
@@ -353,7 +353,7 @@ function openCreate() {
     name: "",
     description: "",
     permissions: [],
-    isActive: true,
+    isActive: true
   };
   formError.value = "";
   successMessage.value = "";
@@ -367,9 +367,9 @@ function openEdit(role: AdminRole) {
     name: role.name,
     description: role.description,
     permissions: role.permissions.includes("*")
-      ? permissionOptions.value.map((item) => item.value)
+      ? permissionOptions.value.map(item => item.value)
       : [...role.permissions],
-    isActive: role.isActive,
+    isActive: role.isActive
   };
   formError.value = "";
   successMessage.value = "";
@@ -386,7 +386,7 @@ async function saveRole() {
     const payload = {
       ...form.value,
       permissions:
-        form.value.code === "super_admin" ? ["*"] : form.value.permissions,
+        form.value.code === "super_admin" ? ["*"] : form.value.permissions
     };
     if (editingId.value) {
       await updateRecord("roles", editingId.value, payload);

@@ -23,7 +23,11 @@
       </div>
 
       <template v-else-if="settings">
-        <q-form v-if="activeCategory === 'basic'" class="settings-form" @submit.prevent="saveSettings">
+        <q-form
+          v-if="activeCategory === 'basic'"
+          class="settings-form"
+          @submit.prevent="saveSettings"
+        >
           <section class="settings-card">
             <header class="settings-heading">
               <span class="settings-icon"><q-icon name="badge" /></span>
@@ -40,7 +44,7 @@
                 label="系统名称"
                 maxlength="80"
                 :readonly="!canWrite"
-                :rules="[(value) => Boolean(value) || '系统名称不能为空']"
+                :rules="[value => Boolean(value) || '系统名称不能为空']"
               />
               <q-input
                 v-model.trim="form.tokenName"
@@ -49,7 +53,7 @@
                 label="主代币名称"
                 maxlength="80"
                 :readonly="!canWrite"
-                :rules="[(value) => Boolean(value) || '代币名称不能为空']"
+                :rules="[value => Boolean(value) || '代币名称不能为空']"
               />
               <q-input
                 v-model.trim="form.tokenSymbol"
@@ -59,7 +63,9 @@
                 maxlength="16"
                 :readonly="!canWrite"
                 :rules="[
-                  (value) => /^[\p{L}\p{N}._-]{1,16}$/u.test(value) || '使用 1 至 16 位字母、数字、点、下划线或连字符',
+                  value =>
+                    /^[\p{L}\p{N}._-]{1,16}$/u.test(value) ||
+                    '使用 1 至 16 位字母、数字、点、下划线或连字符'
                 ]"
               />
               <q-input
@@ -70,6 +76,30 @@
                 readonly
                 hint="由安装器在完整部署后锁定"
               />
+            </div>
+          </section>
+
+          <section class="settings-card">
+            <header class="settings-heading">
+              <span class="settings-icon"><q-icon name="group_add" /></span>
+              <div>
+                <h2>用户端访问规则</h2>
+                <p>控制用户注册时是否必须提交有效的邀请码。</p>
+              </div>
+            </header>
+            <div class="access-rule-list">
+              <div class="access-rule">
+                <div>
+                  <strong>注册必须使用邀请码</strong>
+                  <p>开启后，新用户注册流程必须提交有效的邀请码。</p>
+                </div>
+                <q-toggle
+                  v-model="form.userAccess.requireInvitationForRegistration"
+                  color="primary"
+                  :disable="!canWrite"
+                  aria-label="注册必须使用邀请码"
+                />
+              </div>
             </div>
           </section>
 
@@ -92,16 +122,41 @@
                 max="128"
                 :readonly="!canWrite"
                 :rules="[
-                  (value) => (Number.isInteger(value) && value >= 8 && value <= 128) || '长度须为 8 到 128 位整数',
+                  value =>
+                    (Number.isInteger(value) && value >= 8 && value <= 128) ||
+                    '长度须为 8 到 128 位整数'
                 ]"
               />
               <span>字符</span>
             </div>
             <div class="policy-options">
-              <q-checkbox v-model="form.passwordPolicy.requireUppercase" label="包含大写字母" :disable="!canWrite" />
-              <q-checkbox v-model="form.passwordPolicy.requireLowercase" label="包含小写字母" :disable="!canWrite" />
-              <q-checkbox v-model="form.passwordPolicy.requireNumber" label="包含数字" :disable="!canWrite" />
-              <q-checkbox v-model="form.passwordPolicy.requireSymbol" label="包含特殊字符" :disable="!canWrite" />
+              <q-checkbox
+                v-model="form.passwordPolicy.requireUppercase"
+                label="包含大写字母"
+                :disable="!canWrite"
+              />
+              <q-checkbox
+                v-model="form.passwordPolicy.requireLowercase"
+                label="包含小写字母"
+                :disable="!canWrite"
+              />
+              <q-checkbox
+                v-model="form.passwordPolicy.requireNumber"
+                label="包含数字"
+                :disable="!canWrite"
+              />
+              <q-checkbox
+                v-model="form.passwordPolicy.requireSymbol"
+                label="包含特殊字符"
+                :disable="!canWrite"
+              />
+            </div>
+            <div class="policy-preview" aria-live="polite">
+              <div class="policy-preview-copy">
+                <strong>密码规则样例</strong>
+                <span>仅用于展示规则，请勿直接作为真实密码。</span>
+              </div>
+              <code>{{ passwordSample }}</code>
             </div>
           </section>
 
@@ -122,7 +177,11 @@
           </q-banner>
         </q-form>
 
-        <q-form v-else-if="activeCategory === 'theme'" class="settings-form" @submit.prevent="saveThemeSettings">
+        <q-form
+          v-else-if="activeCategory === 'theme'"
+          class="settings-form"
+          @submit.prevent="saveThemeSettings"
+        >
           <section class="settings-card">
             <header class="settings-heading">
               <span class="settings-icon"><q-icon name="palette" /></span>
@@ -157,7 +216,7 @@
                 class="theme-preview user-theme-preview"
                 :style="{
                   backgroundColor: form.themePalettes.user.background,
-                  color: form.themePalettes.user.text,
+                  color: form.themePalettes.user.text
                 }"
               >
                 <span class="preview-caption">用户端预览</span>
@@ -165,17 +224,19 @@
                   class="preview-surface"
                   :style="{
                     backgroundColor: form.themePalettes.user.surface,
-                    borderColor: `color-mix(in srgb, ${form.themePalettes.user.text} 16%, transparent)`,
+                    borderColor: `color-mix(in srgb, ${form.themePalettes.user.text} 16%, transparent)`
                   }"
                 >
                   <strong>品牌标题</strong>
-                  <span :style="{ color: form.themePalettes.user.mutedText }">辅助说明文字</span>
+                  <span :style="{ color: form.themePalettes.user.mutedText }"
+                    >辅助说明文字</span
+                  >
                   <button
                     type="button"
                     class="preview-primary"
                     :style="{
                       backgroundColor: form.themePalettes.user.accent,
-                      color: userOnPrimary,
+                      color: userOnPrimary
                     }"
                   >
                     主要操作
@@ -221,7 +282,7 @@
                 class="theme-preview admin-theme-preview"
                 :style="{
                   backgroundColor: form.themePalettes.admin.background,
-                  color: form.themePalettes.admin.text,
+                  color: form.themePalettes.admin.text
                 }"
               >
                 <span class="preview-caption">管理后台预览</span>
@@ -229,17 +290,19 @@
                   class="preview-surface"
                   :style="{
                     backgroundColor: form.themePalettes.admin.surface,
-                    borderColor: form.themePalettes.admin.border,
+                    borderColor: form.themePalettes.admin.border
                   }"
                 >
                   <strong>工作区卡片</strong>
-                  <span :style="{ color: form.themePalettes.admin.mutedText }">表格和表单辅助文字</span>
+                  <span :style="{ color: form.themePalettes.admin.mutedText }"
+                    >表格和表单辅助文字</span
+                  >
                   <button
                     type="button"
                     class="preview-primary"
                     :style="{
                       backgroundColor: form.themePalettes.admin.primary,
-                      color: adminOnPrimary,
+                      color: adminOnPrimary
                     }"
                   >
                     主要操作
@@ -250,7 +313,14 @@
           </section>
 
           <div v-if="canWrite" class="settings-actions">
-            <q-btn color="primary" unelevated icon="save" label="保存主题设置" type="submit" :loading="saving" />
+            <q-btn
+              color="primary"
+              unelevated
+              icon="save"
+              label="保存主题设置"
+              type="submit"
+              :loading="saving"
+            />
           </div>
           <q-banner v-else rounded class="readonly-banner">
             <template #avatar><q-icon name="visibility" /></template>
@@ -264,7 +334,11 @@
 
         <LimitOrderSettingsPanel v-else-if="activeCategory === 'trading'" />
 
-        <q-form v-else-if="activeCategory === 'rpc'" class="settings-form" @submit.prevent="saveRpcSettings">
+        <q-form
+          v-else-if="activeCategory === 'rpc'"
+          class="settings-form"
+          @submit.prevent="saveRpcSettings"
+        >
           <section class="settings-card">
             <header class="settings-heading">
               <span class="settings-icon"><q-icon name="hub" /></span>
@@ -275,7 +349,10 @@
                   {{ form.rpcConfiguration.chainId ?? "未锁定" }}）
                 </p>
               </div>
-              <div v-if="canWrite && form.rpcConfiguration.chainId" class="rpc-actions">
+              <div
+                v-if="canWrite && form.rpcConfiguration.chainId"
+                class="rpc-actions"
+              >
                 <q-btn
                   flat
                   round
@@ -284,7 +361,10 @@
                   icon="speed"
                   aria-label="全部测速"
                   :loading="testingAllRpc"
-                  :disable="!form.rpcConfiguration.nodes.length || testingRpcUrls.length > 0"
+                  :disable="
+                    !form.rpcConfiguration.nodes.length ||
+                    testingRpcUrls.length > 0
+                  "
                   @click="testAllRpcNodes"
                 >
                   <q-tooltip>全部测速</q-tooltip>
@@ -308,10 +388,15 @@
                 rounded
                 size="8px"
                 color="primary"
-                :value="rpcTestProgress.total ? rpcTestProgress.completed / rpcTestProgress.total : 0"
+                :value="
+                  rpcTestProgress.total
+                    ? rpcTestProgress.completed / rpcTestProgress.total
+                    : 0
+                "
               />
               <span>
-                已完成 {{ rpcTestProgress.completed }} / {{ rpcTestProgress.total }} 个节点；正在测试
+                已完成 {{ rpcTestProgress.completed }} /
+                {{ rpcTestProgress.total }} 个节点；正在测试
                 {{ rpcTestProgress.active }} 个。
               </span>
             </div>
@@ -324,11 +409,19 @@
               <template #avatar><q-icon name="info" /></template>
               {{ rpcSourceLabel }}。保存后将以数据库配置为准。
             </q-banner>
-            <q-banner v-if="!form.rpcConfiguration.chainId" rounded class="readonly-banner">
+            <q-banner
+              v-if="!form.rpcConfiguration.chainId"
+              rounded
+              class="readonly-banner"
+            >
               请先在安装器完成部署并锁定链，之后才能配置 RPC 节点。
             </q-banner>
             <div v-else class="rpc-node-list">
-              <div v-for="(url, index) in form.rpcConfiguration.nodes" :key="`${index}-${url}`" class="rpc-node-row">
+              <div
+                v-for="(url, index) in form.rpcConfiguration.nodes"
+                :key="`${index}-${url}`"
+                class="rpc-node-row"
+              >
                 <q-radio
                   v-model="selectedRpcIndex"
                   :val="index"
@@ -344,11 +437,22 @@
                   class="rpc-node-input"
                   :readonly="!canWrite || testingAllRpc"
                 />
-                <q-chip dense :color="rpcMetricColor(url)" :text-color="rpcMetricTextColor(url)" class="rpc-speed-chip">
+                <q-chip
+                  dense
+                  :color="rpcMetricColor(url)"
+                  :text-color="rpcMetricTextColor(url)"
+                  class="rpc-speed-chip"
+                >
                   {{ rpcMetricLabel(url) }}
                   <q-tooltip v-if="form.rpcConfiguration.metrics[url]">
-                    测速时间：{{ new Date(form.rpcConfiguration.metrics[url]!.testedAt).toLocaleString() }}
-                    <template v-if="form.rpcConfiguration.metrics[url]?.message">
+                    测速时间：{{
+                      new Date(
+                        form.rpcConfiguration.metrics[url]!.testedAt
+                      ).toLocaleString()
+                    }}
+                    <template
+                      v-if="form.rpcConfiguration.metrics[url]?.message"
+                    >
                       <span class="rpc-metric-message">
                         {{ form.rpcConfiguration.metrics[url]?.message }}
                       </span>
@@ -361,7 +465,12 @@
                   dense
                   icon="wifi_tethering"
                   color="primary"
-                  :disable="!canWrite || !url || testingAllRpc || testingRpcUrls.length > 0"
+                  :disable="
+                    !canWrite ||
+                    !url ||
+                    testingAllRpc ||
+                    testingRpcUrls.length > 0
+                  "
                   :loading="testingRpcUrls.includes(url)"
                   aria-label="测试 RPC 节点"
                   @click="testRpcNode(url)"
@@ -379,11 +488,16 @@
                   @click="removeRpcNode(index)"
                 />
               </div>
-              <div v-if="!form.rpcConfiguration.nodes.length" class="rpc-empty">暂无 RPC 节点，请添加一个节点。</div>
+              <div v-if="!form.rpcConfiguration.nodes.length" class="rpc-empty"
+                >暂无 RPC 节点，请添加一个节点。</div
+              >
             </div>
           </section>
 
-          <div v-if="canWrite && form.rpcConfiguration.chainId" class="settings-actions">
+          <div
+            v-if="canWrite && form.rpcConfiguration.chainId"
+            class="settings-actions"
+          >
             <q-btn
               color="primary"
               unelevated
@@ -412,7 +526,7 @@ import {
   DEFAULT_THEME_PALETTES,
   type AdminThemePalette,
   type ThemePalettes,
-  type UserThemePalette,
+  type UserThemePalette
 } from "@chainforge/shared-types";
 import { adminRequest, type AdminSettings } from "../services/admin-api";
 import { canAccess } from "../services/admin-session";
@@ -426,7 +540,13 @@ const canWrite = computed(() => canAccess("settings:update"));
 const loading = ref(true);
 const saving = ref(false);
 const settings = ref<AdminSettings | null>(null);
-type SettingsCategory = "basic" | "theme" | "language" | "model" | "rpc" | "trading";
+type SettingsCategory =
+  | "basic"
+  | "theme"
+  | "language"
+  | "model"
+  | "rpc"
+  | "trading";
 const activeCategory = ref<SettingsCategory>("basic");
 const categories: Array<{
   id: SettingsCategory;
@@ -438,7 +558,7 @@ const categories: Array<{
   { id: "language", label: "用户端语言", icon: "language" },
   { id: "model", label: "大模型服务", icon: "smart_toy" },
   { id: "rpc", label: "RPC 节点", icon: "hub" },
-  { id: "trading", label: "限价单", icon: "swap_horiz" },
+  { id: "trading", label: "限价单", icon: "swap_horiz" }
 ];
 const userColorFields: Array<{
   key: keyof UserThemePalette;
@@ -449,7 +569,7 @@ const userColorFields: Array<{
   { key: "background", label: "页面背景", description: "用户端页面的整体背景" },
   { key: "surface", label: "内容卡片", description: "主要内容区域的底色" },
   { key: "text", label: "正文文字", description: "标题和主要信息文字" },
-  { key: "mutedText", label: "辅助文字", description: "说明和次要信息文字" },
+  { key: "mutedText", label: "辅助文字", description: "说明和次要信息文字" }
 ];
 const adminColorFields: Array<{
   key: keyof AdminThemePalette;
@@ -460,22 +580,23 @@ const adminColorFields: Array<{
   {
     key: "background",
     label: "工作区背景",
-    description: "页面内容区的整体底色",
+    description: "页面内容区的整体底色"
   },
   {
     key: "surface",
     label: "卡片与顶栏",
-    description: "数据卡片和顶部导航底色",
+    description: "数据卡片和顶部导航底色"
   },
   { key: "text", label: "正文文字", description: "标题和主要信息文字" },
   { key: "mutedText", label: "辅助文字", description: "描述、提示和次要文字" },
-  { key: "border", label: "分隔边框", description: "卡片、表格和表单边线" },
+  { key: "border", label: "分隔边框", description: "卡片、表格和表单边线" }
 ];
 interface SettingsForm {
   systemName: string;
   tokenName: string;
   tokenSymbol: string;
   passwordPolicy: AdminSettings["passwordPolicy"];
+  userAccess: AdminSettings["userAccess"];
   themePalettes: ThemePalettes;
   rpcConfiguration: AdminSettings["rpcConfiguration"];
 }
@@ -489,7 +610,10 @@ const form = ref<SettingsForm>({
     requireUppercase: true,
     requireLowercase: true,
     requireNumber: true,
-    requireSymbol: true,
+    requireSymbol: true
+  },
+  userAccess: {
+    requireInvitationForRegistration: true
   },
   themePalettes: structuredClone(DEFAULT_THEME_PALETTES),
   rpcConfiguration: {
@@ -498,15 +622,18 @@ const form = ref<SettingsForm>({
     nodes: [],
     activeUrl: "",
     metrics: {},
-    source: "unavailable",
-  },
+    source: "unavailable"
+  }
 });
 const testingRpcUrls = ref<string[]>([]);
 const testingAllRpc = ref(false);
 const rpcTestProgress = ref({ completed: 0, total: 0, active: 0 });
 const selectedRpcIndex = ref(-1);
 const canRemoveRpcNode = computed(
-  () => canWrite.value && !testingAllRpc.value && form.value.rpcConfiguration.nodes.length > 1,
+  () =>
+    canWrite.value &&
+    !testingAllRpc.value &&
+    form.value.rpcConfiguration.nodes.length > 1
 );
 const rpcSourceLabel = computed(() => {
   switch (form.value.rpcConfiguration.source) {
@@ -525,35 +652,76 @@ function contrastText(color: string) {
     color
       .slice(1)
       .match(/.{2}/g)
-      ?.map((part) => parseInt(part, 16) / 255) ?? [];
-  const linear = channels.map((channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
-  const luminance = (linear[0] ?? 0) * 0.2126 + (linear[1] ?? 0) * 0.7152 + (linear[2] ?? 0) * 0.0722;
+      ?.map(part => parseInt(part, 16) / 255) ?? [];
+  const linear = channels.map(channel =>
+    channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+  );
+  const luminance =
+    (linear[0] ?? 0) * 0.2126 +
+    (linear[1] ?? 0) * 0.7152 +
+    (linear[2] ?? 0) * 0.0722;
   return luminance > 0.45 ? "#17243b" : "#ffffff";
 }
-const userOnPrimary = computed(() => contrastText(form.value.themePalettes.user.accent));
-const adminOnPrimary = computed(() => contrastText(form.value.themePalettes.admin.primary));
+const userOnPrimary = computed(() =>
+  contrastText(form.value.themePalettes.user.accent)
+);
+const adminOnPrimary = computed(() =>
+  contrastText(form.value.themePalettes.admin.primary)
+);
+const passwordSample = computed(() => {
+  const policy = form.value.passwordPolicy;
+  const minLength = Number.isInteger(policy.minimumLength)
+    ? Math.min(128, Math.max(8, policy.minimumLength))
+    : 12;
+  const required: string[] = [];
+  const pool = [
+    ...(policy.requireUppercase ? "ABCDEFGHJKLMNPQRSTUVWXYZ" : ""),
+    ...(policy.requireLowercase ? "abcdefghijkmnopqrstuvwxyz" : ""),
+    ...(policy.requireNumber ? "23456789" : ""),
+    ...(policy.requireSymbol ? "!@#$%*+-_" : "")
+  ].join("");
+
+  if (policy.requireUppercase) required.push("A");
+  if (policy.requireLowercase) required.push("a");
+  if (policy.requireNumber) required.push("2");
+  if (policy.requireSymbol) required.push("!");
+
+  // 若没有勾选字符类型，使用小写字母展示任意符合长度的示例。
+  const samplePool = pool || "abcdefghijkmnopqrstuvwxyz";
+  return Array.from(
+    { length: minLength },
+    (_, index) => required[index] ?? samplePool[index % samplePool.length]
+  ).join("");
+});
 
 async function loadSettings() {
   loading.value = true;
   try {
-    const response = await adminRequest<{ settings: AdminSettings }>("/settings");
+    const response = await adminRequest<{ settings: AdminSettings }>(
+      "/settings"
+    );
     settings.value = response.settings;
     form.value = {
       systemName: response.settings.systemName,
       tokenName: response.settings.tokenName,
       tokenSymbol: response.settings.tokenSymbol,
       passwordPolicy: { ...response.settings.passwordPolicy },
+      userAccess: { ...response.settings.userAccess },
       themePalettes: structuredClone(response.settings.themePalettes),
-      rpcConfiguration: structuredClone(response.settings.rpcConfiguration),
+      rpcConfiguration: structuredClone(response.settings.rpcConfiguration)
     };
-    selectedRpcIndex.value = form.value.rpcConfiguration.nodes.indexOf(form.value.rpcConfiguration.activeUrl);
+    selectedRpcIndex.value = form.value.rpcConfiguration.nodes.indexOf(
+      form.value.rpcConfiguration.activeUrl
+    );
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "无法读取系统设置。",
       position: "top",
       timeout: 0,
-      actions: [{ label: "重试", color: "white", handler: () => void loadSettings() }],
+      actions: [
+        { label: "重试", color: "white", handler: () => void loadSettings() }
+      ]
     });
   } finally {
     loading.value = false;
@@ -567,12 +735,14 @@ function addRpcNode() {
 
 function removeRpcNode(index: number) {
   form.value.rpcConfiguration.nodes.splice(index, 1);
-  if (selectedRpcIndex.value === index) selectedRpcIndex.value = form.value.rpcConfiguration.nodes.length ? 0 : -1;
+  if (selectedRpcIndex.value === index)
+    selectedRpcIndex.value = form.value.rpcConfiguration.nodes.length ? 0 : -1;
   else if (selectedRpcIndex.value > index) selectedRpcIndex.value -= 1;
 }
 
 async function testRpcNode(url: string, showNotification = true) {
-  if (!canWrite.value || !form.value.rpcConfiguration.chainId || !url.trim()) return;
+  if (!canWrite.value || !form.value.rpcConfiguration.chainId || !url.trim())
+    return;
   testingRpcUrls.value.push(url);
   try {
     const result = await adminRequest<{
@@ -585,7 +755,7 @@ async function testRpcNode(url: string, showNotification = true) {
       message?: string;
     }>("/settings/rpc/test", {
       method: "POST",
-      body: JSON.stringify({ url, batch: testingAllRpc.value }),
+      body: JSON.stringify({ url, batch: testingAllRpc.value })
     });
     const nodeIndex = form.value.rpcConfiguration.nodes.indexOf(url);
     if (nodeIndex !== -1) {
@@ -595,8 +765,10 @@ async function testRpcNode(url: string, showNotification = true) {
       status: result.status,
       latencyMs: result.latencyMs,
       testedAt: result.testedAt,
-      ...(result.blockNumber === undefined ? {} : { blockNumber: result.blockNumber }),
-      ...(result.message ? { message: result.message } : {}),
+      ...(result.blockNumber === undefined
+        ? {}
+        : { blockNumber: result.blockNumber }),
+      ...(result.message ? { message: result.message } : {})
     };
     if (showNotification) {
       Notify.create({
@@ -605,7 +777,7 @@ async function testRpcNode(url: string, showNotification = true) {
           result.status === "success"
             ? `RPC 连接成功，耗时 ${result.latencyMs} ms，Chain ID ${result.chainId}。`
             : (result.message ?? "RPC 节点测试失败。"),
-        position: "top",
+        position: "top"
       });
     }
     return result.status;
@@ -614,7 +786,7 @@ async function testRpcNode(url: string, showNotification = true) {
       Notify.create({
         type: "negative",
         message: error instanceof Error ? error.message : "RPC 测试失败。",
-        position: "top",
+        position: "top"
       });
     }
     return "error";
@@ -625,7 +797,8 @@ async function testRpcNode(url: string, showNotification = true) {
 }
 
 async function testAllRpcNodes() {
-  if (!canWrite.value || testingAllRpc.value || testingRpcUrls.value.length) return;
+  if (!canWrite.value || testingAllRpc.value || testingRpcUrls.value.length)
+    return;
   const nodes = [...form.value.rpcConfiguration.nodes];
   testingAllRpc.value = true;
   rpcTestProgress.value = { completed: 0, total: nodes.length, active: 0 };
@@ -650,11 +823,13 @@ async function testAllRpcNodes() {
     }
   }
   try {
-    await Promise.all(Array.from({ length: Math.min(4, nodes.length) }, () => worker()));
+    await Promise.all(
+      Array.from({ length: Math.min(4, nodes.length) }, () => worker())
+    );
     Notify.create({
       type: failed || errors ? "warning" : "positive",
       message: `测速完成：${passed}/${nodes.length} 个节点可用，${failed} 个连接失败，${errors} 个请求未完成缓存。`,
-      position: "top",
+      position: "top"
     });
   } finally {
     testingAllRpc.value = false;
@@ -686,26 +861,34 @@ async function saveRpcSettings() {
   try {
     const rpcConfiguration = {
       ...form.value.rpcConfiguration,
-      nodes: form.value.rpcConfiguration.nodes.map((url) => url.trim()),
-      activeUrl: form.value.rpcConfiguration.nodes[selectedRpcIndex.value]?.trim() ?? "",
+      nodes: form.value.rpcConfiguration.nodes.map(url => url.trim()),
+      activeUrl:
+        form.value.rpcConfiguration.nodes[selectedRpcIndex.value]?.trim() ?? ""
     };
-    const response = await adminRequest<{ settings: AdminSettings }>("/settings", {
-      method: "PATCH",
-      body: JSON.stringify({ rpcConfiguration }),
-    });
+    const response = await adminRequest<{ settings: AdminSettings }>(
+      "/settings",
+      {
+        method: "PATCH",
+        body: JSON.stringify({ rpcConfiguration })
+      }
+    );
     settings.value = response.settings;
-    form.value.rpcConfiguration = structuredClone(response.settings.rpcConfiguration);
-    selectedRpcIndex.value = form.value.rpcConfiguration.nodes.indexOf(form.value.rpcConfiguration.activeUrl);
+    form.value.rpcConfiguration = structuredClone(
+      response.settings.rpcConfiguration
+    );
+    selectedRpcIndex.value = form.value.rpcConfiguration.nodes.indexOf(
+      form.value.rpcConfiguration.activeUrl
+    );
     Notify.create({
       type: "positive",
       message: "RPC 配置已保存并应用。",
-      position: "top",
+      position: "top"
     });
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "保存 RPC 配置失败。",
-      position: "top",
+      position: "top"
     });
   } finally {
     saving.value = false;
@@ -716,23 +899,26 @@ async function saveThemeSettings() {
   if (!canWrite.value) return;
   saving.value = true;
   try {
-    const response = await adminRequest<{ settings: AdminSettings }>("/settings", {
-      method: "PATCH",
-      body: JSON.stringify({ themePalettes: form.value.themePalettes }),
-    });
+    const response = await adminRequest<{ settings: AdminSettings }>(
+      "/settings",
+      {
+        method: "PATCH",
+        body: JSON.stringify({ themePalettes: form.value.themePalettes })
+      }
+    );
     settings.value = response.settings;
     form.value.themePalettes = structuredClone(response.settings.themePalettes);
     applyThemePalette("admin", response.settings.themePalettes);
     Notify.create({
       type: "positive",
       message: "主题配色已保存并应用到管理后台。",
-      position: "top",
+      position: "top"
     });
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "保存主题设置失败。",
-      position: "top",
+      position: "top"
     });
   } finally {
     saving.value = false;
@@ -743,26 +929,30 @@ async function saveSettings() {
   if (!canWrite.value) return;
   saving.value = true;
   try {
-    const response = await adminRequest<{ settings: AdminSettings }>("/settings", {
-      method: "PATCH",
-      body: JSON.stringify({
-        systemName: form.value.systemName,
-        tokenName: form.value.tokenName,
-        tokenSymbol: form.value.tokenSymbol,
-        passwordPolicy: form.value.passwordPolicy,
-      }),
-    });
+    const response = await adminRequest<{ settings: AdminSettings }>(
+      "/settings",
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          systemName: form.value.systemName,
+          tokenName: form.value.tokenName,
+          tokenSymbol: form.value.tokenSymbol,
+          passwordPolicy: form.value.passwordPolicy,
+          userAccess: form.value.userAccess
+        })
+      }
+    );
     settings.value = response.settings;
     Notify.create({
       type: "positive",
       message: "系统设置已保存。",
-      position: "top",
+      position: "top"
     });
   } catch (error) {
     Notify.create({
       type: "negative",
       message: error instanceof Error ? error.message : "保存系统设置失败。",
-      position: "top",
+      position: "top"
     });
   } finally {
     saving.value = false;
@@ -924,7 +1114,11 @@ onMounted(() => void loadSettings());
   height: 42px;
   flex: 0 0 auto;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--admin-primary) 22%, var(--admin-surface));
+  background: color-mix(
+    in srgb,
+    var(--admin-primary) 22%,
+    var(--admin-surface)
+  );
   color: var(--admin-primary);
   font-size: 21px;
   place-items: center;
@@ -969,6 +1163,70 @@ onMounted(() => void loadSettings());
   flex-wrap: wrap;
   gap: 8px 20px;
   margin-top: 10px;
+}
+
+.policy-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--admin-background) 55%, transparent);
+}
+
+.policy-preview-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.policy-preview-copy strong {
+  color: var(--admin-text);
+  font-size: 13px;
+}
+
+.policy-preview-copy span {
+  color: var(--admin-muted-text);
+  font-size: 11px;
+}
+
+.policy-preview code {
+  overflow-wrap: anywhere;
+  color: var(--admin-primary);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.access-rule-list {
+  display: grid;
+  gap: 12px;
+}
+
+.access-rule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 18px;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--admin-background) 55%, transparent);
+}
+
+.access-rule strong {
+  color: var(--admin-text);
+  font-size: 14px;
+}
+
+.access-rule p {
+  margin: 5px 0 0;
+  color: var(--admin-muted-text);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .theme-editor-grid {
@@ -1138,6 +1396,15 @@ onMounted(() => void loadSettings());
   }
 
   .policy-options {
+    flex-direction: column;
+  }
+
+  .access-rule {
+    padding: 14px;
+  }
+
+  .policy-preview {
+    align-items: flex-start;
     flex-direction: column;
   }
 }

@@ -4,14 +4,14 @@ import {
   adminRequest,
   type AdminMenu,
   type AdminSessionPayload,
-  type AdminIdentity,
+  type AdminIdentity
 } from "./admin-api";
 
 export const adminSession = reactive({
   checked: false,
   loading: false,
   user: null as AdminIdentity | null,
-  menus: [] as AdminMenu[],
+  menus: [] as AdminMenu[]
 });
 
 let sessionRequest: Promise<AdminSessionPayload | null> | undefined;
@@ -23,13 +23,13 @@ export function loadAdminSession(force = false) {
     return Promise.resolve(
       adminSession.user
         ? { user: adminSession.user, menus: adminSession.menus }
-        : null,
+        : null
     );
   }
 
   adminSession.loading = true;
   sessionRequest = adminRequest<AdminSessionPayload>("/auth/me")
-    .then((session) => {
+    .then(session => {
       adminSession.user = session.user;
       adminSession.menus = session.menus;
       adminSession.checked = true;
@@ -69,7 +69,7 @@ export function canAccess(permission: string) {
 }
 
 export function firstMenuPath(
-  nodes: AdminMenu[] = adminSession.menus,
+  nodes: AdminMenu[] = adminSession.menus
 ): string | null {
   for (const node of nodes) {
     if (node.path) return node.path;

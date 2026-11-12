@@ -3,7 +3,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-  ServiceUnavailableException,
+  ServiceUnavailableException
 } from "@nestjs/common";
 import type { Pool, PoolClient } from "pg";
 import { DatabaseService } from "./database.service.js";
@@ -30,7 +30,7 @@ interface TranslationItem {
 export class UserLanguagesService {
   constructor(
     private readonly databaseService: DatabaseService,
-    private readonly aiModelConfigurationService: AiModelConfigurationService,
+    private readonly aiModelConfigurationService: AiModelConfigurationService
   ) {}
 
   async list() {
@@ -44,7 +44,7 @@ export class UserLanguagesService {
          LEFT JOIN user_language_translations AS translation
            ON translation.language_id = language.id
         GROUP BY language.id
-        ORDER BY language.sort_order, language.locale`,
+        ORDER BY language.sort_order, language.locale`
     );
     return { items: result.rows };
   }
@@ -62,7 +62,7 @@ export class UserLanguagesService {
          VALUES ($1, $2, FALSE, FALSE,
            COALESCE((SELECT MAX(sort_order) + 1 FROM user_languages), 0))
          RETURNING id::text`,
-        [locale, name],
+        [locale, name]
       );
       const languageId = created.rows[0]!.id;
       // 新语言先复制默认语言作为翻译底稿，并保持停用，避免未校对内容直接展示。
@@ -75,7 +75,7 @@ export class UserLanguagesService {
             SELECT id FROM user_languages WHERE is_default = TRUE
           )
          ON CONFLICT (language_id, translation_key) DO NOTHING`,
-        [languageId],
+        [languageId]
       );
       await client.query("COMMIT");
       return { language: await this.getLanguage(languageId) };
@@ -122,16 +122,18 @@ export class UserLanguagesService {
         is_default: boolean;
       }>(
         "SELECT locale, is_enabled, is_default FROM user_languages WHERE id = $1 FOR UPDATE",
-        [id],
+        [id]
       );
       const language = current.rows[0];
       if (!language) throw new NotFoundException("语言不存在。");
       const nextDefault =
         (changes.find(([key]) => key === "is_default")?.[1] as
-          boolean | undefined) ?? language.is_default;
+          | boolean
+          | undefined) ?? language.is_default;
       const nextEnabled =
         (changes.find(([key]) => key === "is_enabled")?.[1] as
-          boolean | undefined) ?? language.is_enabled;
+          | boolean
+          | undefined) ?? language.is_enabled;
       if (nextDefault && !nextEnabled) {
         throw new BadRequestException("默认语言必须保持启用。");
       }
@@ -154,7 +156,7 @@ export class UserLanguagesService {
         `UPDATE user_languages
             SET ${assignments.join(", ")}, updated_at = NOW()
           WHERE id = $${values.length}`,
-        values,
+        values
       );
       await client.query("COMMIT");
       return { language: await this.getLanguage(id) };
@@ -184,7 +186,7 @@ export class UserLanguagesService {
       await this.lock(client);
       const current = await client.query<{ is_default: boolean }>(
         "SELECT is_default FROM user_languages WHERE id = $1 FOR UPDATE",
-        [id],
+        [id]
       );
       if (!current.rows[0]) throw new NotFoundException("语言不存在。");
       if (current.rows[0].is_default) {
@@ -223,7 +225,7 @@ export class UserLanguagesService {
          FROM user_language_translations AS translation
         WHERE translation.language_id = $1
         ORDER BY translation.translation_key`,
-      [id],
+      [id]
     );
     return { language, items: result.rows };
   }
@@ -253,11 +255,11 @@ export class UserLanguagesService {
           AND target.translation_key = source.translation_key
         WHERE default_language.is_default = TRUE
         ORDER BY source.translation_key`,
-      [id],
+      [id]
     );
     // 新语言的初始值复制自默认语言，因此仍相同或为空的值作为待翻译候选。
     const candidates = rows.rows.filter(
-      (row) => !row.currentValue.trim() || row.currentValue === row.sourceValue,
+      row => !row.currentValue.trim() || row.currentValue === row.sourceValue
     );
     let selected: typeof rows.rows;
     if (body.keys !== undefined) {
@@ -268,12 +270,12 @@ export class UserLanguagesService {
       ) {
         throw new BadRequestException("每次请选择 1 至 20 条翻译词条。");
       }
-      const keys = body.keys.map((key) => this.translationKey(key));
+      const keys = body.keys.map(key => this.translationKey(key));
       if (new Set(keys).size !== keys.length) {
         throw new BadRequestException("待翻译词条键不能重复。");
       }
-      const byKey = new Map(rows.rows.map((row) => [row.key, row]));
-      selected = keys.map((key) => {
+      const byKey = new Map(rows.rows.map(row => [row.key, row]));
+      selected = keys.map(key => {
         const row = byKey.get(key);
         if (!row?.sourceValue) {
           throw new BadRequestException(`找不到词条 ${key} 的默认语言文本。`);
@@ -289,22 +291,22 @@ export class UserLanguagesService {
     const translated = await this.aiModelConfigurationService.translateBatch({
       sourceLocale: selected[0]!.sourceLocale,
       targetLocale: language.locale,
-      items: selected.map((row) => ({
+      items: selected.map(row => ({
         key: row.key,
-        sourceValue: row.sourceValue,
-      })),
+        sourceValue: row.sourceValue
+      }))
     });
     const values = new Map(
-      translated.translations.map((item) => [item.key, item.value]),
+      translated.translations.map(item => [item.key, item.value])
     );
     return {
       pendingCount: candidates.length,
-      items: selected.map((row) => ({
+      items: selected.map(row => ({
         key: row.key,
         sourceValue: row.sourceValue,
         currentValue: row.currentValue,
-        translatedValue: values.get(row.key) ?? "",
-      })),
+        translatedValue: values.get(row.key) ?? ""
+      }))
     };
   }
 
@@ -314,7 +316,7 @@ export class UserLanguagesService {
     if (!Array.isArray(body.items) || body.items.length > 2000) {
       throw new BadRequestException("翻译词条列表无效或超过 2000 条。");
     }
-    const items = body.items.map((raw) => {
+    const items = body.items.map(raw => {
       const item = this.record(raw);
       if (
         typeof item.key !== "string" ||
@@ -326,7 +328,7 @@ export class UserLanguagesService {
       }
       return { key: item.key, value: item.value };
     });
-    if (new Set(items.map((item) => item.key)).size !== items.length) {
+    if (new Set(items.map(item => item.key)).size !== items.length) {
       throw new BadRequestException("翻译词条键不能重复。");
     }
     const client = await this.databaseService.getPool().connect();
@@ -342,7 +344,7 @@ export class UserLanguagesService {
            ON CONFLICT (language_id, translation_key) DO UPDATE
              SET translation_value = EXCLUDED.translation_value,
                  updated_at = NOW()`,
-          [id, item.key, item.value],
+          [id, item.key, item.value]
         );
       }
       await client.query("COMMIT");
@@ -369,7 +371,7 @@ export class UserLanguagesService {
       .getPool()
       .query(
         "DELETE FROM user_language_translations WHERE language_id = $1 AND translation_key = $2",
-        [id, key],
+        [id, key]
       );
     return { deleted: true };
   }
@@ -383,11 +385,11 @@ export class UserLanguagesService {
       `SELECT locale, name, is_default AS "isDefault"
          FROM user_languages
         WHERE is_enabled = TRUE
-        ORDER BY sort_order, locale`,
+        ORDER BY sort_order, locale`
     );
     const languages = result.rows;
     const defaultLocale = languages.find(
-      (language) => language.isDefault,
+      language => language.isDefault
     )?.locale;
     if (!defaultLocale) {
       throw new ServiceUnavailableException("没有启用的用户端默认语言。");
@@ -406,20 +408,20 @@ export class UserLanguagesService {
          JOIN user_language_translations AS translation
            ON translation.language_id = language.id
         WHERE language.locale = $1 AND language.is_enabled = TRUE`,
-      [locale],
+      [locale]
     );
     if (!result.rowCount) {
       const language = await this.databaseService
         .getPool()
         .query(
           "SELECT 1 FROM user_languages WHERE locale = $1 AND is_enabled = TRUE",
-          [locale],
+          [locale]
         );
       if (!language.rowCount)
         throw new NotFoundException("语言不存在或未启用。");
     }
     return Object.fromEntries(
-      result.rows.map((row) => [row.translation_key, row.translation_value]),
+      result.rows.map(row => [row.translation_key, row.translation_value])
     );
   }
 
@@ -435,7 +437,7 @@ export class UserLanguagesService {
            ON translation.language_id = language.id
         WHERE language.id = $1
         GROUP BY language.id`,
-      [id],
+      [id]
     );
     if (!result.rows[0]) throw new NotFoundException("语言不存在。");
     return result.rows[0];
@@ -444,7 +446,7 @@ export class UserLanguagesService {
   private async assertLanguageExists(client: Pool | PoolClient, id: string) {
     const result = await client.query(
       "SELECT 1 FROM user_languages WHERE id = $1",
-      [id],
+      [id]
     );
     if (!result.rowCount) throw new NotFoundException("语言不存在。");
   }
@@ -456,7 +458,7 @@ export class UserLanguagesService {
   private id(input: string) {
     if (
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-        input,
+        input
       )
     ) {
       throw new BadRequestException("语言 ID 无效。");

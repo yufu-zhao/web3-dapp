@@ -45,9 +45,7 @@
         <q-td class="address-cell">{{ value }}</q-td>
       </template>
       <template #cell-transactionHash="{ value }">
-        <q-td class="hash-cell"
-          ><code>{{ value }}</code></q-td
-        >
+        <q-td class="hash-cell"><code>{{ value }}</code></q-td>
       </template>
       <template #cell-roundId="{ value }">
         <q-td>第 {{ Number(value) + 1 }} 期</q-td>
@@ -57,7 +55,7 @@
           {{
             formatPayment(
               row.paymentAmount as string,
-              Number(row.paymentDecimals),
+              Number(row.paymentDecimals)
             )
           }}
           USDT
@@ -74,7 +72,7 @@
 import { onMounted, reactive, ref } from "vue";
 import { formatUnits } from "ethers";
 import AdminDataTable, {
-  type AdminTableColumn,
+  type AdminTableColumn
 } from "../components/AdminDataTable.vue";
 import { adminRequest, type PageResult } from "../services/admin-api";
 
@@ -98,17 +96,17 @@ const columns: AdminTableColumn[] = [
     name: "participantIndex",
     label: "期内序号",
     field: "participantIndex",
-    align: "right",
+    align: "right"
   },
   {
     name: "paymentAmount",
     label: "认购金额",
     field: "paymentAmount",
-    align: "right",
+    align: "right"
   },
   { name: "blockNumber", label: "区块", field: "blockNumber", align: "right" },
   { name: "transactionHash", label: "交易哈希", field: "transactionHash" },
-  { name: "createdAt", label: "入库时间", field: "createdAt" },
+  { name: "createdAt", label: "入库时间", field: "createdAt" }
 ];
 const state = reactive({
   rows: [] as PresaleRecord[],
@@ -117,14 +115,14 @@ const state = reactive({
   pageSize: 10,
   search: "",
   loading: false,
-  error: "",
+  error: ""
 });
 const roundFilter = ref<number | null>(null);
 const activeRound = ref<number | null>(null);
 const roundOptions = [
   { label: "第一期", value: 0 },
   { label: "第二期", value: 1 },
-  { label: "第三期", value: 2 },
+  { label: "第三期", value: 2 }
 ];
 
 async function load() {
@@ -133,12 +131,12 @@ async function load() {
   const query = new URLSearchParams({
     page: String(state.page),
     pageSize: String(state.pageSize),
-    search: state.search,
+    search: state.search
   });
   if (activeRound.value !== null) query.set("round", String(activeRound.value));
   try {
     const result = await adminRequest<PageResult<PresaleRecord>>(
-      `/presale-records?${query.toString()}`,
+      `/presale-records?${query.toString()}`
     );
     state.rows = result.items;
     state.total = result.total;

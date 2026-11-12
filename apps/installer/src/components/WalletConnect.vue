@@ -1,6 +1,11 @@
 <template>
   <div class="installer-wallet-connect">
-    <WalletConnectButton v-if="walletKitReady" label="连接钱包" loading-label="正在连接钱包…" size="md" />
+    <WalletConnectButton
+      v-if="walletKitReady"
+      label="连接钱包"
+      loading-label="正在连接钱包…"
+      size="md"
+    />
     <q-banner v-else dense rounded class="wallet-config-error">
       钱包连接尚未配置，请检查 WALLETCONNECT_PROJECT_ID。
     </q-banner>
@@ -8,7 +13,9 @@
       <q-card class="wallet-change-card">
         <q-card-section>
           <div class="wallet-picker-title">检测到钱包账户或网络切换</div>
-          <p class="wallet-change-copy">页面仍使用原连接信息。确认同步后会重新校验部署条件。</p>
+          <p class="wallet-change-copy"
+            >页面仍使用原连接信息。确认同步后会重新校验部署条件。</p
+          >
         </q-card-section>
         <q-card-section class="wallet-change-comparison">
           <div class="wallet-change-value">
@@ -33,7 +40,13 @@
           如果这是临时切换，切回页面当前显示的账户和网络后，此提示会自动关闭。
         </q-card-section>
         <q-card-actions align="right" class="wallet-change-actions">
-          <q-btn flat color="grey-8" label="断开钱包" :disable="syncingWalletChange" @click="disconnect" />
+          <q-btn
+            flat
+            color="grey-8"
+            label="断开钱包"
+            :disable="syncingWalletChange"
+            @click="disconnect"
+          />
           <q-btn
             color="primary"
             unelevated
@@ -53,29 +66,39 @@ import {
   WalletConnectButton,
   useWalletConnection,
   walletKitReady,
-  type ConnectedWallet,
+  type ConnectedWallet
 } from "@chainforge/wallet-connect";
 
-const props = withDefaults(defineProps<{ confirmChanges?: boolean; deploymentBusy?: boolean }>(), {
-  confirmChanges: true,
-  deploymentBusy: false,
-});
+const props = withDefaults(
+  defineProps<{ confirmChanges?: boolean; deploymentBusy?: boolean }>(),
+  {
+    confirmChanges: true,
+    deploymentBusy: false
+  }
+);
 const emit = defineEmits<{
   connected: [wallet: ConnectedWallet];
   changed: [wallet: ConnectedWallet];
   changePending: [pending: boolean];
   disconnected: [];
 }>();
-const { wallet, pendingWallet, changePending, syncingWalletChange, changeError, syncWalletChange, disconnect } =
-  useWalletConnection({
-    confirmChanges: toRef(props, "confirmChanges"),
-    events: {
-      connected: (value) => emit("connected", value),
-      changed: (value) => emit("changed", value),
-      changePending: (value) => emit("changePending", value),
-      disconnected: () => emit("disconnected"),
-    },
-  });
+const {
+  wallet,
+  pendingWallet,
+  changePending,
+  syncingWalletChange,
+  changeError,
+  syncWalletChange,
+  disconnect
+} = useWalletConnection({
+  confirmChanges: toRef(props, "confirmChanges"),
+  events: {
+    connected: value => emit("connected", value),
+    changed: value => emit("changed", value),
+    changePending: value => emit("changePending", value),
+    disconnected: () => emit("disconnected")
+  }
+});
 </script>
 
 <style lang="scss" scoped>

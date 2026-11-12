@@ -3,13 +3,13 @@ import {
   HttpStatus,
   Injectable,
   ServiceUnavailableException,
-  UnauthorizedException,
+  UnauthorizedException
 } from "@nestjs/common";
 import {
   createHash,
   randomBytes,
   scryptSync,
-  timingSafeEqual,
+  timingSafeEqual
 } from "node:crypto";
 import { DatabaseService } from "./database.service.js";
 import {
@@ -17,7 +17,7 @@ import {
   ADMIN_PASSWORD_MAX_LENGTH,
   type AdminMenuType,
   type AdminMenuNode,
-  type AdminPrincipal,
+  type AdminPrincipal
 } from "./admin.types.js";
 
 export interface AdminAuthContext {
@@ -66,14 +66,14 @@ export class AdminAuthService {
 
   async login(
     input: unknown,
-    sourceAddress: string,
+    sourceAddress: string
   ): Promise<AdminLoginResult> {
     const credentials = this.validateCredentials(input);
     const pool = this.databaseService.getPool();
     await this.assertAdminSchemaReady();
     const attemptKey = this.loginAttemptKey(
       credentials.username,
-      sourceAddress,
+      sourceAddress
     );
     await this.assertNotLocked(attemptKey);
 
@@ -85,12 +85,12 @@ export class AdminAuthService {
          JOIN roles r ON r.id = u.role_id
         WHERE u.username = $1
         LIMIT 1`,
-      [credentials.username],
+      [credentials.username]
     );
     const row = result.rows[0];
     const passwordMatches = this.verifyPassword(
       credentials.password,
-      row?.password_hash,
+      row?.password_hash
     );
     if (!row || !row.is_active || !row.role_active || !passwordMatches) {
       const locked = await this.recordFailure(attemptKey);
@@ -115,7 +115,7 @@ export class AdminAuthService {
            JOIN roles r ON r.id = u.role_id
           WHERE u.id = $1
           FOR UPDATE OF u, r`,
-        [principal.id],
+        [principal.id]
       );
       if (!active.rows[0]?.is_active || !active.rows[0]?.role_active) {
         await client.query("ROLLBACK");
@@ -123,19 +123,19 @@ export class AdminAuthService {
       }
       await client.query(
         "UPDATE admin_users SET last_login_at = NOW(), updated_at = NOW() WHERE id = $1",
-        [principal.id],
+        [principal.id]
       );
       await client.query(
-        "DELETE FROM admin_sessions WHERE expires_at <= NOW()",
+        "DELETE FROM admin_sessions WHERE expires_at <= NOW()"
       );
       await client.query(
         `INSERT INTO admin_sessions (admin_user_id, token_hash, expires_at)
          VALUES ($1, $2, NOW() + ($3 * INTERVAL '1 second'))`,
-        [principal.id, tokenHash, ADMIN_SESSION_TTL_SECONDS],
+        [principal.id, tokenHash, ADMIN_SESSION_TTL_SECONDS]
       );
       await client.query(
         "DELETE FROM admin_login_attempts WHERE attempt_key = $1",
-        [attemptKey],
+        [attemptKey]
       );
       await client.query("COMMIT");
     } catch (error) {
@@ -160,7 +160,7 @@ export class AdminAuthService {
       }>(
         `SELECT to_regclass('public.admin_sessions') IS NOT NULL
                   AND to_regclass('public.admin_login_attempts') IS NOT NULL
-           AS ready`,
+           AS ready`
       );
       ready = Boolean(result.rows[0]?.ready);
     } catch {
@@ -168,7 +168,7 @@ export class AdminAuthService {
     }
     if (!ready) {
       throw new ServiceUnavailableException(
-        "管理后台数据库迁移未完成，请在本机安装器的数据库连接页应用待执行迁移。",
+        "管理后台数据库迁移未完成，请在本机安装器的数据库连接页应用待执行迁移。"
       );
     }
   }
@@ -184,7 +184,7 @@ export class AdminAuthService {
          JOIN roles r ON r.id = u.role_id
         WHERE s.token_hash = $1 AND s.expires_at > NOW()
         LIMIT 1`,
-      [tokenHash],
+      [tokenHash]
     );
     const row = result.rows[0];
     if (!row || !row.is_active || !row.role_active) return null;
@@ -194,7 +194,7 @@ export class AdminAuthService {
   async context(principal: AdminPrincipal): Promise<AdminAuthContext> {
     return {
       user: principal,
-      menus: await this.visibleMenuTree(principal.permissions),
+      menus: await this.visibleMenuTree(principal.permissions)
     };
   }
 
@@ -247,7 +247,7 @@ export class AdminAuthService {
     // 登录节流表只保存组合摘要，不持久化原始账号或来源地址。
     return createHash("sha256")
       .update(
-        `${sourceAddress.trim() || "unknown"}\0${username.toLocaleLowerCase()}`,
+        `${sourceAddress.trim() || "unknown"}\0${username.toLocaleLowerCase()}`
       )
       .digest("hex");
   }
@@ -259,7 +259,7 @@ export class AdminAuthService {
         `SELECT locked_until > NOW() AS locked
          FROM admin_login_attempts
         WHERE attempt_key = $1`,
-        [attemptKey],
+        [attemptKey]
       );
     if (result.rows[0]?.locked) {
       throw this.tooManyRequests();
@@ -269,7 +269,7 @@ export class AdminAuthService {
   private tooManyRequests() {
     return new HttpException(
       "连续登录失败次数过多，请 15 分钟后重试。",
-      HttpStatus.TOO_MANY_REQUESTS,
+      HttpStatus.TOO_MANY_REQUESTS
     );
   }
 
@@ -299,7 +299,7 @@ export class AdminAuthService {
              END,
              updated_at = NOW()
        RETURNING locked_until > NOW() AS locked`,
-        [attemptKey, LOGIN_WINDOW_MINUTES, LOGIN_FAILURE_LIMIT],
+        [attemptKey, LOGIN_WINDOW_MINUTES, LOGIN_FAILURE_LIMIT]
       );
     return Boolean(result.rows[0]?.locked);
   }
@@ -321,7 +321,7 @@ export class AdminAuthService {
       roleName: row.role_name,
       permissions: Array.isArray(permissions)
         ? permissions.filter((item): item is string => typeof item === "string")
-        : [],
+        : []
     };
   }
 
@@ -333,7 +333,7 @@ export class AdminAuthService {
          FROM menus
         WHERE menu_type <> 'button'
           AND is_active = TRUE AND is_visible = TRUE
-        ORDER BY sort_order, id`,
+        ORDER BY sort_order, id`
     );
     const canRead = (menu: AdminMenuRow) => {
       // 目录仅组织页面菜单，具体页面仍由各自的读取权限保护。
@@ -358,7 +358,7 @@ export class AdminAuthService {
         sortOrder: row.sort_order,
         isVisible: row.is_visible,
         isActive: row.is_active,
-        children: [],
+        children: []
       });
     }
     const roots: AdminMenuNode[] = [];
@@ -369,8 +369,8 @@ export class AdminAuthService {
     }
     const pruneEmptyGroups = (items: AdminMenuNode[]): AdminMenuNode[] =>
       items
-        .map((item) => ({ ...item, children: pruneEmptyGroups(item.children) }))
-        .filter((item) => item.path || item.children.length > 0);
+        .map(item => ({ ...item, children: pruneEmptyGroups(item.children) }))
+        .filter(item => item.path || item.children.length > 0);
     return pruneEmptyGroups(roots);
   }
 }

@@ -30,7 +30,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import {
   WalletConnectButton,
   walletKitReady,
-  useWalletConnection,
+  useWalletConnection
 } from "@chainforge/wallet-connect";
 import { loadPublicInstallationConfig } from "@chainforge/shared-types";
 
@@ -45,8 +45,8 @@ const canRetry = computed(() =>
   Boolean(
     wallet.value &&
     targetChain.value &&
-    wallet.value.chainId !== targetChain.value,
-  ),
+    wallet.value.chainId !== targetChain.value
+  )
 );
 const networkMessage = computed(() => {
   if (configError.value) return configError.value;
@@ -70,13 +70,13 @@ watch(
     }
     void autoSwitch();
   },
-  { immediate: true },
+  { immediate: true }
 );
 watch(
   () => wallet.value?.chainId,
   () => {
     if (!canRetry.value) switchError.value = "";
-  },
+  }
 );
 async function autoSwitch() {
   if (!wallet.value || !targetChain.value || attempted) return;
@@ -94,7 +94,7 @@ async function switchNetwork() {
   try {
     await current.provider.request({
       method: "wallet_switchEthereumChain",
-      params: [{ chainId: `0x${chainId.toString(16)}` }],
+      params: [{ chainId: `0x${chainId.toString(16)}` }]
     });
     const actual = await current.provider.request({ method: "eth_chainId" });
     if (version !== connectionVersion) return;

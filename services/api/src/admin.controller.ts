@@ -11,7 +11,7 @@ import {
   Put,
   Query,
   Req,
-  UseGuards,
+  UseGuards
 } from "@nestjs/common";
 import { AdminService, type PageQuery } from "./admin.service.js";
 import { RequireAdminPermission } from "./admin-permission.decorator.js";
@@ -22,7 +22,14 @@ import { ContentManagementService } from "./content-management.service.js";
 import { UserLanguagesService } from "./user-languages.service.js";
 import { AiModelConfigurationService } from "./ai-model-configuration.service.js";
 import { LimitOrdersService } from "./limit-orders.service.js";
-import { PresaleRecordsService, type PresaleRecordQuery } from "./presale-records.service.js";
+import {
+  PresaleRecordsService,
+  type PresaleRecordQuery
+} from "./presale-records.service.js";
+import {
+  UserReferralsService,
+  type UserAccountQuery
+} from "./user-referrals.service.js";
 
 @Controller("admin")
 @UseGuards(AdminSessionGuard, AdminPermissionGuard)
@@ -34,6 +41,7 @@ export class AdminController {
     private readonly userLanguagesService: UserLanguagesService,
     private readonly aiModelConfigurationService: AiModelConfigurationService,
     private readonly limitOrdersService: LimitOrdersService,
+    private readonly userReferralsService: UserReferralsService
   ) {}
 
   @Get("trading/limit-orders")
@@ -45,12 +53,18 @@ export class AdminController {
 
   @Put("trading/limit-orders/slippage")
   @RequireAdminPermission("settings:update")
-  updateLimitOrderSlippage(@Body() body: unknown, @Req() request: AdminRequest) {
+  updateLimitOrderSlippage(
+    @Body() body: unknown,
+    @Req() request: AdminRequest
+  ) {
     const value =
       body && typeof body === "object" && !Array.isArray(body)
         ? (body as Record<string, unknown>).slippageBps
         : undefined;
-    return this.limitOrdersService.updateSlippage(value, request.adminPrincipal!.id);
+    return this.limitOrdersService.updateSlippage(
+      value,
+      request.adminPrincipal!.id
+    );
   }
 
   @Get("content-management")
@@ -81,7 +95,11 @@ export class AdminController {
     };
     const file = await upload.file({ limits: { fileSize: 100 * 1024 * 1024 } });
     if (!file) throw new BadRequestException("请选择要上传的图片或视频。");
-    return this.contentManagementService.saveAsset(file.filename, file.mimetype, await file.toBuffer());
+    return this.contentManagementService.saveAsset(
+      file.filename,
+      file.mimetype,
+      await file.toBuffer()
+    );
   }
 
   // 在钱包请求前重新核验后台会话权限；链上角色仍由合约独立校验。
@@ -106,11 +124,53 @@ export class AdminController {
     return { allowed: true };
   }
 
+  // 钱包请求前复核发行/开盘操作权限；链上角色和合约条件仍由合约校验。
+  @Get("launch/authorize/fund")
+  @Header("Cache-Control", "no-store")
+  @RequireAdminPermission("launch:fund")
+  authorizeLaunchFunding() {
+    return { allowed: true };
+  }
+
+  @Get("launch/authorize/seed")
+  @Header("Cache-Control", "no-store")
+  @RequireAdminPermission("launch:seed")
+  authorizeLaunchLiquiditySeed() {
+    return { allowed: true };
+  }
+
+  @Get("launch/authorize/schedule")
+  @Header("Cache-Control", "no-store")
+  @RequireAdminPermission("launch:schedule")
+  authorizeLaunchSchedule() {
+    return { allowed: true };
+  }
+
+  @Get("launch/authorize/oracle")
+  @Header("Cache-Control", "no-store")
+  @RequireAdminPermission("launch:oracle")
+  authorizeLaunchOracleStart() {
+    return { allowed: true };
+  }
+
   @Get("presale-records")
   @Header("Cache-Control", "no-store")
   @RequireAdminPermission("presale:records:read")
   listPresaleRecords(@Query() query: PresaleRecordQuery) {
     return this.presaleRecordsService.list(query);
+  }
+
+  @Get("user-accounts")
+  @Header("Cache-Control", "no-store")
+  @RequireAdminPermission("user_accounts:read")
+  listUserAccounts(@Query() query: UserAccountQuery) {
+    return this.userReferralsService.listAccounts(query);
+  }
+
+  @Patch("user-accounts/:id")
+  @RequireAdminPermission("user_accounts:update")
+  updateUserAccount(@Param("id") id: string, @Body() body: unknown) {
+    return this.userReferralsService.updateAccount(id, body);
   }
 
   @Get("users")
@@ -128,7 +188,11 @@ export class AdminController {
 
   @Patch("users/:id")
   @RequireAdminPermission("admins:update")
-  updateUser(@Param("id") id: string, @Body() body: unknown, @Req() request: AdminRequest) {
+  updateUser(
+    @Param("id") id: string,
+    @Body() body: unknown,
+    @Req() request: AdminRequest
+  ) {
     return this.adminService.updateUser(id, body, request.adminPrincipal!.id);
   }
 
@@ -155,13 +219,24 @@ export class AdminController {
   @Post("roles")
   @RequireAdminPermission("roles:create")
   createRole(@Body() body: unknown, @Req() request: AdminRequest) {
-    return this.adminService.createRole(body, request.adminPrincipal!.permissions);
+    return this.adminService.createRole(
+      body,
+      request.adminPrincipal!.permissions
+    );
   }
 
   @Patch("roles/:id")
   @RequireAdminPermission("roles:update")
-  updateRole(@Param("id") id: string, @Body() body: unknown, @Req() request: AdminRequest) {
-    return this.adminService.updateRole(id, body, request.adminPrincipal!.permissions);
+  updateRole(
+    @Param("id") id: string,
+    @Body() body: unknown,
+    @Req() request: AdminRequest
+  ) {
+    return this.adminService.updateRole(
+      id,
+      body,
+      request.adminPrincipal!.permissions
+    );
   }
 
   @Delete("roles/:id")
@@ -261,13 +336,19 @@ export class AdminController {
 
   @Post("languages/:id/translations/ai-preview")
   @RequireAdminPermission("settings:update")
-  previewUserLanguageTranslations(@Param("id") id: string, @Body() body: unknown) {
+  previewUserLanguageTranslations(
+    @Param("id") id: string,
+    @Body() body: unknown
+  ) {
     return this.userLanguagesService.previewAiTranslations(id, body);
   }
 
   @Delete("languages/:id/translations/:key")
   @RequireAdminPermission("settings:update")
-  deleteUserLanguageTranslation(@Param("id") id: string, @Param("key") key: string) {
+  deleteUserLanguageTranslation(
+    @Param("id") id: string,
+    @Param("key") key: string
+  ) {
     return this.userLanguagesService.removeTranslation(id, key);
   }
 

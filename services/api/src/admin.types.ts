@@ -23,7 +23,14 @@ export type AdminPermission =
   | "presale:terms"
   | "presale:schedule"
   | "presale:finalize"
-  | "presale:records:read";
+  | "presale:records:read"
+  | "user_accounts:read"
+  | "user_accounts:update"
+  | "launch:read"
+  | "launch:fund"
+  | "launch:seed"
+  | "launch:schedule"
+  | "launch:oracle";
 
 export type AdminMenuType = "directory" | "menu" | "button";
 

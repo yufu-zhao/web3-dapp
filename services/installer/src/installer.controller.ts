@@ -8,14 +8,14 @@ import {
   Param,
   Post,
   Query,
-  Req,
+  Req
 } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import {
   InstallerService,
   type DatabaseSettings,
   type DeploymentRecord,
-  type InstallationIdentity,
+  type InstallationIdentity
 } from "./installer.service.js";
 
 @Controller("installer")
@@ -48,7 +48,7 @@ export class InstallerController {
   @Post("database/use-existing")
   useExistingDatabase(
     @Req() request: FastifyRequest,
-    @Body() body: { database?: DatabaseSettings },
+    @Body() body: { database?: DatabaseSettings }
   ) {
     // 切换本机安装目标会保存连接凭据，只允许本机安装器发起。
     if (!isLoopbackAddress(request.ip)) {
@@ -71,10 +71,7 @@ export class InstallerController {
   @Post("config/installation")
   saveInstallationIdentity(
     @Body()
-    body: Pick<
-      InstallationIdentity,
-      "systemName" | "tokenName" | "tokenSymbol"
-    >,
+    body: Pick<InstallationIdentity, "systemName" | "tokenName" | "tokenSymbol">
   ) {
     return this.installerService.saveInstallationIdentity(body);
   }
@@ -107,18 +104,18 @@ export class InstallerController {
   @Get("contracts/deployments/:chainId/:deploymentId")
   savedDeployment(
     @Param("chainId") chainId: string,
-    @Param("deploymentId") deploymentId: string,
+    @Param("deploymentId") deploymentId: string
   ) {
     return this.installerService.getSavedDeployment(
       Number(chainId),
-      deploymentId,
+      deploymentId
     );
   }
 
   @Post("contracts/deployments/:chainId")
   saveCompletedDeployment(
     @Param("chainId") chainId: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: Record<string, unknown>
   ) {
     return this.installerService.saveCompletedDeployment(Number(chainId), body);
   }
@@ -126,11 +123,11 @@ export class InstallerController {
   @Post("contracts/deployments/:chainId/:deploymentId/activate")
   activateSavedDeployment(
     @Param("chainId") chainId: string,
-    @Param("deploymentId") deploymentId: string,
+    @Param("deploymentId") deploymentId: string
   ) {
     return this.installerService.activateSavedDeployment(
       Number(chainId),
-      deploymentId,
+      deploymentId
     );
   }
 
@@ -147,7 +144,7 @@ export class InstallerController {
   @Post("contracts/pending/:chainId")
   savePendingDeployment(
     @Param("chainId") chainId: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: Record<string, unknown>
   ) {
     return this.installerService.savePendingDeployment(Number(chainId), body);
   }
@@ -165,7 +162,7 @@ export class InstallerController {
   @Post("contracts/tokens/:chainId")
   saveToken(
     @Param("chainId") chainId: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: Record<string, unknown>
   ) {
     return this.installerService.addSavedToken(Number(chainId), body);
   }

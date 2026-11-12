@@ -1,11 +1,75 @@
 <template>
   <section class="data-card">
-    <header class="table-toolbar">
-      <div class="table-heading">
-        <h2>{{ title }}</h2>
-        <span v-if="description">{{ description }}</span>
+    <header>
+      <div class="search-container" :style="searchStyle">
+        <div v-resize="onResize">
+          <div style="position: relative; overflow: hidden">
+            <div class="row q-col-gutter-sm q-pa-md">
+              <template v-for="i in 8" :key="i">
+                <div class="col-4 flex flex-nowrap">
+                  <q-input
+                    v-model="searchText"
+                    outlined
+                    dense
+                    clearable
+                    class="quick-search full-width"
+                    :placeholder="searchPlaceholder"
+                    label="快捷搜索"
+                  >
+                    <!-- <template #prepend><q-icon name="search" /></template> -->
+                  </q-input>
+                </div>
+              </template>
+            </div>
+          </div>
+          <q-separator />
+        </div>
       </div>
-      <div class="table-tools">
+      <div class="flex q-gutter-x-sm q-pa-md">
+        <q-btn
+          icon="refresh"
+          color="grey"
+          padding="sm"
+          unelevated
+          dense
+        ></q-btn>
+        <q-btn icon="add" color="green" padding="sm" unelevated dense></q-btn>
+        <q-btn-dropdown
+          color="grey"
+          label="批量操作"
+          aria-haspopup="menu"
+          outline
+        >
+          <q-list role="menu">
+            <q-item v-close-popup @click="">
+              <q-item-section side>
+                <q-icon name="delete" color="red" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>批量删除</q-item-label>
+              </q-item-section>
+            </q-item>
+
+            <q-item v-close-popup @click="">
+              <q-item-section side>
+                <q-icon name="edit" color="warning" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>批量编辑</q-item-label>
+              </q-item-section>
+            </q-item>
+
+            <q-item v-close-popup @click="">
+              <q-item-section side>
+                <q-icon name="file_download" color="grey" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>批量导出</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
+        <q-space></q-space>
         <q-input
           v-model="searchText"
           outlined
@@ -17,6 +81,40 @@
         >
           <template #prepend><q-icon name="search" /></template>
         </q-input>
+        <q-btn-group flat>
+          <q-btn-dropdown
+            dropdown-icon="filter_list"
+            outline
+            padding="sm"
+            color="grey-5"
+            hover
+          >
+            <div class="q-pa-sm">
+              <q-option-group
+                v-model="test.fields.modelValue"
+                :options="test.fields.options"
+                color="green"
+                type="checkbox"
+                dense
+              />
+            </div>
+          </q-btn-dropdown>
+          <q-btn
+            icon="search"
+            outline
+            padding="sm"
+            color="grey-5"
+            @click="searcher.expand = !searcher.expand"
+          />
+        </q-btn-group>
+      </div>
+    </header>
+    <header class="table-toolbar">
+      <div class="table-heading">
+        <h2>{{ title }}</h2>
+        <span v-if="description">{{ description }}</span>
+      </div>
+      <div class="table-tools">
         <q-btn
           flat
           round
@@ -114,8 +212,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from "vue";
+import { QBtnGroup, QSeparator } from "quasar";
+import { computed, onUnmounted, ref, watch, reactive } from "vue";
 
+const test = reactive({
+  fields: {
+    modelValue: [],
+    options: [
+      { label: "字段 1", value: "1" },
+      { label: "字段 2", value: "2" },
+      { label: "字段 3", value: "3" }
+    ]
+  }
+});
 export interface AdminTableColumn {
   name: string;
   label: string;
@@ -124,7 +233,16 @@ export interface AdminTableColumn {
   sortable?: boolean;
   format?: (value: unknown, row: Record<string, unknown>) => string;
 }
-
+const searcher = reactive({
+  expand: false,
+  height: 0
+});
+const searchStyle = computed(() => ({
+  height: searcher.expand ? `${searcher.height}px` : "0px"
+}));
+function onResize(size: any) {
+  searcher.height = size.height;
+}
 const props = withDefaults(
   defineProps<{
     title: string;
@@ -155,8 +273,8 @@ const props = withDefaults(
     searchPlaceholder: "搜索名称、编码或账号",
     rowsPerPageOptions: () => [10, 20, 50],
     emptyLabel: "暂无数据",
-    allowCreate: false,
-  },
+    allowCreate: false
+  }
 );
 
 const emit = defineEmits<{
@@ -175,18 +293,18 @@ let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
 watch(
   () => props.search,
-  (value) => {
+  value => {
     searchText.value = value;
-  },
+  }
 );
 
 // 快捷搜索防抖，避免每敲一个字都请求服务端。
-watch(searchText, (value) => {
+watch(searchText, value => {
   if (searchTimer) clearTimeout(searchTimer);
   searchTimer = setTimeout(
     // Quasar 的 clearable 输入框清空时会发出 null，统一按空搜索处理。
     () => emit("search-change", (value ?? "").trim()),
-    300,
+    300
   );
 });
 
@@ -200,13 +318,13 @@ const pagination = computed({
     rowsPerPage: props.pageSize,
     rowsNumber: props.totalRows,
     sortBy: null,
-    descending: false,
+    descending: false
   }),
   set: (value: { page: number; rowsPerPage: number }) => {
     if (value.page !== props.page) emit("page-change", value.page);
     if (value.rowsPerPage !== props.pageSize)
       emit("page-size-change", value.rowsPerPage);
-  },
+  }
 });
 
 function onRequest(event: {
@@ -220,6 +338,10 @@ function onRequest(event: {
 </script>
 
 <style lang="scss" scoped>
+.search-container {
+  transition: all 0.3s;
+  overflow: hidden;
+}
 .data-card {
   overflow: hidden;
   border: 1px solid var(--admin-border, #e3e8ef);

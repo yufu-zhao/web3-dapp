@@ -1,7 +1,7 @@
 import {
   Injectable,
   OnModuleDestroy,
-  ServiceUnavailableException,
+  ServiceUnavailableException
 } from "@nestjs/common";
 import { Pool } from "pg";
 
@@ -17,7 +17,7 @@ export class DatabaseService implements OnModuleDestroy {
     this.pool ??= new Pool({
       connectionString,
       connectionTimeoutMillis: 3000,
-      max: 10,
+      max: 10
     });
     return this.pool;
   }

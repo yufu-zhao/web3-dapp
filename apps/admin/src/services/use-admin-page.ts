@@ -2,7 +2,7 @@ import { shallowReactive } from "vue";
 import { getPage, type PageResult } from "./admin-api";
 
 export function useAdminPage<T extends Record<string, unknown>>(
-  resource: "users" | "roles" | "menus",
+  resource: "users" | "roles" | "menus"
 ) {
   // 浅层响应式保留泛型行类型，避免 Vue 深层解包将 T[] 推断成 UnwrapRefSimple<T>[]。
   const state = shallowReactive({
@@ -13,7 +13,7 @@ export function useAdminPage<T extends Record<string, unknown>>(
     search: "",
     filters: {} as Record<string, string | boolean>,
     loading: false,
-    error: "",
+    error: ""
   });
   let requestId = 0;
 
@@ -27,7 +27,7 @@ export function useAdminPage<T extends Record<string, unknown>>(
         state.page,
         state.pageSize,
         state.search,
-        state.filters,
+        state.filters
       );
       if (currentRequest !== requestId) return;
       state.rows = result.items;

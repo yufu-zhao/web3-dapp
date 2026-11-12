@@ -2,7 +2,7 @@ import {
   BadGatewayException,
   BadRequestException,
   Injectable,
-  ServiceUnavailableException,
+  ServiceUnavailableException
 } from "@nestjs/common";
 import { generateText } from "ai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
@@ -45,12 +45,12 @@ export class AiModelConfigurationService {
     const providerId = this.text(
       body.providerId ?? current.providerId,
       "providerId",
-      80,
+      80
     );
     const providerName = this.text(
       body.providerName ?? current.providerName,
       "providerName",
-      80,
+      80
     );
     const baseUrl = this.validateBaseUrl(body.baseUrl ?? current.baseUrl);
     const model = this.validateModel(body.model ?? current.model);
@@ -68,7 +68,7 @@ export class AiModelConfigurationService {
     }
     if (enabled && (!model || !encryptedApiKey)) {
       throw new BadRequestException(
-        "启用模型前请填写模型名称并配置 API 密钥。",
+        "启用模型前请填写模型名称并配置 API 密钥。"
       );
     }
 
@@ -79,7 +79,7 @@ export class AiModelConfigurationService {
       baseUrl,
       model,
       enabled,
-      ...(encryptedApiKey ? { encryptedApiKey } : {}),
+      ...(encryptedApiKey ? { encryptedApiKey } : {})
     };
     await this.databaseService.getPool().query(
       `INSERT INTO system_configs (config_key, config_value, description)
@@ -88,7 +88,7 @@ export class AiModelConfigurationService {
          SET config_value = EXCLUDED.config_value,
              description = EXCLUDED.description,
              updated_at = NOW()`,
-      [JSON.stringify(configuration)],
+      [JSON.stringify(configuration)]
     );
     return { configuration: this.toPublicConfiguration(configuration) };
   }
@@ -100,12 +100,12 @@ export class AiModelConfigurationService {
     const providerId = this.text(
       body.providerId ?? saved.providerId,
       "providerId",
-      80,
+      80
     );
     const providerName = this.text(
       body.providerName ?? saved.providerName,
       "providerName",
-      80,
+      80
     );
     const baseUrl = this.validateBaseUrl(body.baseUrl ?? saved.baseUrl);
     const modelId = this.validateModel(body.model ?? saved.model);
@@ -117,7 +117,7 @@ export class AiModelConfigurationService {
           : "";
     if (!apiKey)
       throw new BadRequestException(
-        "请先填写 API 密钥并保存，或在此处填写待测试密钥。",
+        "请先填写 API 密钥并保存，或在此处填写待测试密钥。"
       );
     if (apiKey.length > 2048)
       throw new BadRequestException("API 密钥不能超过 2048 个字符。");
@@ -130,25 +130,25 @@ export class AiModelConfigurationService {
           : createOpenAICompatible({
               name: `chainforge-${providerId}`,
               baseURL: baseUrl,
-              apiKey,
+              apiKey
             }).chatModel(modelId);
     try {
       const result = await generateText({
         model,
         prompt: "请仅回复 OK。",
         maxOutputTokens: 8,
-        abortSignal: AbortSignal.timeout(20000),
+        abortSignal: AbortSignal.timeout(20000)
       });
       return {
         success: true,
         providerName,
         model: modelId,
-        response: result.text.slice(0, 120),
+        response: result.text.slice(0, 120)
       };
     } catch {
       // 上游错误可能回显请求头、端点参数或服务商内部信息，后台只显示统一错误提示。
       throw new BadGatewayException(
-        "模型连接失败，请核对 API 地址、模型名称、密钥和服务商兼容协议。",
+        "模型连接失败，请核对 API 地址、模型名称、密钥和服务商兼容协议。"
       );
     }
   }
@@ -164,7 +164,7 @@ export class AiModelConfigurationService {
     ) {
       throw new BadRequestException("每次请提交 1 至 20 条待翻译词条。");
     }
-    const items = body.items.map((raw) => {
+    const items = body.items.map(raw => {
       const item = this.record(raw);
       const key = this.text(item.key, "词条键", 128);
       if (!/^[\w.-]+$/.test(key)) {
@@ -176,12 +176,12 @@ export class AiModelConfigurationService {
         item.sourceValue.length > 2000
       ) {
         throw new BadRequestException(
-          "待翻译文本不能为空且不能超过 2000 个字符。",
+          "待翻译文本不能为空且不能超过 2000 个字符。"
         );
       }
       return { key, sourceValue: item.sourceValue };
     });
-    if (new Set(items.map((item) => item.key)).size !== items.length) {
+    if (new Set(items.map(item => item.key)).size !== items.length) {
       throw new BadRequestException("翻译词条键不能重复。");
     }
     if (
@@ -193,7 +193,7 @@ export class AiModelConfigurationService {
     const saved = await this.readStoredConfiguration();
     if (!saved.enabled || !saved.model || !saved.encryptedApiKey) {
       throw new ServiceUnavailableException(
-        "请先在系统设置中启用并保存大模型配置。",
+        "请先在系统设置中启用并保存大模型配置。"
       );
     }
     const apiKey = this.decryptApiKey(saved.encryptedApiKey);
@@ -202,12 +202,12 @@ export class AiModelConfigurationService {
         ? createAnthropic({ apiKey, baseURL: saved.baseUrl })(saved.model)
         : saved.adapter === "google"
           ? createGoogleGenerativeAI({ apiKey, baseURL: saved.baseUrl })(
-              saved.model,
+              saved.model
             )
           : createOpenAICompatible({
               name: `chainforge-${saved.providerId}`,
               baseURL: saved.baseUrl,
-              apiKey,
+              apiKey
             }).chatModel(saved.model);
 
     try {
@@ -218,7 +218,7 @@ export class AiModelConfigurationService {
         prompt: JSON.stringify({ sourceLocale, targetLocale, items }),
         temperature: 0.2,
         maxOutputTokens: 4000,
-        abortSignal: AbortSignal.timeout(60000),
+        abortSignal: AbortSignal.timeout(60000)
       });
       const text = result.text.trim().replace(/^```(?:json)?\s*|\s*```$/g, "");
       const parsed: unknown = JSON.parse(text);
@@ -236,10 +236,8 @@ export class AiModelConfigurationService {
       ) {
         throw new Error("invalid model output");
       }
-      const expected = new Map(
-        items.map((item) => [item.key, item.sourceValue]),
-      );
-      const normalized = translations.map((raw) => {
+      const expected = new Map(items.map(item => [item.key, item.sourceValue]));
+      const normalized = translations.map(raw => {
         if (
           !raw ||
           typeof raw !== "object" ||
@@ -264,14 +262,14 @@ export class AiModelConfigurationService {
         }
         return { key: item.key, value: item.value };
       });
-      if (new Set(normalized.map((item) => item.key)).size !== items.length) {
+      if (new Set(normalized.map(item => item.key)).size !== items.length) {
         throw new Error("duplicate model output");
       }
       return { translations: normalized };
     } catch {
       // 不向后台回传上游原始错误，避免泄露服务商响应或请求上下文。
       throw new BadGatewayException(
-        "模型翻译失败或返回内容格式无效，请稍后重试。",
+        "模型翻译失败或返回内容格式无效，请稍后重试。"
       );
     }
   }
@@ -310,11 +308,11 @@ export class AiModelConfigurationService {
     try {
       const response = await fetch(endpoint, {
         headers,
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(15000)
       });
       if (!response.ok) {
         throw new BadGatewayException(
-          `服务商拒绝读取模型列表（HTTP ${response.status}）。请检查密钥、API 地址及服务商是否支持模型列表接口。`,
+          `服务商拒绝读取模型列表（HTTP ${response.status}）。请检查密钥、API 地址及服务商是否支持模型列表接口。`
         );
       }
       const result = (await response.json()) as Record<string, unknown>;
@@ -329,7 +327,7 @@ export class AiModelConfigurationService {
               ? result.models
               : [];
       const models = rawModels
-        .flatMap((item) => {
+        .flatMap(item => {
           if (!item || typeof item !== "object") return [];
           const model = item as Record<string, unknown>;
           if (
@@ -356,7 +354,7 @@ export class AiModelConfigurationService {
     } catch (error) {
       if (error instanceof BadGatewayException) throw error;
       throw new BadGatewayException(
-        "读取模型列表失败，请检查网络、API 地址和服务商兼容性。",
+        "读取模型列表失败，请检查网络、API 地址和服务商兼容性。"
       );
     }
   }
@@ -365,7 +363,7 @@ export class AiModelConfigurationService {
     const result = await this.databaseService
       .getPool()
       .query<{ config_value: string }>(
-        "SELECT config_value FROM system_configs WHERE config_key = 'ai_model_configuration'",
+        "SELECT config_value FROM system_configs WHERE config_key = 'ai_model_configuration'"
       );
     if (!result.rows[0]) {
       return {
@@ -374,12 +372,12 @@ export class AiModelConfigurationService {
         providerName: "OpenAI 兼容接口",
         baseUrl: "https://api.openai.com/v1",
         model: "",
-        enabled: false,
+        enabled: false
       };
     }
     try {
       const value = JSON.parse(
-        result.rows[0].config_value,
+        result.rows[0].config_value
       ) as Partial<StoredModelConfiguration>;
       return {
         adapter: this.validateAdapter(value.adapter ?? "openai-compatible"),
@@ -390,7 +388,7 @@ export class AiModelConfigurationService {
         enabled: value.enabled === true,
         ...(typeof value.encryptedApiKey === "string"
           ? { encryptedApiKey: value.encryptedApiKey }
-          : {}),
+          : {})
       };
     } catch {
       throw new ServiceUnavailableException("已保存的大模型配置格式无效。");
@@ -398,7 +396,7 @@ export class AiModelConfigurationService {
   }
 
   private toPublicConfiguration(
-    configuration: StoredModelConfiguration,
+    configuration: StoredModelConfiguration
   ): PublicModelConfiguration {
     return {
       adapter: configuration.adapter,
@@ -408,7 +406,7 @@ export class AiModelConfigurationService {
       model: configuration.model,
       enabled: configuration.enabled,
       hasApiKey: Boolean(configuration.encryptedApiKey),
-      encryptionKeyReady: this.encryptionKey() !== null,
+      encryptionKeyReady: this.encryptionKey() !== null
     };
   }
 
@@ -423,7 +421,7 @@ export class AiModelConfigurationService {
       throw new BadRequestException("API 地址必须是有效的 HTTP(S) 地址。");
     }
     const localHost = ["localhost", "127.0.0.1", "[::1]"].includes(
-      url.hostname,
+      url.hostname
     );
     if (
       !["https:", ...(localHost ? ["http:"] : [])].includes(url.protocol) ||
@@ -433,7 +431,7 @@ export class AiModelConfigurationService {
       url.hash
     ) {
       throw new BadRequestException(
-        "API 地址必须使用 HTTPS；仅本机回环地址允许 HTTP，且不能包含账号、密钥参数或片段。",
+        "API 地址必须使用 HTTPS；仅本机回环地址允许 HTTP，且不能包含账号、密钥参数或片段。"
       );
     }
     return url.toString().replace(/\/$/, "");
@@ -469,7 +467,7 @@ export class AiModelConfigurationService {
       input.trim().length > maxLength
     ) {
       throw new BadRequestException(
-        `${field} 必须为 1 到 ${maxLength} 个字符。`,
+        `${field} 必须为 1 到 ${maxLength} 个字符。`
       );
     }
     return input.trim();
@@ -486,14 +484,14 @@ export class AiModelConfigurationService {
     const key = this.encryptionKey();
     if (!key) {
       throw new ServiceUnavailableException(
-        "AI_CONFIG_ENCRYPTION_KEY 未配置或格式无效。请用 openssl rand -base64 32 生成可解码为 32 字节的密钥，写入 .env 后重启 API。",
+        "AI_CONFIG_ENCRYPTION_KEY 未配置或格式无效。请用 openssl rand -base64 32 生成可解码为 32 字节的密钥，写入 .env 后重启 API。"
       );
     }
     const iv = randomBytes(12);
     const cipher = createCipheriv("aes-256-gcm", key, iv);
     const encrypted = Buffer.concat([
       cipher.update(apiKey, "utf8"),
-      cipher.final(),
+      cipher.final()
     ]);
     return `v1:${iv.toString("hex")}:${cipher.getAuthTag().toString("hex")}:${encrypted.toString("hex")}`;
   }
@@ -502,7 +500,7 @@ export class AiModelConfigurationService {
     const key = this.encryptionKey();
     if (!key) {
       throw new ServiceUnavailableException(
-        "AI_CONFIG_ENCRYPTION_KEY 未配置或格式无效，无法解密已保存的模型密钥。",
+        "AI_CONFIG_ENCRYPTION_KEY 未配置或格式无效，无法解密已保存的模型密钥。"
       );
     }
     const [version, ivHex, tagHex, encryptedHex] = value.split(":");
@@ -513,16 +511,16 @@ export class AiModelConfigurationService {
       const decipher = createDecipheriv(
         "aes-256-gcm",
         key,
-        Buffer.from(ivHex, "hex"),
+        Buffer.from(ivHex, "hex")
       );
       decipher.setAuthTag(Buffer.from(tagHex, "hex"));
       return Buffer.concat([
         decipher.update(Buffer.from(encryptedHex, "hex")),
-        decipher.final(),
+        decipher.final()
       ]).toString("utf8");
     } catch {
       throw new ServiceUnavailableException(
-        "模型密钥解密失败，请确认 AI_CONFIG_ENCRYPTION_KEY 与保存配置时相同。",
+        "模型密钥解密失败，请确认 AI_CONFIG_ENCRYPTION_KEY 与保存配置时相同。"
       );
     }
   }

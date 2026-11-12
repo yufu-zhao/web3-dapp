@@ -3,10 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@11.6.0",
-  "engines": {
-    "node": ">=22.22.0 <23"
-  },
   "scripts": {
     "dev": "pnpm --parallel --filter @chainforge/user --filter @chainforge/admin --filter @chainforge/installer --filter @chainforge/api --filter @chainforge/installer-service run dev",
     "dev:user": "pnpm --filter @chainforge/user dev",
@@ -27,7 +23,13 @@
     "start:installer": "node dist/services/installer/main.js",
     "start:indexer": "node dist/services/api/indexer.js",
     "typecheck": "pnpm --recursive --parallel --if-present run typecheck",
-    "lint": "eslint apps services packages scripts eslint.config.mjs && prettier --check \"apps/**/*\" \"services/**/*\" \"packages/**/*\" \"docs/**/*.md\" \"scripts/**/*.mjs\" package.json pnpm-workspace.yaml tsconfig.base.json eslint.config.mjs AGENTS.md README.md",
+    "lint": "pnpm lint:check",
+    "lint:check": "pnpm lint:check:apps && pnpm lint:check:shared",
+    "lint:check:apps": "pnpm --filter @chainforge/admin --filter @chainforge/installer --filter @chainforge/user --parallel run lint:check",
+    "lint:check:shared": "oxfmt --config oxfmt.config.ts --check \"services/**/*.{ts,json,vue}\" \"packages/**/*.{ts,json,vue}\" \"scripts/**/*.{mjs,ts}\" \"docs/**/*.md\" package.json pnpm-workspace.yaml tsconfig.base.json oxfmt.config.ts oxlint.config.ts AGENTS.md README.md && oxlint --config oxlint.config.ts services packages scripts",
+    "lint:fix": "pnpm lint:fix:apps && pnpm lint:fix:shared",
+    "lint:fix:apps": "pnpm --filter @chainforge/admin --filter @chainforge/installer --filter @chainforge/user --parallel run lint",
+    "lint:fix:shared": "oxfmt --config oxfmt.config.ts \"services/**/*.{ts,json,vue}\" \"packages/**/*.{ts,json,vue}\" \"scripts/**/*.{mjs,ts}\" \"docs/**/*.md\" package.json pnpm-workspace.yaml tsconfig.base.json oxfmt.config.ts oxlint.config.ts AGENTS.md README.md && oxlint --config oxlint.config.ts --fix services packages scripts",
     "clean": "node scripts/clean.mjs"
   },
   "dependencies": {
@@ -49,10 +51,13 @@
     "@nestjs/cli": "^12.0.11",
     "@nestjs/schematics": "^12.0.12",
     "@types/node": "^22.15.30",
-    "eslint": "^10.14.0",
-    "eslint-plugin-vue": "^10.5.1",
-    "prettier": "^3.6.2",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.46.2"
-  }
+    "oxfmt": "0.78.0",
+    "oxlint": "1.93.0",
+    "oxlint-tsgolint": "7.0.2006",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=22.22.0 <23"
+  },
+  "packageManager": "pnpm@11.6.0"
 }

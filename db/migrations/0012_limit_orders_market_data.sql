@@ -183,5 +183,5 @@ INSERT INTO market_indexer_heartbeat (singleton) VALUES (TRUE)
 ON CONFLICT (singleton) DO NOTHING;
 
 INSERT INTO schema_migrations (version)
-VALUES ('0012_limit_orders_and_market_data')
+VALUES ('0012_limit_orders_market_data')
 ON CONFLICT (version) DO NOTHING;

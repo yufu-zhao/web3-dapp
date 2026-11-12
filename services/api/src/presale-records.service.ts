@@ -1,17 +1,17 @@
 import {
   BadRequestException,
   Injectable,
-  ServiceUnavailableException,
+  ServiceUnavailableException
 } from "@nestjs/common";
 import { Contract, Interface, getAddress } from "ethers";
 import { getBoundRpcProvider } from "./chain-rpc.js";
 import { DatabaseService } from "./database.service.js";
 
 const saleInterface = new Interface([
-  "event Committed(address indexed buyer,uint8 indexed round,uint256 index,uint256 payment)",
+  "event Committed(address indexed buyer,uint8 indexed round,uint256 index,uint256 payment)"
 ]);
 const saleReadInterface = new Interface([
-  "function paymentUnit() view returns(uint256)",
+  "function paymentUnit() view returns(uint256)"
 ]);
 
 export interface PresaleRecordQuery {
@@ -37,13 +37,13 @@ export class PresaleRecordsService {
     const provider = await getBoundRpcProvider(
       binding.chainId,
       [binding.saleAddress],
-      this.databaseService.getPool(),
+      this.databaseService.getPool()
     );
     try {
       const network = await provider.getNetwork();
       if (network.chainId !== BigInt(binding.chainId)) {
         throw new ServiceUnavailableException(
-          "当前 RPC 返回的网络与系统绑定链不一致。",
+          "当前 RPC 返回的网络与系统绑定链不一致。"
         );
       }
       const receipt =
@@ -66,7 +66,7 @@ export class PresaleRecordsService {
       const sale = new Contract(
         binding.saleAddress,
         saleReadInterface,
-        provider,
+        provider
       );
       const paymentUnit = (await sale.getFunction("paymentUnit")()) as bigint;
       const paymentDecimals =
@@ -81,10 +81,9 @@ export class PresaleRecordsService {
       // 只从当前绑定 Sale 合约的成功交易回执提取事件，不采信客户端提交的钱包或金额。
       const records = receipt.logs
         .filter(
-          (log) =>
-            log.address.toLowerCase() === binding.saleAddress.toLowerCase(),
+          log => log.address.toLowerCase() === binding.saleAddress.toLowerCase()
         )
-        .flatMap((log) => {
+        .flatMap(log => {
           try {
             const parsed = saleInterface.parseLog(log);
             if (!parsed || parsed.name !== "Committed") return [];
@@ -102,8 +101,8 @@ export class PresaleRecordsService {
                 roundId: round,
                 participantIndex: parsed.args.index.toString(),
                 paymentAmount: parsed.args.payment.toString(),
-                paymentDecimals,
-              },
+                paymentDecimals
+              }
             ];
           } catch {
             return [];
@@ -132,8 +131,8 @@ export class PresaleRecordsService {
             record.roundId,
             record.participantIndex,
             record.paymentAmount,
-            record.paymentDecimals,
-          ],
+            record.paymentDecimals
+          ]
         );
         saved += result.rowCount ?? 0;
       }
@@ -166,7 +165,7 @@ export class PresaleRecordsService {
     if (search) {
       values.push(`%${search}%`);
       where.push(
-        `(buyer_address ILIKE $${values.length} OR transaction_hash ILIKE $${values.length})`,
+        `(buyer_address ILIKE $${values.length} OR transaction_hash ILIKE $${values.length})`
       );
     }
     if (round !== null) {
@@ -178,7 +177,7 @@ export class PresaleRecordsService {
       .getPool()
       .query<{ total: string }>(
         `SELECT COUNT(*)::text AS total FROM presale_records ${clause}`,
-        values,
+        values
       );
     const pageValues = [...values, pageSize, (page - 1) * pageSize];
     const rows = await this.databaseService.getPool().query(
@@ -192,20 +191,20 @@ export class PresaleRecordsService {
          FROM presale_records ${clause}
         ORDER BY block_number DESC, log_index DESC, id DESC
         LIMIT $${pageValues.length - 1} OFFSET $${pageValues.length}`,
-      pageValues,
+      pageValues
     );
     return {
       items: rows.rows,
       total: Number(count.rows[0]?.total ?? 0),
       page,
-      pageSize,
+      pageSize
     };
   }
 
   private async getBinding() {
     const pool = this.databaseService.getPool();
     const table = await pool.query<{ exists: boolean }>(
-      "SELECT to_regclass('public.runtime_contract_binding') IS NOT NULL AS exists",
+      "SELECT to_regclass('public.runtime_contract_binding') IS NOT NULL AS exists"
     );
     if (!table.rows[0]?.exists)
       throw new ServiceUnavailableException("系统尚未绑定生效合约。");
@@ -213,7 +212,7 @@ export class PresaleRecordsService {
       chain_id: string;
       contracts: Record<string, { address?: unknown }>;
     }>(
-      "SELECT chain_id::text, contracts FROM runtime_contract_binding WHERE singleton = TRUE",
+      "SELECT chain_id::text, contracts FROM runtime_contract_binding WHERE singleton = TRUE"
     );
     const row = result.rows[0];
     const chainId = Number(row?.chain_id);
@@ -233,19 +232,19 @@ export class PresaleRecordsService {
     const pool = this.databaseService.getPool();
     const schema = await pool.query<{ ready: boolean }>(
       `SELECT to_regclass('public.presale_records') IS NOT NULL
-          AND to_regclass('public.schema_migrations') IS NOT NULL AS ready`,
+          AND to_regclass('public.schema_migrations') IS NOT NULL AS ready`
     );
     if (!schema.rows[0]?.ready) {
       throw new ServiceUnavailableException(
-        "私募记录数据库迁移尚未应用，请在安装器数据库页执行“应用待执行迁移”。",
+        "私募记录数据库迁移尚未应用，请在安装器数据库页执行“应用待执行迁移”。"
       );
     }
     const migration = await pool.query(
-      "SELECT 1 FROM schema_migrations WHERE version = '0009_presale_records'",
+      "SELECT 1 FROM schema_migrations WHERE version = '0009_presale_records'"
     );
     if (!migration.rowCount) {
       throw new ServiceUnavailableException(
-        "私募记录数据库迁移尚未应用，请在安装器数据库页执行“应用待执行迁移”。",
+        "私募记录数据库迁移尚未应用，请在安装器数据库页执行“应用待执行迁移”。"
       );
     }
   }
@@ -255,7 +254,7 @@ export class PresaleRecordsService {
     fallback: number,
     max: number,
     min: number,
-    label: string,
+    label: string
   ) {
     if (raw === undefined || raw === "") return fallback;
     const value = Number(raw);
